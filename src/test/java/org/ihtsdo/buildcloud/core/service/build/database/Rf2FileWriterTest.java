@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.core.service.build.database;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.Collections;
 
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.build.database.map.RF2TableExportDAOImpl;
@@ -66,7 +67,7 @@ public class Rf2FileWriterTest {
 		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
 
 		// Run target test method
-		rf2FileWriter.exportDelta(tableResults, tableSchema, deltaOutputStream);
+		rf2FileWriter.exportDelta(tableResults, tableSchema, deltaOutputStream, Collections.emptySet());
 
 		// Assert expectations
 		StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(CURRENT_SIMPLE_REFSET_DELTA), new ByteArrayInputStream(deltaOutputStream.toByteArray()));

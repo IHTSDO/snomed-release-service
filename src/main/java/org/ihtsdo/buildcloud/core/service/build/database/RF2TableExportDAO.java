@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.text.ParseException;
+import java.util.Set;
 
+import org.ihtsdo.buildcloud.core.service.build.database.map.Key;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
@@ -16,7 +18,7 @@ public interface RF2TableExportDAO {
 	void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException, DatabasePopulatorException, BadConfigurationException;
 
 	void appendData(TableSchema tableSchema, InputStream rf2InputStream, String previousEffectiveDate) throws IOException, SQLException, ParseException, DatabasePopulatorException, BadConfigurationException;
-
+	Set<Key> findAlreadyPublishedDeltaKeys(TableSchema tableSchema, InputStream previousSnapshotFileStream) throws IOException;
 	RF2TableResults selectAllOrdered(TableSchema tableSchema) throws SQLException;
 
 	RF2TableResults selectWithEffectiveDateOrdered(TableSchema table, String effectiveDate) throws SQLException;

@@ -17,6 +17,7 @@ import org.ihtsdo.buildcloud.core.entity.ExtensionConfig;
 import org.ihtsdo.buildcloud.core.service.build.database.RF2TableExportDAO;
 import org.ihtsdo.buildcloud.core.service.build.database.RF2TableResults;
 import org.ihtsdo.buildcloud.core.service.build.database.Rf2FileWriter;
+import org.ihtsdo.buildcloud.core.service.build.database.map.Key;
 import org.ihtsdo.buildcloud.core.service.build.database.map.RF2TableExportDAOImpl;
 import org.ihtsdo.buildcloud.core.service.helper.StatTimer;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
@@ -58,7 +59,7 @@ public class Rf2FileExportRunner {
 			boolean success = false;
 			while (!success) {
 				try {
-					boolean fileFirstTimeRelease = false;
+					boolean fileFirstTimeRelease;
 					String cleanFileName  = thisFile;
 					if (configuration.isBetaRelease()) {
 						cleanFileName = thisFile.substring(1);
@@ -113,6 +114,7 @@ public class Rf2FileExportRunner {
 			LOGGER.debug("Start: creating table for {}", transformedDeltaDataFile);
 			final InputStream transformedDeltaInputStream = buildDao.getTransformedFileAsInputStream(build, transformedDeltaDataFile);
 
+			Set<Key> deltaKeysToDiscard = new HashSet<>();
 			rf2TableDAO = new RF2TableExportDAOImpl(customRefsetCompositeKeys);
 			timer.split();
 			final boolean workbenchDataFixesRequired = configuration.isWorkbenchDataFixesRequired();
@@ -142,6 +144,16 @@ public class Rf2FileExportRunner {
 						// in yyyyMMdd format
 						String previousDependencyEffectiveDateStr = previousDependencyEffectiveDate != null ? RF2Constants.DATE_FORMAT.format(previousDependencyEffectiveDate) : null;
 						rf2TableDAO.appendData(tableSchema, intFullStream, previousDependencyEffectiveDateStr);
+
+						// Find any DELTA data with effective less than or equal the same one in the previous edition
+						if (!fileFirstTimeRelease) {
+							String cleanSnapshotFileName = constructFullOrSnapshotFilename(transformedDeltaDataFile, SNAPSHOT);
+							if (configuration.isBetaRelease() && cleanSnapshotFileName.startsWith(BETA_PREFIX)) {
+								cleanSnapshotFileName = cleanSnapshotFileName.substring(1); // Previous file will not be a beta release
+							}
+							InputStream previousSnapshotFileStream = getPreviousFileStream(previousPublishedPackage, cleanSnapshotFileName);
+							deltaKeysToDiscard = rf2TableDAO.findAlreadyPublishedDeltaKeys(tableSchema, previousSnapshotFileStream);
+						}
 					} else {
 						//  Refset files specific to extensions will not have equivalent files in the international release.
 						LOGGER.info("No equivalent full file found in dependency package for {}", transformedDeltaDataFile);
@@ -191,7 +203,7 @@ public class Rf2FileExportRunner {
 			RF2TableResults deltaResultSet = rf2TableDAO.selectAllOrdered(tableSchema);
 			timer.logTimeTaken("Select all ordered");
 			timer.split();
-			rf2FileWriter.exportDelta(deltaResultSet, tableSchema, deltaFileAsyncPipe.getOutputStream());
+			rf2FileWriter.exportDelta(deltaResultSet, tableSchema, deltaFileAsyncPipe.getOutputStream(), deltaKeysToDiscard);
 			LOGGER.debug("Completed processing delta file for {}, waiting for network", tableSchema.getTableName());
 			timer.logTimeTaken("Export delta processing");
 			deltaFileAsyncPipe.waitForFinish();

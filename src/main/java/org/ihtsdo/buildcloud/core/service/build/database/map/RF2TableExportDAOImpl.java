@@ -1,5 +1,15 @@
 package org.ihtsdo.buildcloud.core.service.build.database.map;
 
+import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.core.service.build.database.DatabasePopulatorException;
+import org.ihtsdo.buildcloud.core.service.build.database.RF2TableExportDAO;
+import org.ihtsdo.buildcloud.core.service.build.database.RF2TableResults;
+import org.ihtsdo.otf.rest.exception.BadConfigurationException;
+import org.ihtsdo.otf.utils.FileUtils;
+import org.ihtsdo.snomed.util.rf2.schema.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,20 +18,6 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.core.service.build.database.DatabasePopulatorException;
-import org.ihtsdo.buildcloud.core.service.build.database.RF2TableExportDAO;
-import org.ihtsdo.buildcloud.core.service.build.database.RF2TableResults;
-import org.ihtsdo.otf.rest.exception.BadConfigurationException;
-import org.ihtsdo.otf.utils.FileUtils;
-import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
-import org.ihtsdo.snomed.util.rf2.schema.DataType;
-import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
-import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 
@@ -85,6 +81,34 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 			reader.readLine(); // Discard header line
 			insertData(reader, tableSchema, false, false, previousEffectiveDate);
 		}
+	}
+
+	@Override
+	public Set<Key> findAlreadyPublishedDeltaKeys(TableSchema tableSchema, InputStream previousSnapshotFileStream) throws IOException {
+		if (this.table.isEmpty()) return Collections.emptySet();
+		Set<Key> keysToDiscard = new HashSet<>();
+		Map<String, List<Key>> idStringToKeyMap = new HashMap<>();
+		for (Key key : table.keySet()) {
+			idStringToKeyMap.computeIfAbsent(key.getIdString(),  k-> new ArrayList<>()).add(key);
+		}
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
+			String line = reader.readLine(); // Discard header line
+			String[] parts;
+			String idString;
+			while ((line = reader.readLine()) != null) {
+				parts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
+				idString = tableSchema.getComponentType() == ComponentType.IDENTIFIER ? getIdentifierCompositeKey(line).getIdString() : getKey(parts[0], parts[1]).getIdString();
+				if (!idStringToKeyMap.containsKey(idString)) {
+					continue;
+				}
+				for (Key key : idStringToKeyMap.get(idString)) {
+					if (Integer.parseInt(parts[1]) >= Integer.parseInt(key.getDate())) {
+						keysToDiscard.add(key);
+					}
+				}
+			}
+		}
+		return keysToDiscard;
 	}
 
 	@Override
@@ -185,8 +209,8 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 				emptyValueKeys.add(key);
 			}
 		}
-		LOGGER.info("Total number of rows with empty value id found:" + emptyValueKeys.size());
-		if (emptyValueKeys.size() < 1) {
+		LOGGER.info("Total number of rows with empty value id found: {}", emptyValueKeys.size());
+		if (emptyValueKeys.isEmpty()) {
 			//no empty value id is found.
 			return;
 		}
@@ -221,7 +245,7 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 		}
 		//remove any rows with empty value id as not existing in previous file
 		if (!emptyValueKeys.isEmpty()) {
-			LOGGER.info("Found total number of rows with empty value id but member id doesn't exist in previous snapshot file:" + emptyValueKeys.size());
+			LOGGER.info("Found total number of rows with empty value id but member id doesn't exist in previous snapshot file: {}", emptyValueKeys.size());
 		}
 		for (final Key k : emptyValueKeys) {
 			table.remove(k);

@@ -10,11 +10,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.List;
+import java.util.Set;
 
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.build.database.DatabasePopulatorException;
 import org.ihtsdo.buildcloud.core.service.build.database.RF2TableExportDAO;
 import org.ihtsdo.buildcloud.core.service.build.database.RF2TableResults;
+import org.ihtsdo.buildcloud.core.service.build.database.map.Key;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.DataType;
 import org.ihtsdo.snomed.util.rf2.schema.Field;
@@ -83,6 +85,11 @@ public class RF2TableDAOHsqlImpl implements RF2TableExportDAO {
 
 	@Override
 	public void appendData(TableSchema tableSchema, InputStream rf2InputStream, String previousEffectiveTime) {
+		throw new UnsupportedOperationException(("Method is not supported!"));
+	}
+
+	@Override
+	public Set<Key> findAlreadyPublishedDeltaKeys(TableSchema tableSchema, InputStream previousSnapshotFileStream) throws IOException {
 		throw new UnsupportedOperationException(("Method is not supported!"));
 	}
 

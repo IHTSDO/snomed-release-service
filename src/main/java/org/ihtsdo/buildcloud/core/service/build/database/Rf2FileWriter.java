@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.core.service.build.database;
 
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.core.service.build.database.map.Key;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.Field;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
@@ -13,6 +14,7 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 public class Rf2FileWriter {
@@ -28,10 +30,9 @@ public class Rf2FileWriter {
 		this.excludeLanguageRefsetIds = excludeLanguageRefsetIds;
 	}
 
-	public void exportDelta(RF2TableResults tableResults, TableSchema tableSchema, OutputStream deltaOutputStream) throws SQLException, IOException {
+	public void exportDelta(RF2TableResults tableResults, TableSchema tableSchema, OutputStream deltaOutputStream, Set<Key> deltaKeysToDiscard) throws SQLException, IOException {
 		try (BufferedWriter deltaWriter = new BufferedWriter(new OutputStreamWriter(deltaOutputStream, RF2Constants.UTF_8))) {
 			List<Field> fields = tableSchema.getFields();
-
 			// Write header
 			String header = productHeader(fields);
 			deltaWriter.write(header);
@@ -55,15 +56,24 @@ public class Rf2FileWriter {
 						lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
 					}
 					currentId = lineParts[0];
-
-					if (isRF2LineExcluded(tableSchema, currentId, languageRefsetId)) {
-						continue;
-					}
+				}
+				if (isIgnoredKey(deltaKeysToDiscard, currentId, ComponentType.IDENTIFIER.equals(tableSchema.getComponentType()) ? lineParts[2] : lineParts[1])
+				 || (!ComponentType.IDENTIFIER.equals(tableSchema.getComponentType()) && isRF2LineExcluded(tableSchema, currentId, languageRefsetId))) {
+					continue;
 				}
 				deltaWriter.append(line);
 				deltaWriter.append(RF2Constants.LINE_ENDING);
 			}
 		}
+	}
+
+	private boolean isIgnoredKey(Set<Key> deltaKeysToDiscard, String currentId, String effectiveTime) {
+		for (Key key : deltaKeysToDiscard) {
+			if (currentId.equals(key.getIdString()) && effectiveTime.equals(key.getDate())) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public void exportFullAndSnapshot(RF2TableResults tableResults, TableSchema schema, Date targetEffectiveTime, OutputStream fullOutputStream, OutputStream snapshotOutputStream) throws SQLException, IOException {
