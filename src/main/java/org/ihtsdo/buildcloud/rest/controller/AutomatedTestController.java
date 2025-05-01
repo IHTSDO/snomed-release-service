@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.rest.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.service.AutomatedTestService;
 import org.ihtsdo.buildcloud.core.service.BuildService;
@@ -10,17 +11,17 @@ import org.ihtsdo.buildcloud.core.service.build.compare.FileDiffReport;
 import org.ihtsdo.buildcloud.rest.controller.helper.ControllerHelper;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
-import org.ihtsdo.sso.integration.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.UUID;
 
@@ -71,10 +72,11 @@ public class AutomatedTestController {
             @PathVariable final String productKey,
             @RequestParam final String leftBuildId,
             @RequestParam final String rightBuildId,
+            @RequestParam final boolean readyToPublish,
             final HttpServletRequest request) {
         String compareId = UUID.randomUUID().toString();
-        String username = SecurityUtil.getUsername();
-        automatedTestService.compareBuilds(compareId, releaseCenterKey, productKey, leftBuildId, rightBuildId, username);
+        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        automatedTestService.compareBuilds(compareId, releaseCenterKey, productKey, leftBuildId, rightBuildId, readyToPublish, authentication);
 
         return ControllerHelper.getCreatedResponse(compareId);
     }

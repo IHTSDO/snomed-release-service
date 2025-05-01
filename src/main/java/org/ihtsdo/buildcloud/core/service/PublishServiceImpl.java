@@ -217,7 +217,7 @@ public class PublishServiceImpl implements PublishService {
 					moduleStorageCoordinatorCache.clearCachedReleases();
 				} catch (Exception e) {
 					concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), "The build has been published successfully but failed to upload to new versioned content bucket (Module Storage Coordinator).  Error message: " + e.getMessage()));
-					throw new BusinessServiceException("Failed to to upload to new versioned content bucket (Module Storage Coordinator)", e);
+					throw new BusinessServiceException("Failed to upload to new versioned content bucket (Module Storage Coordinator). Error : " + e.getMessage(), e);
 				}
 
 				// update the release package in code system

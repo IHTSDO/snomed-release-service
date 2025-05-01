@@ -5,7 +5,7 @@ import java.util.List;
 
 public class BuildComparisonReport {
     public enum Status {
-        QUEUED, COMPARING, PASSED, FAILED, FAILED_TO_COMPARE;
+        QUEUED, PUBLISHING, COMPARING, PASSED, FAILED, FAILED_TO_COMPARE;
     }
 
     private String compareId;
@@ -25,6 +25,12 @@ public class BuildComparisonReport {
     private String leftBuildId;
 
     private String rightBuildId;
+
+    private boolean readyToPublish;
+
+    private String publishStatus;
+
+    private String publishMessage;
 
     private List<HighLevelComparisonReport> reports;
 
@@ -106,5 +112,29 @@ public class BuildComparisonReport {
 
     public String getProductKey() {
         return productKey;
+    }
+
+    public void setReadyToPublish(boolean readyToPublish) {
+        this.readyToPublish = readyToPublish;
+    }
+
+    public boolean isReadyToPublish() {
+        return readyToPublish;
+    }
+
+    public void setPublishStatus(String publishStatus) {
+        this.publishStatus = publishStatus;
+    }
+
+    public String getPublishMessage() {
+        return publishMessage;
+    }
+
+    public void setPublishMessage(String publishMessage) {
+        this.publishMessage = publishMessage;
+    }
+
+    public String getPublishStatus() {
+        return publishStatus;
     }
 }
