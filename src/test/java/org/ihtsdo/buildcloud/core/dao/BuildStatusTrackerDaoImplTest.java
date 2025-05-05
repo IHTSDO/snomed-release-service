@@ -61,7 +61,7 @@ public class BuildStatusTrackerDaoImplTest {
 		result.setRvfRunId("12345");
 		result.setStatus(Build.Status.RVF_RUNNING.name());
 		buildStatusTrackerDao.update(result);
-		result = buildStatusTrackerDao.findByRvfRunId("12345");
+		result = buildStatusTrackerDao.findByRvfRunIdAndBuildId("12345", buildId);
 
 		assertNotNull(result);
 		assertEquals("12345", result.getRvfRunId());

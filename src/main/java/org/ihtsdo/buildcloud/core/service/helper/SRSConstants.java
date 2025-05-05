@@ -10,4 +10,5 @@ public class SRSConstants {
 	public static final String BUILD_ID_KEY = "buildId";
 	public static final String RUN_ID_KEY = "runId";
 	public static final String STATE_KEY = "state";
+	public static final String STORAGE_LOCATION = "storageLocation";
 }

@@ -8,7 +8,7 @@ public interface BuildStatusTrackerDao extends EntityDAO<BuildStatusTracker> {
 
 	List<BuildStatusTracker> findByProductAndStatus(String productKey, String... status);
 
-	BuildStatusTracker findByRvfRunId(String runId);
+	BuildStatusTracker findByRvfRunIdAndBuildId(String runId, String buildId);
 
 	BuildStatusTracker findByProductKeyAndBuildId(String productKey, String buildId);
 }

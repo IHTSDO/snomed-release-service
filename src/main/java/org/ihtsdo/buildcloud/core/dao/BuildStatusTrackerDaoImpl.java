@@ -26,12 +26,13 @@ public class BuildStatusTrackerDaoImpl extends EntityDAOImpl<BuildStatusTracker>
 	}
 
 	@Override
-	public BuildStatusTracker findByRvfRunId(String rvfRunId) {
+	public BuildStatusTracker findByRvfRunIdAndBuildId(String rvfRunId, String buildId) {
 		Query<BuildStatusTracker> query = getCurrentSession().createQuery(
 				"select statusTracker " +
 						"from BuildStatusTracker statusTracker " +
-						"where statusTracker.rvfRunId = :rvfRunId", BuildStatusTracker.class);
+						"where statusTracker.rvfRunId = :rvfRunId and statusTracker.buildId = :buildId", BuildStatusTracker.class);
 		query.setParameter("rvfRunId", rvfRunId);
+		query.setParameter("buildId", buildId);
 		return query.uniqueResult();
 	}
 
