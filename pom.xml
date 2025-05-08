@@ -4,7 +4,7 @@
 
 	<groupId>org.ihtsdo.snomed.release</groupId>
 	<artifactId>snomed-release-service</artifactId>
-	<version>7.8.0</version>
+	<version>7.8.1-SNAPSHOT</version>
 
 	<parent>
 		<groupId>org.snomed</groupId>
