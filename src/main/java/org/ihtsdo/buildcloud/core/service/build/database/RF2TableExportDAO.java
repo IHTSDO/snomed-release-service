@@ -1,24 +1,27 @@
 package org.ihtsdo.buildcloud.core.service.build.database;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.SQLException;
-import java.text.ParseException;
-import java.util.Set;
-
 import org.ihtsdo.buildcloud.core.service.build.database.map.Key;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.util.Set;
+
 public interface RF2TableExportDAO {
 
 	TableSchema createTable(String rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws SQLException, IOException, FileRecognitionException, ParseException, DatabasePopulatorException, BadConfigurationException;
 
-	void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException, DatabasePopulatorException, BadConfigurationException;
+	void appendData(TableSchema tableSchema, Path rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException, DatabasePopulatorException, BadConfigurationException;
 
-	void appendData(TableSchema tableSchema, InputStream rf2InputStream, String previousEffectiveDate) throws IOException, SQLException, ParseException, DatabasePopulatorException, BadConfigurationException;
-	Set<Key> findAlreadyPublishedDeltaKeys(TableSchema tableSchema, InputStream previousSnapshotFileStream) throws IOException;
+	void appendData(TableSchema tableSchema, Path rf2FilePath, InputStream rf2InputStream, String previousEffectiveDate) throws IOException, SQLException, ParseException, DatabasePopulatorException, BadConfigurationException;
+
+	Set<Key> findAlreadyPublishedDeltaKeys(TableSchema tableSchema, Path previousSnapshotFilePath, InputStream previousSnapshotFileStream) throws IOException;
+
 	RF2TableResults selectAllOrdered(TableSchema tableSchema) throws SQLException;
 
 	RF2TableResults selectWithEffectiveDateOrdered(TableSchema table, String effectiveDate) throws SQLException;
@@ -35,7 +38,7 @@ public interface RF2TableExportDAO {
 	 * @param currentSnapshotFileName
 	 * @param effectiveTime
 	 */
-	void discardAlreadyPublishedDeltaStates(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException;
+	void discardAlreadyPublishedDeltaStates(Path previousSnapshotFile, InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException;
 
 	/**
 	 * This is a workaround for Workbench. Workbench exports refset members with the wrong UUID.
@@ -44,7 +47,7 @@ public interface RF2TableExportDAO {
 	 * @param currentSnapshotFileName
 	 * @param effectiveTime
 	 */
-	void reconcileRefsetMemberIds(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException, BadConfigurationException;
+	void reconcileRefsetMemberIds(Path previousSnapshotFilePath, InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException, BadConfigurationException;
 
 	/**
 	 * This is a workaround for dealing with daily export delta file from WorkBench.
@@ -57,7 +60,7 @@ public interface RF2TableExportDAO {
 	 * @param effectiveTime
 	 * @throws IOException
 	 */
-	void resolveEmptyValueId(InputStream previousFileStream, String effectiveTime) throws IOException;
+	void resolveEmptyValueId(Path previousFile, InputStream previousFileStream, String effectiveTime) throws IOException;
 
 }
 

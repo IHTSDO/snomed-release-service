@@ -7,6 +7,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import jakarta.annotation.PostConstruct;
+import jakarta.jms.JMSException;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.apache.commons.text.StringEscapeUtils;
@@ -44,12 +46,15 @@ import org.ihtsdo.otf.jms.MessagingHelper;
 import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.ihtsdo.otf.rest.exception.*;
 import org.ihtsdo.otf.utils.FileUtils;
+import org.ihtsdo.otf.utils.ZipFileUtils;
 import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snomed.module.storage.ModuleMetadata;
+import org.snomed.module.storage.ModuleStorageCoordinator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ResourceLoader;
@@ -58,9 +63,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-
-import jakarta.annotation.PostConstruct;
-import jakarta.jms.JMSException;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
 
@@ -163,6 +165,12 @@ public class BuildServiceImpl implements BuildService {
 
 	@Autowired
 	private InputFileService inputFileService;
+
+	@Autowired
+	private ModuleStorageCoordinator moduleStorageCoordinator;
+
+	@Autowired
+	private ModuleStorageCoordinatorCache moduleStorageCoordinatorCache;
 
 	@PostConstruct
 	public void init() {
@@ -674,33 +682,39 @@ public class BuildServiceImpl implements BuildService {
 		} else {
 			final Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(build);
 			if (dao.isBuildCancelRequested(build)) return;
-			transformationService.transformFiles(build, inputFileSchemaMap);
-			// Convert Delta input files to Full, Snapshot and Delta release files
-			if (dao.isBuildCancelRequested(build)) return;
 
-			final Rf2FileExportRunner generator = new Rf2FileExportRunner(build, dao, fileProcessingFailureMaxRetry);
+			File previousReleaseDirectory = getReleaseFileFromMscOrNull(configuration.getPreviousPublishedPackage());
+			File dependencyReleaseDirectory = configuration.getExtensionConfig() != null ? getReleaseFileFromMscOrNull(configuration.getExtensionConfig().getDependencyRelease()) : null;
+			try {
+				transformationService.transformFiles(build, inputFileSchemaMap, previousReleaseDirectory);
+				// Convert Delta input files to Full, Snapshot and Delta release files
+				if (dao.isBuildCancelRequested(build)) return;
 
-			if (!generator.isInferredRelationshipFileExist(rf2DeltaFilesSpecifiedByManifest(build))) {
-				throw new BusinessServiceException("There is no inferred relationship delta file");
-			}
-			generator.generateReleaseFiles();
+				final Rf2FileExportRunner generator = new Rf2FileExportRunner(build, dao, previousReleaseDirectory, dependencyReleaseDirectory, fileProcessingFailureMaxRetry);
 
-			//filter out additional relationships from the transformed delta
-			if (dao.isBuildCancelRequested(build)) return;
-			String inferredDelta = getInferredDeltaFromInput(inputFileSchemaMap);
-			if (inferredDelta != null) {
-				String transformedDelta = inferredDelta.replace(RF2Constants.INPUT_FILE_PREFIX, RF2Constants.SCT2);
-				transformedDelta = configuration.isBetaRelease() ? BuildConfiguration.BETA_PREFIX + transformedDelta : transformedDelta;
-				retrieveAdditionalRelationshipsInputDelta(build, transformedDelta);
+				if (!generator.isInferredRelationshipFileExist(rf2DeltaFilesSpecifiedByManifest(build))) {
+					throw new BusinessServiceException("There is no inferred relationship delta file");
+				}
+				generator.generateReleaseFiles();
+
+				//filter out additional relationships from the transformed delta
+				if (dao.isBuildCancelRequested(build)) return;
+				String inferredDelta = getInferredDeltaFromInput(inputFileSchemaMap);
+				if (inferredDelta != null) {
+					String transformedDelta = inferredDelta.replace(RF2Constants.INPUT_FILE_PREFIX, RF2Constants.SCT2);
+					transformedDelta = configuration.isBetaRelease() ? BuildConfiguration.BETA_PREFIX + transformedDelta : transformedDelta;
+					retrieveAdditionalRelationshipsInputDelta(build, transformedDelta);
+				}
+			} finally {
+				if (previousReleaseDirectory != null) {
+					org.apache.commons.io.FileUtils.deleteDirectory(previousReleaseDirectory);
+				}
+				if (dependencyReleaseDirectory != null) {
+					org.apache.commons.io.FileUtils.deleteDirectory(dependencyReleaseDirectory);
+				}
 			}
 		}
 		if (dao.isBuildCancelRequested(build)) return;
-
-//		if (Boolean.FALSE.equals(offlineMode)) {
-//			LOGGER.info("Start classification cross check");
-//			List<PostConditionCheckReport> reports = postconditionManager.runPostconditionChecks(build);
-//			dao.updatePostConditionCheckReport(build, reports);
-//		}
 
 		// Generate release package information
 		String releaseFilename = getReleaseFilename(build);
@@ -768,6 +782,29 @@ public class BuildServiceImpl implements BuildService {
 		report.add("rvf_response", rvfResultMsg);
 		LOGGER.info("End of running build {}", build.getUniqueId());
 		dao.persistReport(build);
+	}
+
+	private File getReleaseFileFromMscOrNull(String releasePackageFilename) {
+		if (org.springframework.util.StringUtils.hasLength(releasePackageFilename)) {
+			try {
+				Map<String, List<ModuleMetadata>> allReleasesMap = moduleStorageCoordinatorCache.getAllReleases();
+				List<ModuleMetadata> allModuleMetadata = new ArrayList<>();
+				allReleasesMap.values().forEach(allModuleMetadata::addAll);
+				ModuleMetadata moduleMetadata = allModuleMetadata.stream().filter(item -> item.getFilename().equals(releasePackageFilename)).findFirst().orElse(null);
+				if (moduleMetadata == null) return null;
+
+				List<ModuleMetadata> moduleMetadataList = moduleStorageCoordinator.getRelease(moduleMetadata.getCodeSystemShortName(), moduleMetadata.getIdentifyingModuleId(), moduleMetadata.getEffectiveTimeString(), true, false);
+				File releasePackage = moduleMetadataList.get(0).getFile();
+				File extractedDirectory = Files.createTempDirectory("temp-rf2-unzip").toFile();
+				ZipFileUtils.extractFilesFromZipToOneFolder(releasePackage, extractedDirectory.getAbsolutePath());
+				Files.delete(releasePackage.toPath());
+				return extractedDirectory;
+			} catch (Exception e) {
+				LOGGER.error("Error retrieving the release file from MSC: {}", e.getMessage());
+				return null;
+			}
+		}
+		return null;
 	}
 
 	private void generateReleasePackageFile(Build build, String releaseFilename) throws BusinessServiceException {

@@ -14,6 +14,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -68,30 +70,30 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 	}
 
 	@Override
-	public void appendData(final TableSchema tableSchema, final InputStream rf2InputStream, final boolean workbenchDataFixesRequired) throws IOException, DatabasePopulatorException, BadConfigurationException {
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
+	public void appendData(final TableSchema tableSchema, final Path rf2FilePath, final InputStream rf2InputStream, final boolean workbenchDataFixesRequired) throws IOException, DatabasePopulatorException, BadConfigurationException {
+		try (BufferedReader reader = rf2FilePath != null ? Files.newBufferedReader(rf2FilePath, RF2Constants.UTF_8) : new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			reader.readLine(); // Discard header line
 			insertData(reader, tableSchema, false, workbenchDataFixesRequired);
 		}
 	}
 
 	@Override
-	public void appendData(TableSchema tableSchema, InputStream rf2InputStream, String previousEffectiveDate) throws IOException, DatabasePopulatorException, BadConfigurationException {
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
+	public void appendData(TableSchema tableSchema, Path rf2FilePath, InputStream rf2InputStream, String previousEffectiveDate) throws IOException, DatabasePopulatorException, BadConfigurationException {
+		try (BufferedReader reader = rf2FilePath != null ? Files.newBufferedReader(rf2FilePath, RF2Constants.UTF_8) : new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			reader.readLine(); // Discard header line
 			insertData(reader, tableSchema, false, false, previousEffectiveDate);
 		}
 	}
 
 	@Override
-	public Set<Key> findAlreadyPublishedDeltaKeys(TableSchema tableSchema, InputStream previousSnapshotFileStream) throws IOException {
+	public Set<Key> findAlreadyPublishedDeltaKeys(TableSchema tableSchema, Path previousSnapshotFilePath, InputStream previousSnapshotFileStream) throws IOException {
 		if (this.table.isEmpty()) return Collections.emptySet();
 		Set<Key> keysToDiscard = new HashSet<>();
 		Map<String, List<Key>> idStringToKeyMap = new HashMap<>();
 		for (Key key : table.keySet()) {
 			idStringToKeyMap.computeIfAbsent(key.getIdString(),  k-> new ArrayList<>()).add(key);
 		}
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
+		try (BufferedReader reader = previousSnapshotFilePath != null ? Files.newBufferedReader(previousSnapshotFilePath, RF2Constants.UTF_8) : new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
 			String line = reader.readLine(); // Discard header line
 			String[] parts;
 			String idString;
@@ -145,8 +147,8 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 	}
 
 	@Override
-	public void discardAlreadyPublishedDeltaStates(final InputStream previousSnapshotFileStream, final String currentSnapshotFileName, final String effectiveTime) throws IOException, DatabasePopulatorException {
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
+	public void discardAlreadyPublishedDeltaStates(final Path previousSnapshotFile, final InputStream previousSnapshotFileStream, final String currentSnapshotFileName, final String effectiveTime) throws IOException, DatabasePopulatorException {
+		try (BufferedReader reader = previousSnapshotFile != null ? Files.newBufferedReader(previousSnapshotFile, RF2Constants.UTF_8) : new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
 			getHeader(currentSnapshotFileName, reader);
 
 			String line;
@@ -166,9 +168,9 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 	}
 
 	@Override
-	public void reconcileRefsetMemberIds(final InputStream previousSnapshotFileStream, final String currentSnapshotFileName, final String effectiveTime) throws IOException, DatabasePopulatorException, BadConfigurationException {
+	public void reconcileRefsetMemberIds(final Path previousSnapshotFilePath, final InputStream previousSnapshotFileStream, final String currentSnapshotFileName, final String effectiveTime) throws IOException, DatabasePopulatorException, BadConfigurationException {
 		LOGGER.info("Reconciling reference set member ids with previous published version of {}", currentSnapshotFileName);
-		try (BufferedReader prevSnapshotReader = new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
+		try (BufferedReader prevSnapshotReader = previousSnapshotFilePath != null ? Files.newBufferedReader(previousSnapshotFilePath, RF2Constants.UTF_8) : new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
 			getHeader("previous to " + currentSnapshotFileName, prevSnapshotReader);
 
 			String line, refsetId, compositeKey, newValues;
@@ -199,7 +201,7 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 	}
 
 	@Override
-	public void resolveEmptyValueId(final InputStream previousSnapshotFileStream, final String effectiveTime) throws IOException {
+	public void resolveEmptyValueId(final Path previousFile, final InputStream previousSnapshotFileStream, final String effectiveTime) throws IOException {
 		//check whether there are any empty value id
 		final List<Key> emptyValueKeys = new ArrayList<>();
 		for (final Key key : table.keySet()) {
@@ -214,7 +216,7 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 			//no empty value id is found.
 			return;
 		}
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
+		try (BufferedReader reader = previousFile != null ? Files.newBufferedReader(previousFile, RF2Constants.UTF_8) : new BufferedReader(new InputStreamReader(previousSnapshotFileStream, RF2Constants.UTF_8))) {
 			String line;
 			line = reader.readLine();
 			if (line == null) {

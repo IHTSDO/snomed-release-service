@@ -2,7 +2,10 @@ package org.ihtsdo.buildcloud.rest.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.PostConstruct;
 import org.ihtsdo.buildcloud.core.service.ModuleStorageCoordinatorCache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.snomed.module.storage.ModuleMetadata;
 import org.snomed.module.storage.ModuleStorageCoordinatorException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,8 +21,19 @@ import java.util.Map;
 @RequestMapping(produces={MediaType.APPLICATION_JSON_VALUE})
 public class ReleasePackageController {
 
+    private final Logger logger = LoggerFactory.getLogger(ReleasePackageController.class);
+
     @Autowired
     private ModuleStorageCoordinatorCache moduleStorageCoordinatorCache;
+
+    @PostConstruct
+    public void init() {
+        try {
+            moduleStorageCoordinatorCache.getAllReleases();
+        } catch (Exception e) {
+            logger.error("Error initializing all release metadata from MSC: {}", e.getMessage());
+        }
+    }
 
     @GetMapping(value = "/releases")
     @Operation(summary = "Returns the list all release packages")

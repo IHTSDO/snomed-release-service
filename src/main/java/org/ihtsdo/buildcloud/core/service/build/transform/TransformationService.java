@@ -1,23 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.build.transform;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.Build;
@@ -26,6 +8,7 @@ import org.ihtsdo.buildcloud.core.entity.BuildReport;
 import org.ihtsdo.buildcloud.core.entity.ExtensionConfig;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.build.ReleaseFileGenerationException;
+import org.ihtsdo.buildcloud.core.service.build.FileUtils;
 import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.core.service.workbenchdatafix.ModuleResolverService;
 import org.ihtsdo.otf.rest.client.RestClientException;
@@ -42,6 +25,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+
+import java.io.*;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Service
 public class TransformationService {
@@ -86,7 +77,7 @@ public class TransformationService {
 	 * A streaming transformation of build input files, creating build output files.
 	 * @throws NoSuchAlgorithmException 
 	 */
-	public void transformFiles(final Build build, final Map<String, TableSchema> inputFileSchemaMap)
+	public void transformFiles(final Build build, final Map<String, TableSchema> inputFileSchemaMap, File previousReleaseDirectory)
 			throws BusinessServiceException, NoSuchAlgorithmException {
 
 		//  clean up any existing data in transformed folder in case there could be data left from previous run during retry
@@ -116,7 +107,14 @@ public class TransformationService {
 				if (!configuration.isFirstTimeRelease()) {
 					final String previousPublishedPackage = configuration.getPreviousPublishedPackage();
 					try {
-						final InputStream statedRelationshipSnapshotStream = dao.getPublishedFileArchiveEntry(build.getReleaseCenterKey(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
+						InputStream statedRelationshipSnapshotStream = null;
+						if (previousReleaseDirectory != null && previousReleaseDirectory.listFiles() != null) {
+							File file = FileUtils.getRf2FileFromDirectory(previousReleaseDirectory, "sct2_StatedRelationship_Snapshot");
+							if (file != null) statedRelationshipSnapshotStream = new FileInputStream(file);
+						}
+						if (statedRelationshipSnapshotStream == null) {
+							statedRelationshipSnapshotStream = dao.getPublishedFileArchiveEntry(build.getReleaseCenterKey(), "sct2_StatedRelationship_Snapshot", previousPublishedPackage);
+						}
 						if (statedRelationshipSnapshotStream != null) {
 							final Set<String> modelConceptIds = moduleResolverService.getExistingModelConceptIds(statedRelationshipSnapshotStream);
 
@@ -238,7 +236,7 @@ public class TransformationService {
 					//retrieving the transformed concept delta file
 					String conceptDeltaFilename = getTransformedDeltaFileName(transformedFileNames, CONCEPT_DELTA);
 					if (conceptDeltaFilename != null) {
-						moduleIdAndNewConceptIds = getNewConcepIds(build, conceptDeltaFilename);
+						moduleIdAndNewConceptIds = getNewConcepIds(previousReleaseDirectory, build, conceptDeltaFilename);
 					}
 					if (moduleIdAndNewConceptIds != null && !moduleIdAndNewConceptIds.isEmpty()) {
 						legacyIdTransformation.transformLegacyIds( moduleIdAndNewConceptIds, build, idRestClient);
@@ -298,7 +296,7 @@ public class TransformationService {
 		}
 	}
 	
-	private Map<String, Collection<Long>> getNewConcepIds(final Build build, final String conceptDelta) throws IOException {
+	private Map<String, Collection<Long>> getNewConcepIds(final File previousReleaseDirectory, final Build build, final String conceptDelta) throws IOException {
 		//load previous concept snapshot 
 		Collection<Long> conceptsInPreviousSnapshot = new ArrayList<>();
 		if (!build.getConfiguration().isFirstTimeRelease()) {
@@ -306,13 +304,20 @@ public class TransformationService {
 			if (build.getConfiguration().isBetaRelease()) {
 				conceptSnapshot = conceptSnapshot.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, "");
 			}
-			try (InputStream prevousSnapshot = dao.getPublishedFileArchiveEntry(build.getReleaseCenterKey(),
-					conceptSnapshot, build.getConfiguration().getPreviousPublishedPackage())){
-				if (prevousSnapshot == null) {
-					throw new IOException("No equivalent file found in the previous published release:" + conceptSnapshot);
-				}
-				conceptsInPreviousSnapshot = getIdsFromFile(prevousSnapshot);
+
+			InputStream prevousSnapshot = null;
+			if (previousReleaseDirectory != null && previousReleaseDirectory.listFiles() != null) {
+				File file = FileUtils.getRf2FileFromDirectory(previousReleaseDirectory, conceptSnapshot);
+				if (file != null) prevousSnapshot = new FileInputStream(file);
 			}
+			if (prevousSnapshot == null) {
+				prevousSnapshot = dao.getPublishedFileArchiveEntry(build.getReleaseCenterKey(),
+						conceptSnapshot, build.getConfiguration().getPreviousPublishedPackage());
+			}
+			if (prevousSnapshot == null) {
+				throw new IOException("No equivalent file found in the previous published release:" + conceptSnapshot);
+			}
+			conceptsInPreviousSnapshot = getIdsFromFile(prevousSnapshot);
 		}
 		Map<String,Collection<Long>> moduleIdAndConceptMap = new HashMap<>();
 		try (InputStream inputStream = dao.getTransformedFileAsInputStream(build, conceptDelta);
