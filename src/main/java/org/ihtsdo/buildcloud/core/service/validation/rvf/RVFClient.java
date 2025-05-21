@@ -43,6 +43,8 @@ public class RVFClient implements Closeable {
 
 	private static final String DROOLS_RULES_GROUPS = "droolsRulesGroups";
 
+	private static final String EXCLUDED_RF2_FILES = "excludedRF2Files";
+
 	private static final String INCLUDED_MODULES = "includedModules";
 
 	private static final String DEFAULT_MODULE_ID = "defaultModuleId";
@@ -280,6 +282,10 @@ public class RVFClient implements Closeable {
 		
 		if (StringUtils.isNotBlank(qaTestConfig.getDroolsRulesGroupNames())) {
 			multiPartBuilder.addTextBody(DROOLS_RULES_GROUPS, qaTestConfig.getDroolsRulesGroupNames());
+		}
+
+		if (request.getRemoveRF2Files() != null) {
+			multiPartBuilder.addTextBody(EXCLUDED_RF2_FILES, request.getRemoveRF2Files().replace("|", ","));
 		}
 
 		if (StringUtils.isNotBlank(request.getPreviousExtensionDependencyEffectiveTime())) {

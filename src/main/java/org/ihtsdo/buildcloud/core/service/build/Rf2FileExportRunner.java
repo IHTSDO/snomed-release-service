@@ -56,23 +56,23 @@ public class Rf2FileExportRunner {
 
 		final List<String> transformedFiles = getTransformedDeltaFiles();
 		final Set<String> newRF2InputFiles = configuration.getNewRF2InputFileSet();
+		final Set<String> removeRF2Files = configuration.getRemoveRF2FileSet();
 		final Map<String,Set<String>> includedFilesMap = configuration.getIncludedFilesInNewFilesMap();
-		for ( String thisFile : transformedFiles) {
-			if (!thisFile.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
+		for (String thisFile : transformedFiles) {
+			String cleanFileName  = thisFile;
+			if (configuration.isBetaRelease()) {
+				cleanFileName = thisFile.substring(1);
+			}
+			String filenameToCheck = cleanFileName.replace(SCT2, INPUT_FILE_PREFIX).replace(DER2, INPUT_FILE_PREFIX);
+			if (!thisFile.endsWith(RF2Constants.TXT_FILE_EXTENSION) || removeRF2Files.stream().anyMatch(filenameToCheck::contains)) {
 				continue;
 			}
+
 			int failureCount = 0;
 			boolean success = false;
 			while (!success) {
 				try {
-					boolean fileFirstTimeRelease;
-					String cleanFileName  = thisFile;
-					if (configuration.isBetaRelease()) {
-						cleanFileName = thisFile.substring(1);
-					}
-					String filenameToCheck = cleanFileName.replace(SCT2, INPUT_FILE_PREFIX).replace(DER2, INPUT_FILE_PREFIX);
-					final boolean newFile = newRF2InputFiles.contains(filenameToCheck);
-					fileFirstTimeRelease = newFile || configuration.isFirstTimeRelease();
+					boolean fileFirstTimeRelease = newRF2InputFiles.contains(filenameToCheck) || configuration.isFirstTimeRelease();
 					Set<String> includedFilesInNewFile = includedFilesMap.get(filenameToCheck);
 					generateReleaseFile(thisFile, configuration.getCustomRefsetCompositeKeys(), fileFirstTimeRelease, includedFilesInNewFile);
 					success = true;

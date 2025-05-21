@@ -1203,6 +1203,7 @@ public class BuildServiceImpl implements BuildService {
 			request.setManifestFileS3Path(manifestFileS3Path);
 			request.setReleaseAsAnEdition(releaseAsAnEdition);
 			request.setStandAloneProduct(buildConfiguration.isStandAloneProduct());
+			request.setRemoveRF2Files(buildConfiguration.getRemoveRF2Files());
 			request.setDailyBuild(buildConfiguration.isDailyBuild());
 			request.setDefaultModuleId(defaultModuleId);
 			request.setIncludedModuleIds(includedModuleIdsStr);

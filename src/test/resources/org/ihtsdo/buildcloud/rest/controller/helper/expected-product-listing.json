@@ -18,6 +18,7 @@
     "betaRelease" : false,
     "previousPublishedPackage" : null,
     "newRF2InputFiles" : null,
+    "removeRF2Files" : null,
     "justPackage" : false,
     "workbenchDataFixesRequired" : false,
     "inputFilesFixesRequired" : false,

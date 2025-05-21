@@ -22,6 +22,8 @@ public class ValidationRequest {
 
 	private boolean standAloneProduct;
 
+	private String removeRF2Files;
+
 	private boolean dailyBuild;
 
 	private String defaultModuleId;
@@ -122,6 +124,14 @@ public class ValidationRequest {
 
 	public void setStandAloneProduct(boolean standAloneProduct) {
 		this.standAloneProduct = standAloneProduct;
+	}
+
+	public String getRemoveRF2Files() {
+		return removeRF2Files;
+	}
+
+	public void setRemoveRF2Files(String removeRF2Files) {
+		this.removeRF2Files = removeRF2Files;
 	}
 
 	public String getDefaultModuleId() {

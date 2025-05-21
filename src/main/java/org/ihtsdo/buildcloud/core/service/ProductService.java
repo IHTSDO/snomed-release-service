@@ -27,6 +27,7 @@ public interface ProductService extends EntityService<Product> {
 	String CREATE_LEGACY_IDS = "createLegacyIds";
 	String CUSTOM_REFSET_COMPOSITE_KEYS = "customRefsetCompositeKeys";
 	String NEW_RF2_INPUT_FILES = "newRF2InputFiles";
+	String REMOVE_RF2_FILES = "removeRF2Files";
 	String TRUE = "true";
 	String ASSERTION_GROUP_NAMES = "assertionGroupNames";
 	String RELEASE_ASSERTION_GROUP_NAMES = "releaseAssertionGroupNames";

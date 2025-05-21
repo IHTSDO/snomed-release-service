@@ -51,6 +51,9 @@ public class BuildConfiguration {
 	@Column(name="rf2_input_files")
 	private String newRF2InputFiles;
 
+	@Column(name="remove_rf2_files")
+	private String removeRF2Files;
+
 	@Convert(converter = YesNoConverter.class)
 	@Column(name="just_package")
 	private boolean justPackage = false;
@@ -213,6 +216,25 @@ public class BuildConfiguration {
 	}
 
 	@JsonIgnore
+	public Set<String> getRemoveRF2FileSet () {
+		final Set<String> files = new HashSet<>();
+		if (removeRF2Files != null) {
+			for (String newInputile :removeRF2Files.split("\\|")) {
+				if (!Normalizer.isNormalized(newInputile, Form.NFC)) {
+					newInputile = Normalizer.normalize(newInputile, Form.NFC);
+				}
+				if (newInputile.startsWith("x")) {
+					newInputile = newInputile.replaceFirst("x", "");
+				}
+				newInputile = newInputile.replace("der2", "rel2").replace("sct2", "rel2");
+
+				files.add(newInputile);
+			}
+		}
+		return files;
+	}
+
+	@JsonIgnore
 	public Map<String, Set<String>> getIncludedFilesInNewFilesMap() {
 		final Map<String, Set<String>> fileMaps = new HashMap<>();
 		if(StringUtils.isNotBlank(includePrevReleaseFiles)) {
@@ -304,7 +326,15 @@ public class BuildConfiguration {
 	public void setNewRF2InputFiles(final String newRF2InputFiles) {
 		this.newRF2InputFiles = newRF2InputFiles;
 	}
-	
+
+	public String getRemoveRF2Files() {
+		return removeRF2Files;
+	}
+
+	public void setRemoveRF2Files(String removeRF2Files) {
+		this.removeRF2Files = removeRF2Files;
+	}
+
 	public Product getProduct() {
 		return product;
 	}
@@ -439,6 +469,7 @@ public class BuildConfiguration {
 				", betaRelease=" + betaRelease +
 				", previousPublishedPackage='" + previousPublishedPackage + '\'' +
 				", newRF2InputFiles='" + newRF2InputFiles + '\'' +
+				", removeRF2Files='" + removeRF2Files + '\'' +
 				", justPackage=" + justPackage +
 				", replaceExistingEffectiveTime=" + replaceExistingEffectiveTime +
 				", workbenchDataFixesRequired=" + workbenchDataFixesRequired +

@@ -332,6 +332,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		setConfigurationValueIfPresent(newPropertyValues, README_HEADER, configuration, README_HEADER, false);
 		setConfigurationValueIfPresent(newPropertyValues, README_END_DATE, configuration, README_END_DATE, false);
 		setConfigurationValueIfPresent(newPropertyValues, NEW_RF2_INPUT_FILES, configuration, NEW_RF2_INPUT_FILES, false);
+		setConfigurationValueIfPresent(newPropertyValues, REMOVE_RF2_FILES, configuration, REMOVE_RF2_FILES, false);
 		setConfigurationValueIfPresent(newPropertyValues, INCLUDED_PREV_RELEASE_FILES, configuration, INCLUDED_PREV_RELEASE_FILES, false);
 		setConfigurationValueIfPresent(newPropertyValues, EXCLUDE_REFSET_DESCRIPTOR_MEMBERS, configuration, EXCLUDE_REFSET_DESCRIPTOR_MEMBERS, false);
 		setConfigurationValueIfPresent(newPropertyValues, EXCLUDE_LANGUAGE_REFSET_IDS, configuration, EXCLUDE_LANGUAGE_REFSET_IDS, false);
