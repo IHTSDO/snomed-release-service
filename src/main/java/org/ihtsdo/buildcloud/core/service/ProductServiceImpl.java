@@ -15,6 +15,7 @@ import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystemVersion;
 import org.ihtsdo.otf.rest.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snomed.module.storage.ModuleMetadata;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -59,7 +60,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	private TermServerService termServerService;
 
 	@Autowired
-	private ReleaseCenterService releaseCenterService;
+	private ModuleStorageCoordinatorCache moduleStorageCoordinatorCache;
 
 	@Value("${srs.build.offlineMode}")
 	private Boolean offlineMode;
@@ -324,10 +325,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		setConfigurationValueIfPresent(newPropertyValues, LICENSE_STATEMENT, configuration, LICENCE_STATEMENT, false);
 		setConfigurationValueIfPresent(newPropertyValues, CONCEPT_PREFERRED_TERMS, configuration, CONCEPT_PREFERRED_TERMS, false);
 		setConfigurationValueIfPresent(newPropertyValues, RELEASE_INFORMATION_FIELDS, configuration, RELEASE_INFORMATION_FIELDS, false);
-		updateAdditionalReleaseInformationFields(newPropertyValues, configuration);
+		setAdditionalReleaseInformationFields(newPropertyValues, configuration);
 		setConfigurationValueIfPresent(newPropertyValues, USE_CLASSIFIER_PRECONDITION_CHECKS, configuration, USE_CLASSIFIER_PRECONDITION_CHECKS, true);
-		updateDefaultBranch(newPropertyValues, product, configuration);
-		updatePreviousPublishedPackage(newPropertyValues, product, configuration);
+		setDefaultBranch(newPropertyValues, product, configuration);
+		setPreviousPublishedPackage(newPropertyValues, product, configuration);
 		setConfigurationValueIfPresent(newPropertyValues, README_HEADER, configuration, README_HEADER, false);
 		setConfigurationValueIfPresent(newPropertyValues, README_END_DATE, configuration, README_END_DATE, false);
 		setConfigurationValueIfPresent(newPropertyValues, NEW_RF2_INPUT_FILES, configuration, NEW_RF2_INPUT_FILES, false);
@@ -335,13 +336,13 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		setConfigurationValueIfPresent(newPropertyValues, EXCLUDE_REFSET_DESCRIPTOR_MEMBERS, configuration, EXCLUDE_REFSET_DESCRIPTOR_MEMBERS, false);
 		setConfigurationValueIfPresent(newPropertyValues, EXCLUDE_LANGUAGE_REFSET_IDS, configuration, EXCLUDE_LANGUAGE_REFSET_IDS, false);
 		if (newPropertyValues.containsKey(CUSTOM_REFSET_COMPOSITE_KEYS)) {
-			updateCustomRefsetCompositeKeys(newPropertyValues, configuration);
+			setCustomRefsetCompositeKeys(newPropertyValues, configuration);
 		}
 
 		setExtensionConfig(newPropertyValues, configuration);
 	}
 
-	private void updateAdditionalReleaseInformationFields(Map<String, String> newPropertyValues, BuildConfiguration configuration) throws BusinessServiceException {
+	private void setAdditionalReleaseInformationFields(Map<String, String> newPropertyValues, BuildConfiguration configuration) throws BusinessServiceException {
 		if (newPropertyValues.containsKey(ADDITIONAL_RELEASE_INFORMATION_FIELDS)) {
 			String additionalFields = newPropertyValues.get(ADDITIONAL_RELEASE_INFORMATION_FIELDS);
 			if (StringUtils.hasLength(additionalFields) && !isJSONValid((additionalFields))) {
@@ -351,7 +352,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		}
 	}
 
-	private void updateDefaultBranch(Map<String, String> newPropertyValues, Product product, BuildConfiguration configuration) throws BusinessServiceException {
+	private void setDefaultBranch(Map<String, String> newPropertyValues, Product product, BuildConfiguration configuration) throws BusinessServiceException {
 		if (newPropertyValues.containsKey(DEFAULT_BRANCH_PATH)) {
 			String newDefaultBranchPath = newPropertyValues.get(DEFAULT_BRANCH_PATH);
 			if (!StringUtils.hasLength(newDefaultBranchPath)) {
@@ -371,7 +372,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 					configuration.setDefaultBranchPath(newDefaultBranchPath);
 				}
 			}
-
 		}
 	}
 
@@ -386,7 +386,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		}
 	}
 
-	private void updateCustomRefsetCompositeKeys(Map<String, String> newPropertyValues, BuildConfiguration configuration) throws BadConfigurationException {
+	private void setCustomRefsetCompositeKeys(Map<String, String> newPropertyValues, BuildConfiguration configuration) throws BadConfigurationException {
 		final Map<String, List<Integer>> refsetCompositeKeyMap = new HashMap<>();
 		try {
 			final String refsetCompositeKeyIndexes = newPropertyValues.get(CUSTOM_REFSET_COMPOSITE_KEYS);
@@ -414,7 +414,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		configuration.setCustomRefsetCompositeKeys(refsetCompositeKeyMap);
 	}
 
-	private void updatePreviousPublishedPackage(Map<String, String> newPropertyValues, Product product, BuildConfiguration configuration) {
+	private void setPreviousPublishedPackage(Map<String, String> newPropertyValues, Product product, BuildConfiguration configuration) {
 		if (newPropertyValues.containsKey(PREVIOUS_PUBLISHED_PACKAGE)) {
 			final ReleaseCenter releaseCenter = product.getReleaseCenter();
 			final String pPP = newPropertyValues.get(PREVIOUS_PUBLISHED_PACKAGE);
@@ -425,7 +425,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 				boolean pppExists = false;
 				Exception rootCause = new Exception("No further information");
 				try {
-					pppExists = publishService.exists(releaseCenter, pPP);
+					pppExists = isReleaseFileExistInMSC(pPP);
+					if (!pppExists) {
+						pppExists = publishService.exists(releaseCenter, pPP);
+					}
 				} catch (final Exception e) {
 					rootCause = e;
 				}
@@ -525,7 +528,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 				boolean pppExists = false;
 				Exception rootCause = new Exception("No further information");
 				try {
-					pppExists = publishService.exists(releaseCenter, dependencyPackageRelease);
+					pppExists = isReleaseFileExistInMSC(dependencyPackageRelease);
+					if (!pppExists) {
+						pppExists = publishService.exists(releaseCenter, dependencyPackageRelease);
+					}
 				} catch (final Exception e) {
 					rootCause = e;
 				}
@@ -535,6 +541,25 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 					throw new ResourceNotFoundException("Could not find dependency release package: " + dependencyPackageRelease, rootCause);
 				}
 			}
+		}
+	}
+
+	/**
+	 * Checks if a release file exists in the Module Storage Coordinator (MSC).
+	 *
+	 * @param releasePackage the name of the release file to check for existence
+	 * @return true if the release file exists in MSC, false otherwise
+	 */
+	private boolean isReleaseFileExistInMSC(String releasePackage) {
+		try {
+			// Get all releases from MSC
+			Map<String, List<ModuleMetadata>> allReleasesMap = moduleStorageCoordinatorCache.getAllReleases();
+			List<ModuleMetadata> allModuleMetadata = new ArrayList<>();
+			allReleasesMap.values().forEach(allModuleMetadata::addAll);
+			return allModuleMetadata.stream().anyMatch(item -> item.getFilename().equals(releasePackage));
+		} catch (Exception e) {
+			LOGGER.error("Error checking release file existence in MSC: {}", e.getMessage());
+            return false;
 		}
 	}
 

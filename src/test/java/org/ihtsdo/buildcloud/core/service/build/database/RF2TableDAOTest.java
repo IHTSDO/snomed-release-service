@@ -63,7 +63,7 @@ public class RF2TableDAOTest {
 	private void testAppendData() throws Exception {
 		TableSchema tableSchema = rf2TableDAO.createTable(rf2FullFilename, getClass().getResourceAsStream(rf2FullFilename), false);
 
-		rf2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(rf2DeltaFilename), false);
+		rf2TableDAO.appendData(tableSchema, null, getClass().getResourceAsStream(rf2DeltaFilename), false);
 
 		RF2TableResults results = rf2TableDAO.selectAllOrdered(tableSchema);
 		assertEquals("a895084b-10bc-42ca-912f-d70e8f0b825e\t20130130\t1\t900000000000207008\t450990004\t293495006", results.nextLine());

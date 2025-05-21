@@ -1,18 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.build;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
@@ -27,7 +14,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Rf2FileExportRunnerTest extends AbstractTest {
 
@@ -113,7 +108,7 @@ public class Rf2FileExportRunnerTest extends AbstractTest {
 		buildConfiguration.setWorkbenchDataFixesRequired(false);
 		s3Client.putObject(storageBucketName, transformedFileFullPath + TRANSFORMED_SIMPLE_DELTA_FILE_NAME, getFileByName(TRANSFORMED_SIMPLE_DELTA_FILE_NAME));
 
-		final Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, 1);
+		final Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, null, null, 1);
 		rf2ExportService.generateReleaseFiles();
 
 		final List<String> outputFiles = dao.listOutputFilePaths(build);
@@ -144,7 +139,7 @@ public class Rf2FileExportRunnerTest extends AbstractTest {
 		s3Client.putObject(storageBucketName, path + PREVIOUS_OWL_ONTHOLOGY_FULL_FILE_NAME, getFileByName(PREVIOUS_OWL_ONTHOLOGY_FULL_FILE_NAME));
 		s3Client.putObject(storageBucketName, path + PREVIOUS_OWL_ONTHOLOGY_SNAPSHOT_FILE_NAME, getFileByName(PREVIOUS_OWL_ONTHOLOGY_SNAPSHOT_FILE_NAME));
 
-		final Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, 1);
+		final Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, null, null, 1);
 		rf2ExportService.generateReleaseFiles();
 
 		final List<String> outputFiles = dao.listOutputFilePaths(build);
@@ -164,7 +159,7 @@ public class Rf2FileExportRunnerTest extends AbstractTest {
 		s3Client.putObject(storageBucketName, publishedPath + PREVIOUS_ATTRIBUT_VALUE_FULL_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_FULL_FILE));
 		s3Client.putObject(storageBucketName, publishedPath + PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE, getFileByName(PREVIOUS_ATTRIBUT_VALUE_SNAPSHOT_FILE));
 
-		final Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, 1);
+		final Rf2FileExportRunner rf2ExportService = new Rf2FileExportRunner(build, dao, null, null, 1);
 		rf2ExportService.generateReleaseFiles();
 
 		final List<String> outputFiles = dao.listOutputFilePaths(build);
