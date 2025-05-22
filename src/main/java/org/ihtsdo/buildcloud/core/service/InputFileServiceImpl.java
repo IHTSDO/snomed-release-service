@@ -77,6 +77,10 @@ public class InputFileServiceImpl implements InputFileService {
 
 	@Override
 	public void putManifestFile(final String centerKey, final String productKey, final InputStream inputStream, final String originalFilename, final long fileSize) throws ResourceNotFoundException, IOException, DecoderException {
+		String pattern = "^[^\\s\\[\\]\\(\\)\\{\\}<>]+$";
+		if (!originalFilename.matches(pattern)) {
+            throw new IllegalArgumentException("Invalid filename format. It does not allow spaces, (), [], {}, <>, or any brackets");
+        }
 		inputFileDAO.putManifestFile(centerKey, productKey, inputStream, originalFilename, fileSize);
 	}
 
