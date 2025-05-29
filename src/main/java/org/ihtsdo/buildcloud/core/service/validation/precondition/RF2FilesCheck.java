@@ -10,6 +10,7 @@ import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.service.NetworkRequired;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.validation.rvf.RVFClient;
+import org.ihtsdo.sso.integration.SecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +41,7 @@ public class RF2FilesCheck extends PreconditionCheck implements NetworkRequired 
 				if (inputFile.startsWith(RF2Constants.INPUT_FILE_PREFIX) && inputFile.endsWith(RF2Constants.TXT_FILE_EXTENSION)) {
 					InputStream inputFileStream = buildDAO.getInputFileStream(build, inputFile);
 					AsyncPipedStreamBean logFileOutputStream = buildDAO.getLogFileOutputStream(build, "precheck-rvf-" + inputFile + ".log");
-					String error = rvfClient.checkInputFile(inputFileStream, inputFile, logFileOutputStream);
+					String error = rvfClient.checkInputFile(inputFileStream, inputFile, logFileOutputStream, SecurityUtil.getAuthenticationToken());
 					if (error != null) {
 						errorMessage.append(error).append(".");
 					}

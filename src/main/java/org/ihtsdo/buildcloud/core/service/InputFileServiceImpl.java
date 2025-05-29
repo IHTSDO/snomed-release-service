@@ -24,12 +24,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -221,13 +222,13 @@ public class InputFileServiceImpl implements InputFileService {
 	}
 
 	@Override
-	public InputGatherReport gatherSourceFiles(Build build, SecurityContext securityContext) throws BusinessServiceException {
+	public InputGatherReport gatherSourceFiles(Build build) throws BusinessServiceException {
 		InputGatherReport inputGatherReport = new InputGatherReport();
 		try {
 			BuildConfiguration buildConfiguration = build.getConfiguration();
 			inputFileDAO.persistSourcesGatherReport(build.getReleaseCenterKey(), build.getProductKey(), build.getId(), inputGatherReport);
 			if (buildConfiguration.isLoadTermServerData()) {
-				gatherSourceFilesFromTermServer(build, inputGatherReport, securityContext);
+				gatherSourceFilesFromTermServer(build, inputGatherReport);
 			}
 			if (buildConfiguration.isLoadExternalRefsetData()) {
 				gatherSourceFilesFromExternallyMaintained(build, inputGatherReport);
@@ -246,10 +247,9 @@ public class InputFileServiceImpl implements InputFileService {
 		return inputGatherReport;
 	}
 
-	private void gatherSourceFilesFromTermServer(Build build, InputGatherReport inputGatherReport, SecurityContext securityContext) throws BusinessServiceException {
+	private void gatherSourceFilesFromTermServer(Build build, InputGatherReport inputGatherReport) throws BusinessServiceException {
 		File fileExported = null;
 		try {
-			SecurityContextHolder.setContext(securityContext);
 			BuildConfiguration buildConfiguration = build.getConfiguration();
 			final long branchHeadTimestamp = termServerService.getBranch(buildConfiguration.getBranchPath()).getHeadTimestamp();
 			fileExported = termServerService.export(buildConfiguration.getBranchPath(), buildConfiguration.getEffectiveTimeSnomedFormat(),
@@ -268,7 +268,6 @@ public class InputFileServiceImpl implements InputFileService {
 			inputGatherReport.addDetails(InputGatherReport.Status.ERROR, SRC_TERM_SERVER, ex.getMessage());
 			throw new BusinessServiceException("Failed to export from term server for branch " + build.getConfiguration().getBranchPath() + ". Error: " + ex.getMessage());
 		} finally {
-			SecurityContextHolder.clearContext();
 			org.apache.commons.io.FileUtils.deleteQuietly(fileExported);
 		}
 	}

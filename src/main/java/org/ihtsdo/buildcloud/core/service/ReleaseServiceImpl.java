@@ -25,9 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.stereotype.Service;
 
 import javax.xml.bind.JAXBContext;
@@ -66,15 +63,14 @@ public class ReleaseServiceImpl implements ReleaseService {
 	private static final String ERROR_MSG_FORMAT = "Error encountered while running release build %s for product %s";
 
 	@Override
-	public void runReleaseBuild(Build build, Authentication authentication) throws IOException {
+	public void runReleaseBuild(Build build) throws IOException {
 		if (buildDAO.isBuildCancelRequested(build)) return;
 
 		TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
 		try {
 			MDC.put(TRACKER_ID, build.getReleaseCenterKey() + "|" + build.getProductKey() + "|" + build.getId());
 			LOGGER.info("Running release build for center/{}/product/{}/buildId/{}", build.getReleaseCenterKey(), build.getProductKey(), build.getId());
-
-			if (gatherSourceFiles(build, authentication)) {
+			if (gatherSourceFiles(build)) {
 				if (buildDAO.isBuildCancelRequested(build)) return;
 				if (prepareInputFiles(build)) {
 					// trigger build
@@ -302,12 +298,10 @@ public class ReleaseServiceImpl implements ReleaseService {
 		return true;
 	}
 
-	private boolean gatherSourceFiles(Build build, Authentication authentication) throws BusinessServiceException, IOException {
-		SecurityContext securityContext = new SecurityContextImpl();
-		securityContext.setAuthentication(authentication);
+	private boolean gatherSourceFiles(Build build) throws BusinessServiceException, IOException {
 
 		// Gather all files in term server and externally maintain buckets when required
-		InputGatherReport inputGatherReport = inputFileService.gatherSourceFiles(build, securityContext);
+		InputGatherReport inputGatherReport = inputFileService.gatherSourceFiles(build);
 		if (inputGatherReport.getStatus().equals(InputGatherReport.Status.ERROR)) {
 			LOGGER.error("Error occurred when gathering source files: ");
 			for (String source : inputGatherReport.getDetails().keySet()) {

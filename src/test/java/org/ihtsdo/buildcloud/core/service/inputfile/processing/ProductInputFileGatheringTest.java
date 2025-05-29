@@ -2,8 +2,8 @@ package org.ihtsdo.buildcloud.core.service.inputfile.processing;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.IOUtils;
-import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.dao.InputFileDAO;
+import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.Product;
@@ -16,13 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentMatcher;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,7 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 /**
@@ -83,7 +78,7 @@ public class ProductInputFileGatheringTest {
 		Build build = new Build(new Date(), "centerKey", "productKey", buildConfiguration, null);
 
 		FileInputStream fileInputStream = new FileInputStream(testArchive);
-		InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles(build, SecurityContextHolder.getContext());
+		InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles(build);
 		verify(productInputFileService, times(1))
 				.putSourceFile(eq(TERMINOLOGY_SERVER), eq("centerkey"), eq("productkey"), eq("buildId"),
 						argThat(new InputStreamMatcher(fileInputStream)), eq(INPUT_SOURCE_TEST_DATA_ZIP), eq(testArchive.length()));
@@ -101,7 +96,7 @@ public class ProductInputFileGatheringTest {
 		buildConfiguration.setLoadTermServerData(true);
 		Build build = new Build(new Date(), "centerKey", "productKey", buildConfiguration, null);
 
-		InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles(build, SecurityContextHolder.getContext());
+		InputGatherReport inputGatherReport = productInputFileService.gatherSourceFiles(build);
 		verify(productInputFileService, times(0)).putSourceFile(anyString(), anyString(), anyString(), anyString(),
 				any(InputStream.class), anyString(), anyLong());
 

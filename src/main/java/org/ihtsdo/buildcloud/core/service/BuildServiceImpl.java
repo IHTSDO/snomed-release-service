@@ -51,6 +51,7 @@ import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
 import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.ihtsdo.sso.integration.SecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snomed.module.storage.ModuleMetadata;
@@ -1211,7 +1212,7 @@ public class BuildServiceImpl implements BuildService {
 			request.setBranchPath(buildConfiguration.getBranchPath());
 			request.setExcludedRefsetDescriptorMembers(buildConfiguration.getExcludeRefsetDescriptorMembers());
 			sendMiniRvfValidationRequestToBuildStatusMessage(build, runId);
-			rvfResponse = rvfClient.validateOutputPackageFromS3(qaTestConfig, request);
+			rvfResponse = rvfClient.validateOutputPackageFromS3(qaTestConfig, request, SecurityUtil.getAuthenticationToken());
 			if (buildConfiguration.isDailyBuild()) {
 				sendDailyBuildRvfResponseUpdateMessage(buildConfiguration.getBranchPath(), rvfResponse);
 			}

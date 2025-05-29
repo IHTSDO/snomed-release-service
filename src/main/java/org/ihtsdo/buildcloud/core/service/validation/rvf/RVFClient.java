@@ -105,11 +105,11 @@ public class RVFClient implements Closeable {
 		httpClient = HttpClients.createDefault();
 	}
 
-	public String checkInputFile(final InputStream inputFileStream, final String inputFileName, final AsyncPipedStreamBean logFileOutputStream) {
-		return checkFile(inputFileStream, inputFileName, logFileOutputStream, true);
+	public String checkInputFile(final InputStream inputFileStream, final String inputFileName, final AsyncPipedStreamBean logFileOutputStream, final String authToken) {
+		return checkFile(inputFileStream, inputFileName, logFileOutputStream, true, authToken);
 	}
 
-	private String checkFile(final InputStream inputFileStream, final String inputFileName, final AsyncPipedStreamBean logFileOutputStream, final boolean preCheck) {
+	private String checkFile(final InputStream inputFileStream, final String inputFileName, final AsyncPipedStreamBean logFileOutputStream, final boolean preCheck, final String authToken) {
 		String errorMessage;
 
 		String fileType;
@@ -129,6 +129,7 @@ public class RVFClient implements Closeable {
 		LOGGER.info("Adding {} to RVF Request.", inputFileName);
 
 		final HttpPost post = new HttpPost(releaseValidationFrameworkUrl + targetUrl);
+		post.addHeader("Cookie", authToken);
 		post.setEntity(MultipartEntityBuilder.create().addPart("file", new InputStreamBody(inputFileStream, inputFileName)).build());
 
 		LOGGER.info("Posting file {} to RVF for {} check, using {}", inputFileName, checkType, targetUrl);
@@ -300,8 +301,10 @@ public class RVFClient implements Closeable {
 		return post;
 	}
 
-	public String validateOutputPackageFromS3(QATestConfig qaTestConfig, ValidationRequest validationRequest) throws BusinessServiceException {
+	public String validateOutputPackageFromS3(QATestConfig qaTestConfig, ValidationRequest validationRequest, final String authToken) throws BusinessServiceException {
 		HttpPost post = createHttpPostRequest(qaTestConfig, validationRequest, RUN_POST_VIA_S3);
+		post.addHeader("Cookie", authToken);
+
 		LOGGER.info("Posting file {} to RVF at {} with run id {}.", validationRequest.getReleaseZipFileS3Path(), post.getURI(), validationRequest.getRunId());
 		String rvfResponse;
 		try (CloseableHttpResponse response = httpClient.execute(post)) {

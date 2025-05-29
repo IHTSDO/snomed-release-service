@@ -3,7 +3,6 @@ package org.ihtsdo.buildcloud.core.service.worker;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
-import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildReport;
 import org.ihtsdo.buildcloud.core.service.BuildService;
@@ -47,9 +46,6 @@ public class SRSWorkerService {
     @Autowired
     private BuildDAO buildDAO;
 
-    @Autowired
-    private ProductDAO productDAO;
-
     @JmsListener(destination = "${srs.jms.queue.prefix}.build-jobs", concurrency = "${srs.jms.queue.concurrency}")
     public void consumeSRSJob(final TextMessage srsMessage) throws IOException {
 
@@ -66,7 +62,7 @@ public class SRSWorkerService {
         if (build.getId().equals(ReleaseBuildManager.EPOCH_TIME)) {
             return;
         }
-
+        SecurityContextHolder.getContext().setAuthentication(getPreAuthenticatedAuthenticationToken(buildRequest));
         try {
             if (Build.Status.QUEUED != build.getStatus()) {
                 throw new IllegalStateException(String.format("Build status expected to be in QUEUED status for the worker to proceed but got %s", build.getStatus().name()));
@@ -77,8 +73,7 @@ public class SRSWorkerService {
             LOGGER.info("Starting release build: {} for product: {}", build.getId(), build.getProductKey());
             // build status response message is handled by buildDAO
             buildDAO.updateStatus(build, Build.Status.BEFORE_TRIGGER);
-            SecurityContextHolder.getContext().setAuthentication(getPreAuthenticatedAuthenticationToken(buildRequest));
-            releaseService.runReleaseBuild(build, SecurityContextHolder.getContext().getAuthentication());
+            releaseService.runReleaseBuild(build);
 
             final Instant finish = Instant.now();
             LOGGER.info("Release build {} completed in {} minute(s) for product: {}", build.getId(), Duration.between(start, finish).toMinutes(), build.getProductKey());
