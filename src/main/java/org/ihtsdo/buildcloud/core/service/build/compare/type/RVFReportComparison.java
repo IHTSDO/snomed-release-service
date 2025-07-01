@@ -11,6 +11,10 @@ import org.ihtsdo.buildcloud.core.service.build.compare.DefaultComponentComparis
 import org.ihtsdo.buildcloud.core.service.build.compare.ValidationComparisonReport;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -24,13 +28,14 @@ import java.util.List;
 @Service
 public class RVFReportComparison extends ComponentComparison {
 
-    public static final String REPORTS = "reports";
-
 
     private String releaseValidationFrameworkUrl;
 
-    public RVFReportComparison(@Value("${rvf.url}") String releaseValidationFrameworkUrl) {
+    private String authenticationToken;
+
+    public RVFReportComparison(@Value("${rvf.url}") String releaseValidationFrameworkUrl, @Value("${authentication.token:#{null}}") String authenticationToken) {
         this.releaseValidationFrameworkUrl = releaseValidationFrameworkUrl;
+        this.authenticationToken = authenticationToken;
     }
 
     public enum RVFTestName {
@@ -93,13 +98,19 @@ public class RVFReportComparison extends ComponentComparison {
     }
 
     @Override
-    public ComponentComparison newInstance(BuildDAO buildDAO, PublishService publishService, String releaseValidationFrameworkUrl) {
-        return new RVFReportComparison(releaseValidationFrameworkUrl);
+    public ComponentComparison newInstance(BuildDAO buildDAO, PublishService publishService, String releaseValidationFrameworkUrl, String authenticationToken) {
+        return new RVFReportComparison(releaseValidationFrameworkUrl, authenticationToken);
     }
 
     private String getValidationComparisonReport(String leftUrl, String rightUrl) throws InterruptedException, BusinessServiceException, JsonProcessingException {
         RestTemplate rvfRestTemplate = new RestTemplate();
-        URI uri = rvfRestTemplate.postForLocation(releaseValidationFrameworkUrl + "compare?prospectiveReportUrl=" + rightUrl + "&previousReportUrl=" + leftUrl, null);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Cookie", this.authenticationToken);
+        URI uri = rvfRestTemplate.postForLocation(releaseValidationFrameworkUrl + "compare?prospectiveReportUrl=" + rightUrl + "&previousReportUrl=" + leftUrl, new HttpEntity<>(null, headers));
+        if (uri == null) {
+            throw new BusinessServiceException("Location must not be null.");
+        }
+
         final int pollPeriod = 60 * 1000; // 1 minute
         final int maxPollPeriod = 3600000;
 
@@ -108,7 +119,8 @@ public class RVFReportComparison extends ComponentComparison {
             Thread.sleep(pollPeriod);
             count += pollPeriod;
 
-            String validationReportString = rvfRestTemplate.getForObject(uri.toString(), String.class);
+            ResponseEntity<String> response = rvfRestTemplate.exchange(uri, HttpMethod.GET, new HttpEntity<>(headers), String.class);
+            String validationReportString = response.getBody();
             if (StringUtils.hasLength(validationReportString)) {
                 ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().failOnUnknownProperties(false).build();
                 final ValidationComparisonReport highLevelValidationReport = objectMapper.readValue(validationReportString, ValidationComparisonReport.class);

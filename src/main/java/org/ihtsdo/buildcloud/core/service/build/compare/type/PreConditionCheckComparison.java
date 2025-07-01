@@ -121,7 +121,7 @@ public class PreConditionCheckComparison extends ComponentComparison {
     }
 
     @Override
-    public ComponentComparison newInstance(BuildDAO buildDAO, PublishService publishService, String releaseValidationFrameworkUrl) {
+    public ComponentComparison newInstance(BuildDAO buildDAO, PublishService publishService, String releaseValidationFrameworkUrl, String authenticationToken) {
         return new PreConditionCheckComparison(buildDAO, publishService);
     }
 

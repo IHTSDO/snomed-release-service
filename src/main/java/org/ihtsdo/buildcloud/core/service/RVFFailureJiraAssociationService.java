@@ -22,6 +22,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -267,12 +271,16 @@ public class RVFFailureJiraAssociationService {
 
 	private ValidationReport getRVFReport(String url) throws IOException {
 		RestTemplate rvfRestTemplate = new RestTemplate();
-		ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().failOnUnknownProperties(false).build();
-		String validationReportString = rvfRestTemplate.getForObject(url, String.class);
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("Cookie", SecurityUtil.getAuthenticationToken());
+		HttpEntity<String> entity = new HttpEntity<>(headers);
+		ResponseEntity<String> response = rvfRestTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+		String validationReportString = response.getBody();
 		if (StringUtils.hasLength(validationReportString)) {
 			validationReportString = validationReportString.replace("\"TestResult\"", "\"testResult\"");
 		}
 
+		ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().failOnUnknownProperties(false).build();
 		return objectMapper.readValue(validationReportString, ValidationReport.class);
 	}
 

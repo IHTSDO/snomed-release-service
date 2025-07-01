@@ -14,7 +14,7 @@ public abstract class ComponentComparison {
 
 	public abstract void findDiff(Build leftBuild, Build rightBuild) throws IOException;
 
-	public abstract ComponentComparison newInstance(BuildDAO buildDAO, PublishService publishService, String releaseValidationFrameworkUrl);
+	public abstract ComponentComparison newInstance(BuildDAO buildDAO, PublishService publishService, String releaseValidationFrameworkUrl, String authenticationToken);
 
 	protected void pass() {
 		this.state = HighLevelComparisonReport.State.PASS;

@@ -63,11 +63,11 @@ public class BuildComparisonManager {
     @Value("${rvf.url}")
     private String releaseValidationFrameworkUrl;
 
-    public List<HighLevelComparisonReport> runBuildComparisons(final Build leftBuild, final Build rightBuild) throws IOException {
+    public List<HighLevelComparisonReport> runBuildComparisons(final Build leftBuild, final Build rightBuild, String authenticationToken) throws IOException {
         List<HighLevelComparisonReport> reports = new ArrayList<>();
         componentComparisonChecks.sort(orderTestComparator);
         for (ComponentComparison thisCheck : componentComparisonChecks) {
-            ComponentComparison instance = thisCheck.newInstance(buildDAO, publishService, releaseValidationFrameworkUrl);
+            ComponentComparison instance = thisCheck.newInstance(buildDAO, publishService, releaseValidationFrameworkUrl, authenticationToken);
             instance.findDiff(leftBuild, rightBuild);
             reports.add(instance.getReport());
         }

@@ -179,7 +179,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 			if (readyToPublish) {
 				publishBuild(compareId, rightBuild, report, leftBuild);
 			}
-			buildComparisonBlockingQueue.put(new BuildComparisonQueue(compareId, leftBuild, rightBuild, report));
+			buildComparisonBlockingQueue.put(new BuildComparisonQueue(compareId, leftBuild, rightBuild, report, SecurityUtil.getAuthenticationToken()));
 			processBuildComparisonJobs();
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(), e);
@@ -260,7 +260,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 				Build leftLatestBuild = getBuild(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), leftBuild.getId(), false, false, true);
 				Build rightLatestBuild = getBuild(rightBuild.getReleaseCenterKey(), rightBuild.getProductKey(), rightBuild.getId(), false, false, true);
 
-				List<HighLevelComparisonReport> highLevelComparisonReports = buildComparisonManager.runBuildComparisons(leftLatestBuild, rightLatestBuild);
+				List<HighLevelComparisonReport> highLevelComparisonReports = buildComparisonManager.runBuildComparisons(leftLatestBuild, rightLatestBuild, automatePromoteProcess.getAuthenticationToken());
 				boolean isFailed = highLevelComparisonReports.stream().anyMatch(c -> c.getResult().equals(HighLevelComparisonReport.State.FAILED));
 				report.setStatus(isFailed ? BuildComparisonReport.Status.FAILED.name() : BuildComparisonReport.Status.PASSED.name());
 				report.setReports(highLevelComparisonReports);
@@ -442,11 +442,14 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		private Build rightBuild;
 		private BuildComparisonReport report;
 
-		BuildComparisonQueue(String compareId, Build leftBuild, Build rightBuild, BuildComparisonReport report) {
+		private String authenticationToken;
+
+		BuildComparisonQueue(String compareId, Build leftBuild, Build rightBuild, BuildComparisonReport report, String authenticationToken) {
 			this.compareId = compareId;
 			this.leftBuild = leftBuild;
 			this.rightBuild = rightBuild;
 			this.report = report;
+			this.authenticationToken = authenticationToken;
 		}
 
 		public String getCompareId() {
@@ -475,6 +478,10 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 
 		public BuildComparisonReport getReport() {
 			return report;
+		}
+
+		public String getAuthenticationToken() {
+			return authenticationToken;
 		}
 	}
 
