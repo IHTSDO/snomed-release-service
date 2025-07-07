@@ -146,9 +146,6 @@ public class ReleaseBuildManager {
 	}
 
 	private void validateBuildRequest(BuildRequestPojo buildRequestPojo, Product product) throws BusinessServiceException {
-		if (!StringUtils.hasLength(buildRequestPojo.getEffectiveDate())) {
-			throw new BadRequestException("Effective Date must not be empty.");
-		}
 		if (buildRequestPojo.isLoadTermServerData()) {
 			if (!StringUtils.hasLength(buildRequestPojo.getBranchPath())) {
 				throw new BadRequestException("Branch path must not be empty.");

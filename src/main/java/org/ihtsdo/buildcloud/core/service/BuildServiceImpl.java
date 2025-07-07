@@ -188,10 +188,18 @@ public class BuildServiceImpl implements BuildService {
 		final Product product = getProduct(releaseCenterKey, productKey);
 
 		if (!product.isVisibility()) {
-			throw new BusinessServiceException("Could not create build from invisible product with key: " + product.getBusinessKey());
+			throw new BusinessServiceException("Could not create build from a invisible product with key: " + product.getBusinessKey());
 		}
 
-		Date effectiveTime = parseEffectiveTimeOrThrow(buildRequest);
+		Date effectiveTime = null;
+		if (buildRequest.getEffectiveDate() != null) {
+			try {
+				effectiveTime = RF2Constants.DATE_FORMAT.parse(buildRequest.getEffectiveDate());
+			} catch (ParseException e) {
+				throw new BusinessServiceRuntimeException("Could not parse effectiveDate.");
+			}
+		}
+
 		validateBuildConfig(product.getBuildConfiguration(), effectiveTime, buildRequest.getBranchPath());
 		Build build;
 		try {
