@@ -32,6 +32,7 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jms.annotation.EnableJms;
+import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 import org.springframework.jms.config.SimpleJmsListenerContainerFactory;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
@@ -223,6 +224,15 @@ public abstract class Config extends BaseConfiguration {
             case "uat" -> ModuleStorageCoordinator.initUat(resourceManager);
             default -> ModuleStorageCoordinator.initDev(resourceManager);
         };
+	}
+
+	@Bean(name = "topicJmsListenerContainerFactory")
+	public DefaultJmsListenerContainerFactory getTopicFactory(@Autowired ConnectionFactory connectionFactory) {
+		DefaultJmsListenerContainerFactory factory = new  DefaultJmsListenerContainerFactory();
+		factory.setConnectionFactory(connectionFactory);
+		factory.setSessionTransacted(true);
+		factory.setPubSubDomain(true);
+		return factory;
 	}
 
 	private ActiveMQTextMessage getActiveMQTextMessage(final String queue) throws JMSException {
