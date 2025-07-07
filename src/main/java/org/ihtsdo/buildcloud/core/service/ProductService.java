@@ -59,6 +59,8 @@ public interface ProductService extends EntityService<Product> {
 
 	Page<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions, Pageable pageable, boolean includedLatestBuildStatusAndTags);
 
+	Product getDailyBuildProductForCodeSystem(String codeSystemShortName);
+
 	Page<Product> findHiddenProducts(String releaseCenterKey, Pageable pageable);
 
 	Product find(String releaseCenterKey, String productKey, boolean includedLatestBuildStatusAndTags);

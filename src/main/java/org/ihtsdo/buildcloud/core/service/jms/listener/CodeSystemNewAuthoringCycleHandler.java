@@ -10,41 +10,34 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.ExtensionConfig;
 import org.ihtsdo.buildcloud.core.entity.Product;
-import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.service.ModuleStorageCoordinatorCache;
 import org.ihtsdo.buildcloud.core.service.ProductService;
-import org.ihtsdo.buildcloud.core.service.ReleaseCenterService;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
-import org.ihtsdo.buildcloud.rest.controller.helper.PageRequestHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snomed.module.storage.ModuleMetadata;
 import org.snomed.module.storage.ModuleStorageCoordinatorException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import java.text.ParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class CodeSystemNewAuthoringCycleHandler {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final ReleaseCenterService releaseCenterService;
-
     private final ProductService productService;
 
     private final ModuleStorageCoordinatorCache moduleStorageCoordinatorCache;
 
     @Autowired
-    public CodeSystemNewAuthoringCycleHandler(ReleaseCenterService releaseCenterService, ProductService productService, ModuleStorageCoordinatorCache moduleStorageCoordinatorCache) {
-        this.releaseCenterService = releaseCenterService;
+    public CodeSystemNewAuthoringCycleHandler(ProductService productService, ModuleStorageCoordinatorCache moduleStorageCoordinatorCache) {
         this.productService = productService;
         this.moduleStorageCoordinatorCache = moduleStorageCoordinatorCache;
     }
@@ -60,33 +53,17 @@ public class CodeSystemNewAuthoringCycleHandler {
         final String previousPackage = message.get("previousPackage");
         final String dependencyPackage = message.get("dependencyPackage");
         final String newEffectiveTime = message.get("newEffectiveTime");
-
-        List<ReleaseCenter> centers = releaseCenterService.findAll();
-        ReleaseCenter releaseCenter = centers.stream().filter(center -> center.getCodeSystem() != null && center.getCodeSystem().equals(codeSystemShortName)).findFirst().orElse(null);
-        if (releaseCenter == null) {
-            logger.error("No release center is associated with the code system {}", codeSystemShortName);
-            return;
-        }
-
         try {
-            Set<FilterOption> filterOptions = EnumSet.noneOf(FilterOption.class);
-            PageRequest pageRequest = PageRequestHelper.createPageRequest(0, 100, null, null);
-            Page<Product> page = productService.findAll(releaseCenter.getBusinessKey(), filterOptions, pageRequest, false);
-            if (page.getTotalElements() == 0) return;
-
-            for (Product product : page.getContent()) {
-                if (product.getBuildConfiguration().isDailyBuild()) {
-                    BuildConfiguration buildConfiguration = product.getBuildConfiguration();
-                    buildConfiguration.setPreviousPublishedPackage(previousPackage);
-                    if (newEffectiveTime != null) {
-                        // Format: yyyy-MM-dd or yyyyMMdd
-                        buildConfiguration.setEffectiveTime(newEffectiveTime.contains("-") ? DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(newEffectiveTime) : RF2Constants.DATE_FORMAT.parse(newEffectiveTime));
-                    }
-                    updateExtensionConfig(product, dependencyPackage, previousPackage);
-                    productService.update(product);
-                    break;
-                }
+            Product dailyBuildProduct = productService.getDailyBuildProductForCodeSystem(codeSystemShortName);
+            if (dailyBuildProduct == null) return;
+            BuildConfiguration buildConfiguration = dailyBuildProduct.getBuildConfiguration();
+            buildConfiguration.setPreviousPublishedPackage(previousPackage);
+            if (newEffectiveTime != null) {
+                // Format: yyyy-MM-dd or yyyyMMdd
+                buildConfiguration.setEffectiveTime(newEffectiveTime.contains("-") ? DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(newEffectiveTime) : RF2Constants.DATE_FORMAT.parse(newEffectiveTime));
             }
+            updateExtensionConfig(dailyBuildProduct, dependencyPackage, previousPackage);
+            productService.update(dailyBuildProduct);
         } catch (Exception e) {
             logger.error("Failed to update the daily build product config after starting the new authoring cycle for code system {}", codeSystemShortName, e);
         }

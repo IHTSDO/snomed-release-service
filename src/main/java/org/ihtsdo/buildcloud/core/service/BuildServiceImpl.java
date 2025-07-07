@@ -258,18 +258,6 @@ public class BuildServiceImpl implements BuildService {
 		return build;
 	}
 
-	private Date parseEffectiveTimeOrThrow(BuildRequestPojo buildRequest) {
-		Date effectiveTime = null;
-		if (buildRequest != null) {
-			try {
-				effectiveTime = RF2Constants.DATE_FORMAT.parse(buildRequest.getEffectiveDate());
-			} catch (ParseException e) {
-				throw new BusinessServiceRuntimeException("Could not parse effectiveDate.");
-			}
-		}
-		return effectiveTime;
-	}
-
 	private void validateBuildConfig(BuildConfiguration buildConfiguration, Date buildEffectiveTime, String branchPath) throws BadConfigurationException {
 		if (buildEffectiveTime == null && buildConfiguration.getEffectiveTime() == null) {
 			throw new BadConfigurationException("The effective time must be set before a build is created.");

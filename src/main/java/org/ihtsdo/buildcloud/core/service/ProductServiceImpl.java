@@ -8,6 +8,7 @@ import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
+import org.ihtsdo.buildcloud.rest.controller.helper.PageRequestHelper;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
@@ -19,6 +20,7 @@ import org.snomed.module.storage.ModuleMetadata;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,6 +79,28 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			page.getContent().forEach(product -> setLatestBuildStatusAndTag(releaseCenterKey, product));
 		}
 		return page;
+	}
+
+	@Override
+	public Product getDailyBuildProductForCodeSystem(String codeSystemShortName) {
+		List<ReleaseCenter> centers = releaseCenterDAO.findAll();
+		ReleaseCenter releaseCenter = centers.stream().filter(center -> center.getCodeSystem() != null && center.getCodeSystem().equals(codeSystemShortName)).findFirst().orElse(null);
+		if (releaseCenter == null) {
+			LOGGER.error("No release center is associated with the code system {}", codeSystemShortName);
+			return null;
+		}
+
+		Set<FilterOption> filterOptions = EnumSet.noneOf(FilterOption.class);
+		PageRequest pageRequest = PageRequestHelper.createPageRequest(0, 100, null, null);
+		Page<Product> page = productDAO.findAll(releaseCenter.getBusinessKey(), filterOptions, pageRequest);
+		if (page.getTotalElements() == 0) return null;
+
+		for (Product product : page.getContent()) {
+			if (product.getBuildConfiguration().isDailyBuild()) {
+				return product;
+			}
+		}
+		return null;
 	}
 
 	@Override
