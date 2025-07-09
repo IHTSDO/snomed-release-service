@@ -11,5 +11,7 @@ public interface ReleaseService {
 
     void runReleaseBuild(Build build) throws IOException;
 
-    void startNewAuthoringCycle(String releaseCenterKey, String productKey, String effectiveTime, String productKeySource, String dependencyPackage) throws ParseException, JAXBException, IOException, BusinessServiceException;
+    void startNewAuthoringCycleForDailyBuildProduct(String releaseCenterKey, String dailyBuildProductKey, String effectiveTime, String productKeySource, String dependencyPackage) throws ParseException, JAXBException, IOException, BusinessServiceException;
+
+    void copyManifestFileAndReplaceEffectiveTime(String releaseCenterKey, String dailyBuildProductKey, Build previousPublishedBuild, String effectiveTime) throws IOException;
 }

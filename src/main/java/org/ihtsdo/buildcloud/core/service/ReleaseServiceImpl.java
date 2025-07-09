@@ -89,12 +89,12 @@ public class ReleaseServiceImpl implements ReleaseService {
 	}
 
 	@Override
-	public void startNewAuthoringCycle(String releaseCenterKey, String productKey, String effectiveTime, String productKeySource, String dependencyPackage) throws BusinessServiceException, ParseException, JAXBException, IOException {
-		Product product = productService.find(releaseCenterKey, productKey, false);
+	public void startNewAuthoringCycleForDailyBuildProduct(String releaseCenterKey, String dailyBuildProductKey, String effectiveTime, String productKeySource, String dependencyPackage) throws BusinessServiceException, ParseException, JAXBException, IOException {
+		Product product = productService.find(releaseCenterKey, dailyBuildProductKey, false);
 		if (product == null) {
-			throw new BusinessServiceRuntimeException("Could not find product " + productKey + " in release center " + releaseCenterKey);
+			throw new BusinessServiceRuntimeException("Could not find product " + dailyBuildProductKey + " in release center " + releaseCenterKey);
 		} else if (!product.getBuildConfiguration().isDailyBuild()) {
-			throw new BusinessServiceException("The product with key " + productKey + " is not a daily product");
+			throw new BusinessServiceException("The product with key " + dailyBuildProductKey + " is not a daily product");
 		}
 
 		Product productSource = productService.find(releaseCenterKey, productKeySource, false);
@@ -118,9 +118,9 @@ public class ReleaseServiceImpl implements ReleaseService {
 			}
 
 			String previousPackage = getPreviousPackage(latestPublishedBuild) + RF2Constants.ZIP_FILE_EXTENSION;
-			replaceManifestFile(releaseCenterKey, productKey, latestPublishedBuild, effectiveTime, configuration.getEffectiveTimeSnomedFormat());
+			copyManifestFileAndReplaceEffectiveTime(releaseCenterKey, dailyBuildProductKey, latestPublishedBuild, effectiveTime);
 			externalMaintainedRefsetsService.copyExternallyMaintainedFiles(releaseCenterKey, configuration.getEffectiveTimeSnomedFormat(), effectiveTime.replace("-", ""), true);
-			updateProduct(releaseCenterKey, productKey, effectiveTime, dependencyPackage, previousPackage);
+			updateProduct(releaseCenterKey, dailyBuildProductKey, effectiveTime, dependencyPackage, previousPackage);
 		} else {
 			LOGGER.info("The product {} does not have any build which has been published yet", productKeySource);
 		}
@@ -154,9 +154,10 @@ public class ReleaseServiceImpl implements ReleaseService {
 		return latestPackageName;
 	}
 
-	private void replaceManifestFile(String releaseCenterKey, String productKey, Build build, String effectiveTime, String previousEffectiveTime) throws IOException {
+	@Override
+	public void copyManifestFileAndReplaceEffectiveTime(String releaseCenterKey, String dailyBuildProductKey, Build previousPublishedBuild, String effectiveTime) throws IOException {
 		File tmpFile = File.createTempFile("manifest", ".xml");
-		try (InputStream manifestStream = buildDAO.getManifestStream(build)){
+		try (InputStream manifestStream = buildDAO.getManifestStream(previousPublishedBuild)){
 
 			final Unmarshaller unmarshaller = JAXBContext.newInstance(RF2Constants.MANIFEST_CONTEXT_PATH).createUnmarshaller();
 			ListingType manifestListing = unmarshaller.unmarshal(new StreamSource(manifestStream), ListingType.class).getValue();
@@ -174,13 +175,14 @@ public class ReleaseServiceImpl implements ReleaseService {
 			}
 
 			boolean isDeltaFolderExistInManifest = isDeltaFolderExistInManifest(rootFolder);
+			String previousEffectiveTime = previousPublishedBuild.getConfiguration().getEffectiveTimeSnomedFormat();
 			if (!isDeltaFolderExistInManifest) {
 				replaceManifestFileNoDelta(effectiveTime, previousEffectiveTime, rootFolder, manifestListing, tmpFile);
 			} else {
-				replaceManifestFileWithDelta(build, effectiveTime, previousEffectiveTime, tmpFile);
+				replaceManifestFileWithDelta(previousPublishedBuild, effectiveTime, previousEffectiveTime, tmpFile);
 			}
 			try (FileInputStream fileInputStream = new FileInputStream(tmpFile)) {
-				inputFileService.putManifestFile(releaseCenterKey, productKey, fileInputStream, "manifest.xml", tmpFile.length());
+				inputFileService.putManifestFile(releaseCenterKey, dailyBuildProductKey, fileInputStream, "manifest.xml", tmpFile.length());
 			}
 		} catch (JAXBException | DecoderException e) {
 			LOGGER.error(e.getMessage());
