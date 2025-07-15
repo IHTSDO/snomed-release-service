@@ -213,7 +213,7 @@ public class PublishServiceImpl implements PublishService {
 
 				// upload to new versioned content bucket which will be used by Module Storage Coordinator
 				try {
-					uploadReleaseFileToNewVersionedContentBucket(build, releaseFiles);
+					uploadReleaseFileToNewVersionedContentBucket(build, releaseFiles, releaseFiles.md5FileName());
 					moduleStorageCoordinatorCache.clearCachedReleases();
 				} catch (Exception e) {
 					concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), "The build has been published successfully but failed to upload to new versioned content bucket (Module Storage Coordinator).  Error message: " + e.getMessage()));
@@ -231,7 +231,7 @@ public class PublishServiceImpl implements PublishService {
 		}
 	}
 
-	private void uploadReleaseFileToNewVersionedContentBucket(Build build, ReleaseFile releaseFiles) throws IOException, RestClientException, ModuleStorageCoordinatorException.InvalidArgumentsException, ModuleStorageCoordinatorException.ResourceNotFoundException, ModuleStorageCoordinatorException.DuplicateResourceException, ModuleStorageCoordinatorException.OperationFailedException, ScriptException {
+	private void uploadReleaseFileToNewVersionedContentBucket(Build build, ReleaseFile releaseFiles, String md5Filename) throws IOException, RestClientException, ModuleStorageCoordinatorException.InvalidArgumentsException, ModuleStorageCoordinatorException.ResourceNotFoundException, ModuleStorageCoordinatorException.DuplicateResourceException, ModuleStorageCoordinatorException.OperationFailedException, ScriptException {
 		List<CodeSystem> codeSystems = termServerService.getCodeSystems();
 		ReleaseCenter releaseCenter = releaseCenterDAO.find(build.getReleaseCenterKey());
 		CodeSystem codeSystem = codeSystems.stream().filter(item -> releaseCenter.getCodeSystem().equals(item.getShortName()))
@@ -239,17 +239,26 @@ public class PublishServiceImpl implements PublishService {
 				.orElse(null);
 		if (codeSystem != null) {
 			File releaseFile = new File(releaseFiles.releaseFileName());
+			File md5File = md5Filename != null ? new File(md5Filename) : null;
 			try {
 				try (InputStream inputFileStream = srsFileHelper.getFileStream(s3PathHelper.getBuildOutputFilePath(build, releaseFiles.releaseFileName()));
 					 FileOutputStream out = new FileOutputStream(releaseFile)) {
 					StreamUtils.copy(inputFileStream, out);
 				}
-
+				if (md5Filename != null) {
+					try (InputStream inputFileStream = srsFileHelper.getFileStream(s3PathHelper.getBuildOutputFilePath(build, md5Filename));
+						 FileOutputStream out = new FileOutputStream(md5File)) {
+						StreamUtils.copy(inputFileStream, out);
+					}
+				}
 				String moduleId = getModuleId(build);
 				String codeSystemShortname = SNOMEDCT.equals(codeSystem.getShortName()) ? RF2Constants.INT : codeSystem.getShortName().substring(codeSystem.getShortName().indexOf('-') + 1);
-				moduleStorageCoordinator.upload(codeSystemShortname, moduleId, build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFile);
+				moduleStorageCoordinator.upload(codeSystemShortname, moduleId, build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFile, md5File);
 			} finally {
 				org.apache.commons.io.FileUtils.forceDelete(releaseFile);
+				if (md5File != null) {
+					org.apache.commons.io.FileUtils.forceDelete(md5File);
+				}
 			}
 		}
 	}
