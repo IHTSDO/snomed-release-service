@@ -56,6 +56,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snomed.module.storage.ModuleMetadata;
 import org.snomed.module.storage.ModuleStorageCoordinator;
+import org.snomed.module.storage.RF2Row;
+import org.snomed.module.storage.RF2Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ResourceLoader;
@@ -63,6 +65,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 import us.monoid.json.JSONException;
 import us.monoid.json.JSONObject;
@@ -681,7 +684,7 @@ public class BuildServiceImpl implements BuildService {
 			if (dao.isBuildCancelRequested(build)) return;
 
 			File previousReleaseDirectory = getReleaseFileFromMscOrNull(configuration.getPreviousPublishedPackage());
-			File dependencyReleaseDirectory = configuration.getExtensionConfig() != null ? getReleaseFileFromMscOrNull(configuration.getExtensionConfig().getDependencyRelease()) : null;
+			File dependencyReleaseDirectory = getDependencyFileFromModuleStorageCoordinatorOrNull(build);
 			try {
 				transformationService.transformFiles(build, inputFileSchemaMap, previousReleaseDirectory);
 				// Convert Delta input files to Full, Snapshot and Delta release files
@@ -802,6 +805,63 @@ public class BuildServiceImpl implements BuildService {
 			}
 		}
 		return null;
+	}
+
+	private File getDependencyFileFromModuleStorageCoordinatorOrNull(Build build) throws IOException, ProcessingException {
+		File rf2DeltaZipFile = downloadInputDelta(build);
+		try {
+			RF2Service rf2Service = new RF2Service();
+			Set<RF2Row> mdrsRows = rf2Service.getMDRS(rf2DeltaZipFile, true);
+			Set<String> uniqueModuleIds = rf2Service.getUniqueModuleIds(rf2DeltaZipFile, true);
+			Set<ModuleMetadata> dependencies = moduleStorageCoordinator.getRequiredDependencies(mdrsRows, uniqueModuleIds, true);
+			File extractedDirectory = null;
+			if (!dependencies.isEmpty()) {
+				int index = 0;
+				for (ModuleMetadata dependency : dependencies) {
+					File dependencyFile = dependency.getFile();
+					// At the moment, SRS only allows one dependency. So that the first one will be picked up
+					if (index == 0) {
+						extractedDirectory = Files.createTempDirectory("temp-rf2-unzip").toFile();
+						ZipFileUtils.extractFilesFromZipToOneFolder(dependencyFile, extractedDirectory.getAbsolutePath());
+					}
+					index++;
+					Files.delete(dependencyFile.toPath());
+				}
+			} else {
+				LOGGER.info("No dependency found from Module Storage Coordinator");
+			}
+			return extractedDirectory;
+		} catch (Exception e) {
+			LOGGER.error("Error retrieving dependencies from MSC: {}", e.getMessage());
+			return null;
+		} finally {
+			if (rf2DeltaZipFile != null) {
+				Files.delete(rf2DeltaZipFile.toPath());
+			}
+		}
+	}
+
+	public File downloadInputDelta(final Build build) throws ProcessingException, IOException {
+		final File deltaTempDir = Files.createTempDirectory("temp-delta-rf2").toFile();
+		File rf2DeltaZipFile = new File("rf2Delta_" + build.getId() + ".zip");
+		try {
+			for (String downloadFilename : dao.listInputFileNames(build)) {
+				final File localFile = new File(deltaTempDir, downloadFilename);
+				try (InputStream inputFileStream = dao.getInputFileStream(build, downloadFilename);
+					 FileOutputStream out = new FileOutputStream(localFile)) {
+					if (inputFileStream != null) {
+						StreamUtils.copy(inputFileStream, out);
+					} else {
+						throw new ProcessingException("Didn't find input file:" + downloadFilename);
+					}
+				}
+			}
+			ZipFileUtils.zip(deltaTempDir.getAbsolutePath(), rf2DeltaZipFile.getAbsolutePath());
+		} finally {
+			org.apache.commons.io.FileUtils.deleteDirectory(deltaTempDir);
+		}
+
+		return rf2DeltaZipFile;
 	}
 
 	private void generateReleasePackageFile(Build build, String releaseFilename) throws BusinessServiceException {

@@ -1,19 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.build.database.hsql;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.ParseException;
-import java.util.List;
-import java.util.Set;
-
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.build.database.DatabasePopulatorException;
 import org.ihtsdo.buildcloud.core.service.build.database.RF2TableExportDAO;
@@ -21,13 +7,21 @@ import org.ihtsdo.buildcloud.core.service.build.database.RF2TableResults;
 import org.ihtsdo.buildcloud.core.service.build.database.map.Key;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.utils.FileUtils;
-import org.ihtsdo.snomed.util.rf2.schema.DataType;
-import org.ihtsdo.snomed.util.rf2.schema.Field;
-import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
-import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.ihtsdo.snomed.util.rf2.schema.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.util.List;
+import java.util.Set;
 
 @Deprecated
 public class RF2TableDAOHsqlImpl implements RF2TableExportDAO {
@@ -77,8 +71,8 @@ public class RF2TableDAOHsqlImpl implements RF2TableExportDAO {
 	}
 
 	@Override
-	public void appendData(TableSchema tableSchema, Path rf2FilePath, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException {
-		try (BufferedReader reader = rf2FilePath != null ? Files.newBufferedReader(rf2FilePath, RF2Constants.UTF_8) : new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
+	public void appendData(TableSchema tableSchema, InputStream rf2InputStream, boolean workbenchDataFixesRequired) throws IOException, SQLException, ParseException {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(rf2InputStream, RF2Constants.UTF_8))) {
 			reader.readLine(); // Discard header line
 
 			PreparedStatement insertStatement = getInsertStatement(tableSchema, tableSchema.getTableName());
@@ -87,12 +81,12 @@ public class RF2TableDAOHsqlImpl implements RF2TableExportDAO {
 	}
 
 	@Override
-	public void appendData(TableSchema tableSchema, Path rf2FilePath, InputStream rf2InputStream, String previousEffectiveTime) {
+	public void appendData(TableSchema tableSchema, InputStream rf2InputStream, String previousEffectiveTime) {
 		throw new UnsupportedOperationException(("Method is not supported!"));
 	}
 
 	@Override
-	public Set<Key> findAlreadyPublishedDeltaKeys(TableSchema tableSchema, Path  previousSnapshotFilePath, InputStream previousSnapshotFileStream) throws IOException {
+	public Set<Key> findAlreadyPublishedDeltaKeys(TableSchema tableSchema, InputStream previousSnapshotFileStream) throws IOException {
 		throw new UnsupportedOperationException(("Method is not supported!"));
 	}
 
@@ -139,13 +133,13 @@ public class RF2TableDAOHsqlImpl implements RF2TableExportDAO {
 	}
 
 	@Override
-	public void discardAlreadyPublishedDeltaStates(Path previousSnapshotFile, InputStream previousSnapshotFileStream, String currentFullFileName, String effectiveTime) throws IOException {
+	public void discardAlreadyPublishedDeltaStates(InputStream previousSnapshotFileStream, String currentFullFileName, String effectiveTime) throws IOException {
 		previousSnapshotFileStream.close();
 		throw new UnsupportedOperationException("This method is not yet implemented in this class (" + getClass().getName() + ")");
 	}
 
 	@Override
-	public void reconcileRefsetMemberIds(Path previousSnapshotFilePath, InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException, BadConfigurationException {
+	public void reconcileRefsetMemberIds(InputStream previousSnapshotFileStream, String currentSnapshotFileName, String effectiveTime) throws IOException, DatabasePopulatorException, BadConfigurationException {
 		previousSnapshotFileStream.close();
 		throw new UnsupportedOperationException("This method is not yet implemented in this class (" + getClass().getName() + ")");
 	}
@@ -256,7 +250,7 @@ public class RF2TableDAOHsqlImpl implements RF2TableExportDAO {
 	}
 
 	@Override
-	public void resolveEmptyValueId(Path previousFile, InputStream previousFileStream, String  effectiveTime) {
+	public void resolveEmptyValueId(InputStream previousFileStream, String  effectiveTime) {
 		throw new UnsupportedOperationException("This method is not supported yet for current implementation (" + getClass().getName() + ")");
 	}
 

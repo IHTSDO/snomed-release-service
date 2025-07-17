@@ -18,10 +18,7 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -43,8 +40,8 @@ public class Rf2FileExportRunner {
 
 	public Rf2FileExportRunner(final Build build, final BuildDAO dao, File previousReleaseDirectory, File dependencyReleaseDirectory, final int maxRetries) {
 		this.build = build;
-		configuration = build.getConfiguration();
-		buildDao = dao;
+		this.configuration = build.getConfiguration();
+		this.buildDao = dao;
 		this.previousReleaseDirectory = previousReleaseDirectory;
 		this.dependencyReleaseDirectory = dependencyReleaseDirectory;
 		this.maxRetries = maxRetries;
@@ -133,13 +130,9 @@ public class Rf2FileExportRunner {
 					throw new ReleaseFileGenerationException(msg);
 				}
 				// Add the international delta for extension edition release.
-				File intDeltaFile = getEquivalentInternationalDeltaFromDirectory(configuration.getExtensionConfig(), transformedDeltaDataFile);
-				InputStream intDeltaInputStream = null;
-				if (intDeltaFile == null) {
-					intDeltaInputStream = getEquivalentInternationalDelta(configuration.getExtensionConfig(), transformedDeltaDataFile);
-				}
-				if (intDeltaFile != null || intDeltaInputStream != null) {
-					rf2TableDAO.appendData(tableSchema, intDeltaFile != null ? intDeltaFile.toPath() : null, intDeltaInputStream, workbenchDataFixesRequired);
+				InputStream intDeltaStream = getEquivalentInternationalDeltaFromLocalDirectory(configuration.getExtensionConfig(), transformedDeltaDataFile);
+				if (intDeltaStream != null) {
+					rf2TableDAO.appendData(tableSchema, intDeltaStream, workbenchDataFixesRequired);
 				} else {
 					Date previousDependencyEffectiveDate = configuration.getExtensionConfig().getPreviousEditionDependencyEffectiveDate();
 					if (!configuration.isFirstTimeRelease() && previousDependencyEffectiveDate == null) {
@@ -149,15 +142,11 @@ public class Rf2FileExportRunner {
 					}
 					Instant start = Instant.now();
 					// Filter delta from dependency full
-					File intFullFile = getEquivalentInternationalFullFromDirectory(configuration.getExtensionConfig(), transformedDeltaDataFile);
-					InputStream intFullStream = null;
-					if (intFullFile == null) {
-						intFullStream = getEquivalentInternationalFull(configuration.getExtensionConfig(), transformedDeltaDataFile);
-					}
-					if (intFullFile != null || intFullStream != null) {
+					InputStream intFullStream = getEquivalentInternationalFullFromLocalDirectory(configuration.getExtensionConfig(), transformedDeltaDataFile);
+					if (intFullStream != null) {
 						// in yyyyMMdd format
 						String previousDependencyEffectiveDateStr = previousDependencyEffectiveDate != null ? RF2Constants.DATE_FORMAT.format(previousDependencyEffectiveDate) : null;
-						rf2TableDAO.appendData(tableSchema, intFullFile != null ? intFullFile.toPath() : null, intFullStream, previousDependencyEffectiveDateStr);
+						rf2TableDAO.appendData(tableSchema, intFullStream, previousDependencyEffectiveDateStr);
 
 						// Find any DELTA data with effective less than or equal the same one in the previous edition
 						if (!fileFirstTimeRelease) {
@@ -165,12 +154,8 @@ public class Rf2FileExportRunner {
 							if (configuration.isBetaRelease() && cleanSnapshotFileName.startsWith(BETA_PREFIX)) {
 								cleanSnapshotFileName = cleanSnapshotFileName.substring(1); // Previous file will not be a beta release
 							}
-							File previousSnapshotFile = getPreviousFileFromDirectory(cleanSnapshotFileName);
-							InputStream previousSnapshotFileStream = null;
-							if (previousSnapshotFile == null) {
-								previousSnapshotFileStream = getPreviousFileStream(previousPublishedPackage, cleanSnapshotFileName);
-							}
-							deltaKeysToDiscard = rf2TableDAO.findAlreadyPublishedDeltaKeys(tableSchema, previousSnapshotFile != null ? previousSnapshotFile.toPath() : null, previousSnapshotFileStream);
+							InputStream previousSnapshotStream = getPreviousFileFromLocalDirectory(previousPublishedPackage, cleanSnapshotFileName);
+							deltaKeysToDiscard = rf2TableDAO.findAlreadyPublishedDeltaKeys(tableSchema, previousSnapshotStream);
 						}
 					} else {
 						//  Refset files specific to extensions will not have equivalent files in the international release.
@@ -191,33 +176,21 @@ public class Rf2FileExportRunner {
 				if (tableSchema.getComponentType() == ComponentType.REFSET) {
 					// Workbench workaround - correct refset member ids using previous snapshot file.
 					// See interface javadoc for more info.
-					File previousFile = getPreviousFileFromDirectory(cleanCurrentSnapshotFileName);
-					InputStream previousFileStream = null;
-					if (previousFile == null) {
-						previousFileStream = getPreviousFileStream(previousPublishedPackage, cleanCurrentSnapshotFileName);
-					}
-					rf2TableDAO.reconcileRefsetMemberIds(previousFile != null ? previousFile.toPath() : null, previousFileStream, currentSnapshotFileName, effectiveTime);
+					InputStream previousFileStream = getPreviousFileFromLocalDirectory(previousPublishedPackage, cleanCurrentSnapshotFileName);
+					rf2TableDAO.reconcileRefsetMemberIds(previousFileStream, currentSnapshotFileName, effectiveTime);
 				}
 
 				// Workbench workaround for dealing Attribute Value File with empty valueId
 				// ideally we should combine all workbench workaround together so that don't read snapshot file twice
 				if (transformedDeltaDataFile.contains(RF2Constants.ATTRIBUTE_VALUE_FILE_IDENTIFIER)) {
-					File previousFile = getPreviousFileFromDirectory(cleanCurrentSnapshotFileName);
-					InputStream previousFileStream = null;
-					if (previousFile == null) {
-						previousFileStream = getPreviousFileStream(previousPublishedPackage, cleanCurrentSnapshotFileName);
-					}
-					rf2TableDAO.resolveEmptyValueId(previousFile != null ? previousFile.toPath() : null, previousFileStream, effectiveTime);
+					InputStream previousFileStream = getPreviousFileFromLocalDirectory(previousPublishedPackage, cleanCurrentSnapshotFileName);
+					rf2TableDAO.resolveEmptyValueId(previousFileStream, effectiveTime);
 				}
 
 				// Workbench workaround - use full file to discard invalid delta entries
 				// See interface javadoc for more info.
-				File previousFile = getPreviousFileFromDirectory(cleanCurrentSnapshotFileName);
-				InputStream previousFileStream = null;
-				if (previousFile == null) {
-					previousFileStream = getPreviousFileStream(previousPublishedPackage, cleanCurrentSnapshotFileName);
-				}
-				rf2TableDAO.discardAlreadyPublishedDeltaStates(previousFile != null ? previousFile.toPath() : null, previousFileStream, currentSnapshotFileName, effectiveTime);
+				InputStream previousFileStream = getPreviousFileFromLocalDirectory(previousPublishedPackage, cleanCurrentSnapshotFileName);
+				rf2TableDAO.discardAlreadyPublishedDeltaStates(previousFileStream, currentSnapshotFileName, effectiveTime);
 			}
 
 			LOGGER.debug("Start: Exporting delta file for {}", tableSchema.getTableName());
@@ -246,16 +219,11 @@ public class Rf2FileExportRunner {
 					cleanFullFileName = currentFullFileName.substring(1); // Previous file will not be a beta release
 				}
 
-				File previousFullFile = getPreviousFileFromDirectory(cleanFullFileName);
-				InputStream previousFullFileStream = null;
-				if (previousFullFile == null) {
-					previousFullFileStream = getPreviousFileStream(previousPublishedPackage, cleanFullFileName);
-				}
-
+				InputStream previousFullFileStream = getPreviousFileFromLocalDirectory(previousPublishedPackage, cleanFullFileName);
 				// Append transformed previous full file
 				LOGGER.debug("Start: Insert previous release data into table {}", tableSchema.getTableName());
 				timer.split();
-				rf2TableDAO.appendData(tableSchema, previousFullFile != null ? previousFullFile.toPath() : null, previousFullFileStream, workbenchDataFixesRequired);
+				rf2TableDAO.appendData(tableSchema, previousFullFileStream, workbenchDataFixesRequired);
 				timer.logTimeTaken("Insert previous release data");
 				LOGGER.debug("Finish: Insert previous release data into table {}", tableSchema.getTableName());
 			}
@@ -264,16 +232,12 @@ public class Rf2FileExportRunner {
 			if (includedFilesInNewFile != null && !includedFilesInNewFile.isEmpty()) {
 				for (String includedFile : includedFilesInNewFile) {
 					final String includedFileFullName = constructFullOrSnapshotFilename(includedFile, RF2Constants.FULL);
-					File previousCombinedFullFile = getPreviousFileFromDirectory(includedFileFullName);
-					InputStream previousCombinedFullFileStream = null;
-					if (previousCombinedFullFile == null) {
-						previousCombinedFullFileStream = getPreviousFileStream(previousPublishedPackage, includedFileFullName);
-					}
+					InputStream previousCombinedFullFileStream = getPreviousFileFromLocalDirectory(previousPublishedPackage, includedFileFullName);
 
 					// Append transformed previous full file
 					LOGGER.debug("Start: Insert previous release data from {} into table {}", includedFileFullName, tableSchema.getTableName());
 					timer.split();
-					rf2TableDAO.appendData(tableSchema, previousCombinedFullFile != null ? previousCombinedFullFile.toPath() : null, previousCombinedFullFileStream, workbenchDataFixesRequired);
+					rf2TableDAO.appendData(tableSchema, previousCombinedFullFileStream, workbenchDataFixesRequired);
 					timer.logTimeTaken("Insert previous release data");
 					LOGGER.debug("Finish: Insert previous release data from {} into table {}", includedFileFullName, tableSchema.getTableName());
 				}
@@ -309,13 +273,16 @@ public class Rf2FileExportRunner {
 		}
 	}
 
-	private File getEquivalentInternationalFullFromDirectory(ExtensionConfig extensionConfig, String transformedDeltaDataFile) {
+	private InputStream getEquivalentInternationalFullFromLocalDirectory(ExtensionConfig extensionConfig, String transformedDeltaDataFile) throws IOException {
 		String equivalentFullFile = getEquivalentInternationalFile(extensionConfig, transformedDeltaDataFile).replace(DELTA, FULL);
 		LOGGER.info("Equivalent full file {}", equivalentFullFile);
 		if (this.dependencyReleaseDirectory != null && this.dependencyReleaseDirectory.listFiles() != null) {
-			return FileUtils.getRf2FileFromDirectory(this.dependencyReleaseDirectory, equivalentFullFile);
+			File file = FileUtils.getRf2FileFromDirectory(this.dependencyReleaseDirectory, equivalentFullFile);
+			if (file != null) {
+				return new FileInputStream(file);
+			}
 		}
-		return null;
+		return getEquivalentInternationalFull(extensionConfig, transformedDeltaDataFile);
 	}
 
 	private InputStream getEquivalentInternationalFull(ExtensionConfig extensionConfig, String transformedDeltaDataFile) throws IOException {
@@ -324,12 +291,15 @@ public class Rf2FileExportRunner {
 		return buildDao.getPublishedFileArchiveEntry(INT_RELEASE_CENTER.getBusinessKey(), equivalentFullFile, extensionConfig.getDependencyRelease());
 	}
 
-	private File getEquivalentInternationalDeltaFromDirectory(ExtensionConfig extensionConfig, String transformedDeltaDataFile) {
+	private InputStream getEquivalentInternationalDeltaFromLocalDirectory(ExtensionConfig extensionConfig, String transformedDeltaDataFile) throws IOException {
 		String equivalentDeltaFile = getEquivalentInternationalFile(extensionConfig, transformedDeltaDataFile);
 		if (this.dependencyReleaseDirectory != null && this.dependencyReleaseDirectory.listFiles() != null) {
-			return FileUtils.getRf2FileFromDirectory(this.dependencyReleaseDirectory, equivalentDeltaFile);
+			File file = FileUtils.getRf2FileFromDirectory(this.dependencyReleaseDirectory, equivalentDeltaFile);
+			if (file != null) {
+				return new FileInputStream(file);
+			}
 		}
-		return null;
+		return getEquivalentInternationalDelta(extensionConfig, transformedDeltaDataFile);
 	}
 
 	private InputStream getEquivalentInternationalDelta(ExtensionConfig extensionConfig, String transformedDeltaDataFile) throws IOException {
@@ -355,11 +325,14 @@ public class Rf2FileExportRunner {
 		return equivalentBuilder.toString();
 	}
 
-	private File getPreviousFileFromDirectory(final String currentFileName) {
+	private InputStream getPreviousFileFromLocalDirectory(final String previousPublishedPackage, final String currentFileName) throws IOException {
 		if (this.previousReleaseDirectory != null && this.previousReleaseDirectory.listFiles() != null) {
-			return FileUtils.getRf2FileFromDirectory(this.previousReleaseDirectory, currentFileName);
+			File file = FileUtils.getRf2FileFromDirectory(this.previousReleaseDirectory, currentFileName);
+			if (file != null) {
+				return new FileInputStream(file);
+			}
 		}
-		return null;
+		return getPreviousFileStream(previousPublishedPackage, currentFileName);
 	}
 
 	private InputStream getPreviousFileStream(final String previousPublishedPackage, final String currentFileName) throws IOException {

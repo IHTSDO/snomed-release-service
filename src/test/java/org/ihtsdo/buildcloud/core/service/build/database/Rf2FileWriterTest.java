@@ -1,9 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.build.database;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.Collections;
-
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.build.database.map.RF2TableExportDAOImpl;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
@@ -11,6 +7,10 @@ import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.util.Collections;
 
 public class Rf2FileWriterTest {
 
@@ -79,7 +79,7 @@ public class Rf2FileWriterTest {
 	@Test
 	public void testSimpleRefsetExportWithAppendData() throws Exception {
 	    tableSchema = rf2TableDAO.createTable(PREVIOUS_SIMPLE_REFSET_FULL, getClass().getResourceAsStream(PREVIOUS_SIMPLE_REFSET_FULL), false);
-	    rf2TableDAO.appendData(tableSchema, null, getClass().getResourceAsStream(CURRENT_SIMPLE_REFSET_DELTA), false);
+	    rf2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(CURRENT_SIMPLE_REFSET_DELTA), false);
 		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
 
 		rf2FileWriter.exportFullAndSnapshot(tableResults, tableSchema, RF2Constants.DATE_FORMAT.parse(RELEASE_DATE), fullOutputStream, snapshotOutputStream);
@@ -105,7 +105,7 @@ public class Rf2FileWriterTest {
 	@Test
 	public void testExtendedMapRefsetExport() throws Exception {
 	    tableSchema = rf2TableDAO.createTable(PREVIOUS_EXTENDED_MAP_REFSET_FULL, getClass().getResourceAsStream(PREVIOUS_EXTENDED_MAP_REFSET_FULL), false);
-	    rf2TableDAO.appendData(tableSchema, null, getClass().getResourceAsStream(CURRENT_EXTENDED_MAP_REFSET_DELTA), false);
+	    rf2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(CURRENT_EXTENDED_MAP_REFSET_DELTA), false);
 		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
 
 		rf2FileWriter.exportFullAndSnapshot(tableResults, tableSchema, RF2Constants.DATE_FORMAT.parse("20140731"), fullOutputStream, snapshotOutputStream);

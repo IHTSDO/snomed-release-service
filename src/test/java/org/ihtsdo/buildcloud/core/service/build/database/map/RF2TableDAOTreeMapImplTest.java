@@ -37,7 +37,7 @@ public class RF2TableDAOTreeMapImplTest {
 		TableSchema tableSchema = dao.createTable(deltaInput, thisClass.getResourceAsStream(deltaInput), true);
 
 		String previousSnapshot = "der2_Refset_SimpleSnapshot_INT_20140131.txt";
-		dao.reconcileRefsetMemberIds(null, thisClass.getResourceAsStream(previousSnapshot), previousSnapshot, effectiveTime);
+		dao.reconcileRefsetMemberIds(thisClass.getResourceAsStream(previousSnapshot), previousSnapshot, effectiveTime);
 
 		String expectedNewDelta = "der2_Refset_SimpleDelta_INT_20140731.txt";
 		RF2TableResults results = dao.selectAllOrdered(tableSchema);
@@ -54,7 +54,7 @@ public class RF2TableDAOTreeMapImplTest {
 		TableSchema tableSchema = dao.createTable(deltaInput, thisClass.getResourceAsStream(deltaInput), true);
 
 		String previousSnapshot = "der2_cRefset_AssociationReferenceSnapshot_INT_20140131.txt";
-		dao.reconcileRefsetMemberIds(null, thisClass.getResourceAsStream(previousSnapshot), previousSnapshot, effectiveTime);
+		dao.reconcileRefsetMemberIds(thisClass.getResourceAsStream(previousSnapshot), previousSnapshot, effectiveTime);
 
 		String expectedNewDelta = "der2_cRefset_AssociationReferenceDelta_INT_20140731.txt";
 		RF2TableResults results = dao.selectAllOrdered(tableSchema);
@@ -72,7 +72,7 @@ public class RF2TableDAOTreeMapImplTest {
 		TableSchema tableSchema = dao.createTable(deltaInput, thisClass.getResourceAsStream(deltaInput), true);
 
 		String previousSnapshot = "der2_cRefset_AssociationReferenceSnapshot_INT_20140131.txt";
-		dao.reconcileRefsetMemberIds(null, thisClass.getResourceAsStream(previousSnapshot), previousSnapshot, effectiveTime);
+		dao.reconcileRefsetMemberIds(thisClass.getResourceAsStream(previousSnapshot), previousSnapshot, effectiveTime);
 
 		String expectedNewDelta = "der2_cRefset_AssociationReferenceDelta_INT_20140731_custom_key.txt";
 		RF2TableResults results = dao.selectAllOrdered(tableSchema);
