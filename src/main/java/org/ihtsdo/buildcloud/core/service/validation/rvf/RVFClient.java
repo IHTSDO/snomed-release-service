@@ -224,8 +224,10 @@ public class RVFClient implements Closeable {
 	public void close() throws IOException {
 		httpClient.close();
 	}
-	private HttpPost createHttpPostRequest(QATestConfig qaTestConfig, ValidationRequest request, String targetUrl) {
-		final HttpPost post = new HttpPost(releaseValidationFrameworkUrl + targetUrl);
+
+	private HttpPost createHttpPostRequest(QATestConfig qaTestConfig, ValidationRequest request) {
+		String rvfUrl = releaseValidationFrameworkUrl.endsWith("/") ? releaseValidationFrameworkUrl.substring(0, releaseValidationFrameworkUrl.length() - 1) : releaseValidationFrameworkUrl;
+		final HttpPost post = new HttpPost(rvfUrl + RVFClient.RUN_POST_VIA_S3);
 		final MultipartEntityBuilder multiPartBuilder = MultipartEntityBuilder.create();
 		multiPartBuilder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
 		multiPartBuilder.addTextBody(BUCKET_NAME, request.getBuildBucketName());
@@ -302,7 +304,7 @@ public class RVFClient implements Closeable {
 	}
 
 	public String validateOutputPackageFromS3(QATestConfig qaTestConfig, ValidationRequest validationRequest, final String authToken) throws BusinessServiceException {
-		HttpPost post = createHttpPostRequest(qaTestConfig, validationRequest, RUN_POST_VIA_S3);
+		HttpPost post = createHttpPostRequest(qaTestConfig, validationRequest);
 		post.addHeader("Cookie", authToken);
 
 		LOGGER.info("Posting file {} to RVF at {} with run id {}.", validationRequest.getReleaseZipFileS3Path(), post.getURI(), validationRequest.getRunId());
