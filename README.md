@@ -1,14 +1,169 @@
-SNOMED Release Service
-======================
+# SNOMED Release Service (SRS)
 
-Cloud based release service for SNOMED CT
+The **SNOMED Release Service (SRS)** is a Spring Boot–based web application that orchestrates the end-to-end life-cycle of **SNOMED CT release builds** (both production and daily builds). It integrates with a rich ecosystem of backend systems—**Snowstorm**, **CIS**, **IMS**, **Jira**, **ActiveMQ**, **AWS S3**, **Consul**, **Vault** and others—while exposing a **REST / WebSocket API** (documented via Swagger-UI) through which UI clients and automated pipelines can trigger and track releases.
 
-Development Environment
------------------------
-Build the project using maven: 
+This document explains **how to run SRS locally** and the **engineering best-practices** expected when contributing to the code-base.
 
-`mvn clean install`
+---
 
-Start the application using the standalone executable jar which includes an embedded tomcat:
+## 1  High-Level Architecture
 
-`java -Xms512m -Xmx4g -jar target/snomed-release-service-*.jar --server.port=8081 --server.servlet.contextPath=/api`
+```mermaid
+flowchart TD
+    UI["Web UI / API Consumers"] --> SRS
+    SRS -->|REST & WebSocket| Snowstorm[(Snowstorm Term Server)]
+    SRS -->|REST| CIS[(CIS)]
+    SRS -->|REST| IMS[(IMS)]
+    SRS -->|REST| Jira[(Jira Cloud / DC)]
+    SRS -->|REST| Classification[(Classification Service)]
+    SRS -->|JMS| ActiveMQ[(ActiveMQ Broker)]
+    SRS -->|SQL| MySQL[(MySQL 8.*)]
+    SRS -->|S3 SDK| S3[(AWS S3)]
+    SRS -->|Config| Consul[(Consul)]
+    SRS -->|Secrets| Vault[(Hashicorp Vault)]
+```
+
+<br/>
+
+#### Typical Release-Build Lifecycle
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant SRS
+    participant MySQL
+    participant Snowstorm
+    participant ActiveMQ
+    participant S3
+    User->>SRS: Trigger Release Build (REST)
+    SRS->>MySQL: Persist build & audit
+    SRS->>Snowstorm: Export content snapshot
+    Snowstorm-->>SRS: Snapshot archive
+    SRS->>S3: Upload build inputs
+    SRS-->>User: 201 Created (Build ID)
+    SRS--)ActiveMQ: Publish build.jobs event
+    ActiveMQ-->>SRS: Asynchronous status updates
+```
+
+Key points:
+* **Stateless** – session information lives in the DB or external services, enabling horizontal scalability.
+* **Liquibase** drives schema migrations; these run automatically on start-up.
+* **Spring Scheduling, JMS & WebSocket** power asynchronous build processing and client notifications.
+* The application is packaged both as a fat **JAR** and a Debian **.deb** for production deployment under `supervisord`.
+
+---
+
+## 2  Feature Highlights
+
+* **Interactive Swagger-UI / OpenAPI 3 docs** – [`SRSApplication.java`](https://github.com/IHTSDO/snomed-release-service/blob/master/src/main/java/org/ihtsdo/buildcloud/SRSApplication.java)
+* **SSO-secured Spring Security layer** – configured via `ihtsdo-spring-sso` dependency
+* **Release-Build Processing Pipeline**
+  * Worker – [`SRSWorkerService`](https://github.com/IHTSDO/snomed-release-service/blob/master/src/main/java/org/ihtsdo/buildcloud/core/service/worker/SRSWorkerService.java)
+  * Status listener – [`BuildStatusListenerService`](https://github.com/IHTSDO/snomed-release-service/blob/master/src/main/java/org/ihtsdo/buildcloud/core/service/manager/BuildStatusListenerService.java)
+  * Snowstorm event listeners – [`CodeSystemNewAuthoringCycleHandler`](https://github.com/IHTSDO/snomed-release-service/blob/master/src/main/java/org/ihtsdo/buildcloud/core/service/jms/listener/CodeSystemNewAuthoringCycleHandler.java) • [`CodeSystemUpgradeCompleteHandler`](https://github.com/IHTSDO/snomed-release-service/blob/master/src/main/java/org/ihtsdo/buildcloud/core/service/jms/listener/CodeSystemUpgradeCompleteHandler.java)
+* **JMS Messaging (ActiveMQ)** – configurable queue prefixes (`srs.jms.queue.prefix`) enable multi-tenant deployments
+* **Module Storage & Resource Manager** – S3-backed storage for release packages and manifest files
+* **Database schema migrations with Liquibase** – [`db.changelog-master.xml`](https://github.com/IHTSDO/snomed-release-service/blob/master/src/main/resources/org/ihtsdo/srs/db/changelog/db.changelog-master.xml)
+* **SimpleCache-based caching layer** for release-center metadata and version look-ups
+* **Consul & Vault support** for distributed configuration and secrets management
+
+---
+
+## 3  Project Layout
+
+```
+src/
+  main/
+    java/org/ihtsdo/buildcloud   ← Java sources
+    resources/                   ← configuration, templates, Liquibase changelog
+  test/                          ← unit & integration tests
+```
+
+Package conventions:
+* `config`             Spring `@Configuration` classes and beans.
+* `rest`               Spring MVC controllers and DTOs.
+* `core`               Business logic, services, entities & repositories.
+* `jira`               Jira helper utilities and client adapters.
+* `telemetry`          Telemetry helpers for build metrics.
+* `util`               General-purpose helpers.
+
+---
+
+## 4  Getting Started Locally
+
+### 4.1  Prerequisites
+
+1. **JDK 17** (aligned with the parent BOM)
+2. **Maven 3.8+** (wrapper provided)
+3. **MySQL 8** running on `localhost:3306` with a database called `srs`.
+4. **ActiveMQ 5.x** (an embedded broker starts automatically for local dev, but external brokers are recommended for JMS testing).
+5. (Optional) **Snowstorm**, **Classification Service**, **Consul** & **Vault** if you want to mirror a production-like setup.
+
+> Tip: A `docker-compose.yml` for the full stack is planned – contributions welcome!
+
+### 4.2  Clone & Build
+
+```bash
+git clone https://github.com/IHTSDO/snomed-release-service.git
+cd snomed-release-service
+./mvnw clean verify
+```
+
+* `verify` executes the test-suite and builds `target/snomed-release-service-${VERSION}.jar`.
+* Run `./mvnw -Pdeb package` to also create `target/snomed-release-service-${VERSION}-all.deb`.
+
+### 4.3  Configuration
+
+1. Copy `src/main/resources/application.properties` to `src/main/resources/application-local.properties` (already `.gitignored`).
+2. Override at least the following properties:
+   ```properties
+   spring.datasource.username=<your-db-user>
+   spring.datasource.password=<your-db-pwd>
+   snowstorm.url=http://localhost:8080/snowstorm/snomed-ct/
+   srs.jms.queue.prefix=local-srs
+   srs.environment.shortname=local
+   ```
+3. Any property can also be supplied via environment variables, e.g. `SPRING_DATASOURCE_URL` or `SPRING_MAIL_HOST`.
+
+### 4.4  Run
+
+```bash
+java -Xms512m -Xmx4g \
+     -jar target/snomed-release-service-${VERSION}.jar \
+     --server.port=8081 \
+     --server.servlet.contextPath=/api \
+     --spring.config.additional-location=classpath:/,file:./ \
+     --spring.profiles.active=local
+```
+
+Swagger UI will be available at <http://localhost:8081/api/swagger-ui/index.html>.
+
+---
+
+## 5  Messaging & Async Workflows
+
+* JMS queues are prefixed using `srs.jms.queue.prefix` for safe multi-tenant deployments.
+* Payload sizes can be tuned via `activemq.max.message.concept-activities`.
+* **Consumers must be idempotent** – messages may be redelivered when using ActiveMQ in fail-over mode.
+
+---
+
+## 6  Deployment
+
+### 6.1  Fat JAR
+
+```bash
+java -Xms512m -Xmx4g \
+     -Dspring.profiles.active=prod \
+     -jar snomed-release-service-${VERSION}.jar
+```
+
+### 6.2  Debian package
+
+1. `./mvnw -Pdeb package`
+2. Copy the resulting `.deb` to your server.
+3. ```bash
+   sudo dpkg -i snomed-release-service-${VERSION}-all.deb
+   sudo systemctl restart supervisor        # if applicable
+   ```
+   Configuration lives under `/opt/snomed-release-service/` and logs under `/var/log/srs/`.
