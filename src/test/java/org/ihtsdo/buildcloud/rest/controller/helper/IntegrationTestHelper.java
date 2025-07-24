@@ -168,7 +168,8 @@ public class IntegrationTestHelper {
 	}
 
 	public void uploadManifest(final String manifestFileName, final Class<?> classpathResourceOwner) throws Exception {
-		final MockMultipartFile manifestFile = new MockMultipartFile("file", manifestFileName, "text/plain", classpathResourceOwner.getResourceAsStream(manifestFileName));
+		String filename = manifestFileName.contains("/") ? manifestFileName.substring(manifestFileName.lastIndexOf("/") + 1) : manifestFileName;
+		final MockMultipartFile manifestFile = new MockMultipartFile("file", filename, "text/plain", classpathResourceOwner.getResourceAsStream(manifestFileName));
 		mockMvc.perform(
 						multipart(getProductUrl() + "/manifest")
 						.file(manifestFile)
@@ -176,7 +177,6 @@ public class IntegrationTestHelper {
 		)
 				.andDo(print())
 				.andExpect(status().isCreated());
-
 	}
 
 	public void setEffectiveTime(final String effectiveDate) throws Exception {

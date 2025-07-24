@@ -78,9 +78,9 @@ public class InputFileServiceImpl implements InputFileService {
 
 	@Override
 	public void putManifestFile(final String centerKey, final String productKey, final InputStream inputStream, final String originalFilename, final long fileSize) throws ResourceNotFoundException, IOException, DecoderException {
-		String pattern = "^[^\\s\\[\\]\\(\\)\\{\\}<>]+$";
+		String pattern = "^[a-zA-Z0-9_.!\\-*'()]+$";
 		if (!originalFilename.matches(pattern)) {
-            throw new IllegalArgumentException("Invalid filename format. It does not allow spaces, (), [], {}, <>, or any brackets");
+            throw new IllegalArgumentException(originalFilename + " is an invalid filename format. It should only contain the alphanumeric characters and some special characters [!, -, _, ., *, ', (, )]");
         }
 		inputFileDAO.putManifestFile(centerKey, productKey, inputStream, originalFilename, fileSize);
 	}
