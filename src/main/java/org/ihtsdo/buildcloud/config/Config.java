@@ -218,7 +218,7 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean
-	public ModuleStorageCoordinator moduleStorageCoordinator(@Autowired ResourceManager resourceManager,  @Value("${srs.environment.shortname}") final String envShortname) {
+	public ModuleStorageCoordinator moduleStorageCoordinator(@Autowired ResourceManager resourceManager,  @Value("${module.storage.environment.shortname}") final String envShortname) {
         return switch (envShortname) {
             case "prod" -> ModuleStorageCoordinator.initProd(resourceManager);
             case "uat" -> ModuleStorageCoordinator.initUat(resourceManager);
