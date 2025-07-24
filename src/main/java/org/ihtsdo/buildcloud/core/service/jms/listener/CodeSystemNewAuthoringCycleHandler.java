@@ -60,7 +60,6 @@ public class CodeSystemNewAuthoringCycleHandler {
         final String codeSystemShortName = message.get("codeSystemShortName");
         final String codeSystemBranchPath = message.get("codeSystemBranchPath");
         final String previousPackage = message.get("previousPackage");
-        final String dependencyPackage = message.get("dependencyPackage");
         final String newEffectiveTime = message.get("newEffectiveTime");
 
         if (newEffectiveTime == null) {
@@ -79,7 +78,7 @@ public class CodeSystemNewAuthoringCycleHandler {
 
             // Format: yyyy-MM-dd or yyyyMMdd
             buildConfiguration.setEffectiveTime(newEffectiveTime.contains("-") ? DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(newEffectiveTime) : RF2Constants.DATE_FORMAT.parse(newEffectiveTime));
-            updateExtensionConfig(dailyBuildProduct, dependencyPackage, previousPackage);
+            updateExtensionConfig(dailyBuildProduct, previousPackage);
             productService.update(dailyBuildProduct);
 
             Build previousPublishedBuild = getPublishedBuild(dailyBuildProduct.getReleaseCenter(), codeSystemBranchPath, previousPackage);
@@ -115,18 +114,15 @@ public class CodeSystemNewAuthoringCycleHandler {
         return null;
     }
 
-    private void updateExtensionConfig(Product product, String dependencyPackage, String previousPackage) throws ModuleStorageCoordinatorException.OperationFailedException, ModuleStorageCoordinatorException.ResourceNotFoundException, ModuleStorageCoordinatorException.InvalidArgumentsException, ParseException {
+    private void updateExtensionConfig(Product product, String previousPackage) throws ModuleStorageCoordinatorException.OperationFailedException, ModuleStorageCoordinatorException.ResourceNotFoundException, ModuleStorageCoordinatorException.InvalidArgumentsException, ParseException {
         ExtensionConfig extensionConfig = product.getBuildConfiguration().getExtensionConfig();
-        if (extensionConfig != null) {
-            extensionConfig.setDependencyRelease(dependencyPackage);
-            if (extensionConfig.isReleaseAsAnEdition()) {
-                Map<String, List<ModuleMetadata>> allReleasesMap = moduleStorageCoordinatorCache.getAllReleases();
-                List<ModuleMetadata> allModuleMetadata = new ArrayList<>();
-                allReleasesMap.values().forEach(allModuleMetadata::addAll);
-                ModuleMetadata moduleMetadata = allModuleMetadata.stream().filter(item -> item.getFilename().equals(previousPackage)).findFirst().orElse(null);
-                if (moduleMetadata != null && !CollectionUtils.isEmpty(moduleMetadata.getDependencies())) {
-                    extensionConfig.setPreviousEditionDependencyEffectiveDate(RF2Constants.DATE_FORMAT.parse(moduleMetadata.getDependencies().get(0).getEffectiveTimeString()));
-                }
+        if (extensionConfig != null && extensionConfig.isReleaseAsAnEdition()) {
+            Map<String, List<ModuleMetadata>> allReleasesMap = moduleStorageCoordinatorCache.getAllReleases();
+            List<ModuleMetadata> allModuleMetadata = new ArrayList<>();
+            allReleasesMap.values().forEach(allModuleMetadata::addAll);
+            ModuleMetadata moduleMetadata = allModuleMetadata.stream().filter(item -> item.getFilename().equals(previousPackage)).findFirst().orElse(null);
+            if (moduleMetadata != null && !CollectionUtils.isEmpty(moduleMetadata.getDependencies())) {
+                extensionConfig.setPreviousEditionDependencyEffectiveDate(RF2Constants.DATE_FORMAT.parse(moduleMetadata.getDependencies().get(0).getEffectiveTimeString()));
             }
         }
     }
