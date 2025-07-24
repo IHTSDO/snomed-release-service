@@ -355,16 +355,32 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		setPreviousPublishedPackage(newPropertyValues, product, configuration);
 		setConfigurationValueIfPresent(newPropertyValues, README_HEADER, configuration, README_HEADER, false);
 		setConfigurationValueIfPresent(newPropertyValues, README_END_DATE, configuration, README_END_DATE, false);
-		setConfigurationValueIfPresent(newPropertyValues, NEW_RF2_INPUT_FILES, configuration, NEW_RF2_INPUT_FILES, false);
-		setConfigurationValueIfPresent(newPropertyValues, REMOVE_RF2_FILES, configuration, REMOVE_RF2_FILES, false);
 		setConfigurationValueIfPresent(newPropertyValues, INCLUDED_PREV_RELEASE_FILES, configuration, INCLUDED_PREV_RELEASE_FILES, false);
 		setConfigurationValueIfPresent(newPropertyValues, EXCLUDE_REFSET_DESCRIPTOR_MEMBERS, configuration, EXCLUDE_REFSET_DESCRIPTOR_MEMBERS, false);
 		setConfigurationValueIfPresent(newPropertyValues, EXCLUDE_LANGUAGE_REFSET_IDS, configuration, EXCLUDE_LANGUAGE_REFSET_IDS, false);
 		if (newPropertyValues.containsKey(CUSTOM_REFSET_COMPOSITE_KEYS)) {
 			setCustomRefsetCompositeKeys(newPropertyValues, configuration);
 		}
+		validateDelaFilesThenSet(newPropertyValues, NEW_RF2_INPUT_FILES, "New RF2 Input Files only allow the Delta filenames", configuration);
+		validateDelaFilesThenSet(newPropertyValues, REMOVE_RF2_FILES, "Remove RF2 Files only allow the Delta filenames", configuration);
 
 		setExtensionConfig(newPropertyValues, configuration);
+	}
+
+	private void validateDelaFilesThenSet(Map<String, String> newPropertyValues, String propertyName, String message, BuildConfiguration configuration) throws BusinessServiceException, NoSuchFieldException {
+		if (newPropertyValues.containsKey(propertyName)) {
+			String value = newPropertyValues.get(propertyName);
+			if (StringUtils.hasLength(value)) {
+				String[] parts = Arrays.stream(value.split("\\|")).map(String::trim).toArray(String[]::new);
+				boolean allContainDelta = Arrays.stream(parts).allMatch(s -> s.contains("Delta_") || s.contains("Delta-"));
+				if (!allContainDelta) {
+					throw new BusinessServiceException(message);
+				}
+				setConfigurationValueIfPresent(newPropertyValues, propertyName, configuration, propertyName, false);
+			} else {
+				setConfigurationValueIfPresent(newPropertyValues, propertyName, configuration, propertyName, false);
+			}
+		}
 	}
 
 	private void setAdditionalReleaseInformationFields(Map<String, String> newPropertyValues, BuildConfiguration configuration) throws BusinessServiceException {
