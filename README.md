@@ -60,9 +60,9 @@ Key points:
 * **Release-Build Processing Pipeline**
   * Worker – [`SRSWorkerService`](https://github.com/IHTSDO/snomed-release-service/blob/master/src/main/java/org/ihtsdo/buildcloud/core/service/worker/SRSWorkerService.java)
   * Status listener – [`BuildStatusListenerService`](https://github.com/IHTSDO/snomed-release-service/blob/master/src/main/java/org/ihtsdo/buildcloud/core/service/manager/BuildStatusListenerService.java)
-  * Snowstorm event listeners – [`CodeSystemNewAuthoringCycleHandler`](https://github.com/IHTSDO/snomed-release-service/blob/master/src/main/java/org/ihtsdo/buildcloud/core/service/jms/listener/CodeSystemNewAuthoringCycleHandler.java) • [`CodeSystemUpgradeCompleteHandler`](https://github.com/IHTSDO/snomed-release-service/blob/master/src/main/java/org/ihtsdo/buildcloud/core/service/jms/listener/CodeSystemUpgradeCompleteHandler.java)
+  * Snowstorm event listeners – [`CodeSystemNewAuthoringCycleHandler`](https://github.com/IHTSDO/snomed-release-service/blob/master/src/main/java/org/ihtsdo/buildcloud/core/service/jms/listener/CodeSystemNewAuthoringCycleHandler.java)
 * **JMS Messaging (ActiveMQ)** – configurable queue prefixes (`srs.jms.queue.prefix`) enable multi-tenant deployments
-* **Module Storage & Resource Manager** – S3-backed storage for release packages and manifest files
+* **Module Storage & Resource Manager** – S3-backed storage for release packages
 * **Database schema migrations with Liquibase** – [`db.changelog-master.xml`](https://github.com/IHTSDO/snomed-release-service/blob/master/src/main/resources/org/ihtsdo/srs/db/changelog/db.changelog-master.xml)
 * **SimpleCache-based caching layer** for release-center metadata and version look-ups
 * **Consul & Vault support** for distributed configuration and secrets management
