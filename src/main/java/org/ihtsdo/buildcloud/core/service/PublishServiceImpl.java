@@ -586,6 +586,7 @@ public class PublishServiceImpl implements PublishService {
 		int counter = 0;
 		int publishedAlreadyCounter = 0;
 		int assignedStatusCounter = 0;
+		int availableStatusCounter = 0;
 		List<Long> otherStatusIds = new ArrayList<>();
 		for (Long id : sctIds) {
 			if (batchJob == null) {
@@ -599,6 +600,7 @@ public class PublishServiceImpl implements PublishService {
 					LOGGER.warn("Total sctids reqeusted {} but total status returned {}", batchJob.size(),sctIdStatusMap.size());
 				}
 				List<Long> assignedIds = new ArrayList<>();
+				List<Long> availableIds = new ArrayList<>();
 				for (Long sctId : batchJob) {
 					String status = sctIdStatusMap.get(sctId);
 					if (IdServiceRestClient.ID_STATUS.ASSIGNED.getName().equals(status)) {
@@ -606,47 +608,62 @@ public class PublishServiceImpl implements PublishService {
 						assignedIds.add(sctId);
 					} else if (IdServiceRestClient.ID_STATUS.PUBLISHED.getName().equals(status)) {
 						publishedAlreadyCounter++;
+					} else if (IdServiceRestClient.ID_STATUS.AVAILABLE.getName().equals(status)){
+						availableStatusCounter++;
+						availableIds.add(sctId);
 					} else {
 						otherStatusIds.add(sctId);
 					}
 				}
 				if (!assignedIds.isEmpty()) {
-					//publishing sctId grouped in batch by namespace id
-					Map<String,List<Long>> sctIdsByNamespaceMap = groupSctIdsByNamespace(assignedIds);
-					for ( String namespace : sctIdsByNamespaceMap.keySet()) {
-						boolean isSuccessful = idRestClient.publishSctIds(sctIdsByNamespaceMap.get(namespace), Integer.valueOf(namespace), buildId);
-						if (!isSuccessful) {
-							LOGGER.error("Publishing sctids for file {} is completed with error.", filename);
-						}
+					processPublishSctids(filename, buildId, assignedIds);
+				}
+				if (!availableIds.isEmpty()) {
+					Map<String,List<Long>> sctIdsByNamespaceMap = groupSctIdsByNamespace(availableIds);
+					List<Long> registeredSctids = new ArrayList<>();
+					for (Map.Entry<String,List<Long>> entry : sctIdsByNamespaceMap.entrySet()) {
+						registeredSctids.addAll(idRestClient.registerSctIds(entry.getValue(), null, Integer.valueOf(entry.getKey()), buildId));
+					}
+					if (!registeredSctids.isEmpty()) {
+						List<Long> succeedSctids = processPublishSctids(filename, buildId, registeredSctids);
+						availableIds.removeAll(succeedSctids);
+					}
+					if (!availableIds.isEmpty()) {
+						StringBuilder msgBuilder = new StringBuilder("the following SctIds are available but cannot be assigned or published:");
+						int firstNCount = Math.min(availableIds.size(), MAX_FAILURE);
+						msgBuilder.append(availableIds.subList(0, firstNCount).stream().map(String::valueOf).collect(Collectors.joining(",")));
+						LOGGER.warn("Total ids are available but cannot be assigned or published {} in file {} for example: {} ", availableIds.size(), filename, msgBuilder);
 					}
 				}
 				batchJob = null;
 			}
 		}
-		LOGGER.info("Found total sctIds {} in file {} with assigned status {} , published status {} and other status {}", 
-				sctIds.size(), filename, assignedStatusCounter, publishedAlreadyCounter, otherStatusIds.size());
-		if (otherStatusIds.size() > 0) {
-			StringBuilder msgBuilder = new StringBuilder("the following SctIds are not in assigned or published status:");
-			boolean isFirstOne = true;
-			int failureCounter = 0;
-			for (Long id : otherStatusIds) {
-				if (failureCounter > MAX_FAILURE) {
-					break;
-				}
-				if (!isFirstOne) {
-					msgBuilder.append(",");
-				}
-				if (isFirstOne) {
-					isFirstOne = false;
-				}
-				msgBuilder.append(id);
-				failureCounter++;
-			}
-			LOGGER.warn("Total ids have not been published {} in file {} for example {} ", otherStatusIds.size(), filename, msgBuilder.toString());
+		LOGGER.info("Found total sctIds {} in file {} with available status {},  assigned status {} , published status {} and other status {}",
+				sctIds.size(), filename, availableStatusCounter, assignedStatusCounter, publishedAlreadyCounter, otherStatusIds.size());
+		if (!otherStatusIds.isEmpty()) {
+			StringBuilder msgBuilder = new StringBuilder("the following SctIds are not in available or assigned or published status:");
+			int firstNCount = Math.min(otherStatusIds.size(), MAX_FAILURE);
+			msgBuilder.append(otherStatusIds.subList(0, firstNCount).stream().map(String::valueOf).collect(Collectors.joining(",")));
+			LOGGER.warn("Total ids have not been published {} in file {} for example: {} ", otherStatusIds.size(), filename, msgBuilder);
 		}
 		
 	}
-	
+
+	private List<Long> processPublishSctids(String filename, String buildId, List<Long> registeredSctids) throws RestClientException {
+		//publishing sctId grouped in batch by namespace id
+		Map<String,List<Long>> sctIdsByNamespaceMap = groupSctIdsByNamespace(registeredSctids);
+		List<Long> succeedSctids = new ArrayList<>();
+		for (Map.Entry<String,List<Long>> entry : sctIdsByNamespaceMap.entrySet()) {
+			boolean isSuccessful = idRestClient.publishSctIds(entry.getValue(), Integer.valueOf(entry.getKey()), buildId);
+			if (!isSuccessful) {
+				LOGGER.error("Publishing sctids for file {} is completed with error.", filename);
+			} else {
+				succeedSctids.addAll(entry.getValue());
+			}
+		}
+		return succeedSctids;
+	}
+
 	private Map<String, List<Long>> groupSctIdsByNamespace(List<Long> assignedIds) {
 		Map<String, List<Long>> result = new HashMap<>();
 		for (Long sctId : assignedIds) {
