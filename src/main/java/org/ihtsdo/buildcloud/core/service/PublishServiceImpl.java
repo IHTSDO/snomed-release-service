@@ -43,6 +43,8 @@ import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -52,9 +54,6 @@ import static org.ihtsdo.buildcloud.core.service.PermissionServiceCache.BRANCH_R
 @Service
 @Transactional
 public class PublishServiceImpl implements PublishService {
-
-	private static final String SNOMEDCT = "SNOMEDCT";
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(PublishServiceImpl.class);
 
 	private final FileHelper srsFileHelper;
@@ -232,33 +231,33 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	private void uploadReleaseFileToNewVersionedContentBucket(Build build, ReleaseFile releaseFiles, String md5Filename) throws IOException, RestClientException, ModuleStorageCoordinatorException.InvalidArgumentsException, ModuleStorageCoordinatorException.ResourceNotFoundException, ModuleStorageCoordinatorException.DuplicateResourceException, ModuleStorageCoordinatorException.OperationFailedException, ScriptException {
-		List<CodeSystem> codeSystems = termServerService.getCodeSystems();
-		ReleaseCenter releaseCenter = releaseCenterDAO.find(build.getReleaseCenterKey());
-		CodeSystem codeSystem = codeSystems.stream().filter(item -> releaseCenter.getCodeSystem().equals(item.getShortName()))
-				.findAny()
-				.orElse(null);
-		if (codeSystem != null) {
-			File releaseFile = new File(releaseFiles.releaseFileName());
-			File md5File = md5Filename != null ? new File(md5Filename) : null;
-			try {
-				try (InputStream inputFileStream = srsFileHelper.getFileStream(s3PathHelper.getBuildOutputFilePath(build, releaseFiles.releaseFileName()));
-					 FileOutputStream out = new FileOutputStream(releaseFile)) {
+		String branchPath = build.getConfiguration().getBranchPath();
+		String shortName = getShortName(branchPath);
+		if (shortName == null) {
+			String message = String.format("Cannot upload to versioned content bucket as shortName is unknown for branch: %s", branchPath);
+			LOGGER.error(message);
+			throw new ModuleStorageCoordinatorException.InvalidArgumentsException(message);
+		}
+
+		File releaseFile = new File(releaseFiles.releaseFileName());
+		File md5File = md5Filename != null ? new File(md5Filename) : null;
+		try {
+			try (InputStream inputFileStream = srsFileHelper.getFileStream(s3PathHelper.getBuildOutputFilePath(build, releaseFiles.releaseFileName()));
+				 FileOutputStream out = new FileOutputStream(releaseFile)) {
+				StreamUtils.copy(inputFileStream, out);
+			}
+			if (md5Filename != null) {
+				try (InputStream inputFileStream = srsFileHelper.getFileStream(s3PathHelper.getBuildOutputFilePath(build, md5Filename));
+					 FileOutputStream out = new FileOutputStream(md5File)) {
 					StreamUtils.copy(inputFileStream, out);
 				}
-				if (md5Filename != null) {
-					try (InputStream inputFileStream = srsFileHelper.getFileStream(s3PathHelper.getBuildOutputFilePath(build, md5Filename));
-						 FileOutputStream out = new FileOutputStream(md5File)) {
-						StreamUtils.copy(inputFileStream, out);
-					}
-				}
-				String moduleId = getModuleId(build);
-				String codeSystemShortname = SNOMEDCT.equals(codeSystem.getShortName()) ? RF2Constants.INT : codeSystem.getShortName().substring(codeSystem.getShortName().indexOf('-') + 1);
-				moduleStorageCoordinator.upload(codeSystemShortname, moduleId, build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFile, md5File);
-			} finally {
-				org.apache.commons.io.FileUtils.forceDelete(releaseFile);
-				if (md5File != null) {
-					org.apache.commons.io.FileUtils.forceDelete(md5File);
-				}
+			}
+			String moduleId = getModuleId(build);
+			moduleStorageCoordinator.upload(shortName, moduleId, build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFile, md5File);
+		} finally {
+			org.apache.commons.io.FileUtils.forceDelete(releaseFile);
+			if (md5File != null) {
+				org.apache.commons.io.FileUtils.forceDelete(md5File);
 			}
 		}
 	}
@@ -746,5 +745,31 @@ public class PublishServiceImpl implements PublishService {
 
 	private String getBuildUniqueKey(Build build) {
 		return build.getReleaseCenterKey() + "|" + build.getProductKey() + "|" + build.getId();
+	}
+
+	private String getShortName(String branchPath) {
+		if (branchPath == null || branchPath.isEmpty()) {
+			return null;
+		}
+
+		if (!branchPath.startsWith("MAIN")) {
+			return null;
+		}
+
+		if (branchPath.startsWith("MAIN/SNOMEDCT-")) {
+			Pattern pattern = Pattern.compile("SNOMEDCT-[^/]+/?");
+			Matcher matcher = pattern.matcher(branchPath);
+
+			if (matcher.find()) {
+				String snomedSegment = matcher.group();
+
+				snomedSegment = snomedSegment.replace("/", "");
+				snomedSegment = snomedSegment.replace("SNOMEDCT-", "");
+
+				return snomedSegment;
+			}
+		}
+
+		return "INT";
 	}
 }
