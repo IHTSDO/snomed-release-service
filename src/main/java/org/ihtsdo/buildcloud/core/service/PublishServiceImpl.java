@@ -16,7 +16,6 @@ import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.core.service.identifier.client.SchemeIdType;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
-import org.ihtsdo.otf.exception.ScriptException;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
@@ -31,7 +30,6 @@ import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.snomed.module.storage.ModuleStorageCoordinator;
-import org.snomed.module.storage.ModuleStorageCoordinatorException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
@@ -171,6 +169,8 @@ public class PublishServiceImpl implements PublishService {
 			return;
 		}
 		concurrentPublishingBuildStatus.putIfAbsent(getBuildUniqueKey(build), new ProcessingStatus(Status.RUNNING.name(), null));
+		final List<String> errors = new ArrayList<>();
+		final List<String> warnings = new ArrayList<>();
 		try {
 			String pkgOutPutDir = s3PathHelper.getBuildOutputFilesPath(build).toString();
 			List<String> filesFound = srsFileHelper.listFiles(pkgOutPutDir);
@@ -179,30 +179,22 @@ public class PublishServiceImpl implements PublishService {
 			if (releaseFiles.releaseFileName() == null) {
 				String errorMessage = "No zip file found for build: " + build.getUniqueId();
 				LOGGER.error(errorMessage);
-				concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), errorMessage));
+				errors.add(errorMessage);
 			} else {
 				String fileLock = releaseFiles.releaseFileName().intern();
 				synchronized (fileLock) {
 					String publishFilePath = s3PathHelper.getPublishJobFilePath(build.getReleaseCenterKey(), releaseFiles.releaseFileName());
 
 					// validate the release file
-					validateReleaseFile(build, publishFilePath);
+					validateReleaseFile(build, publishFilePath, errors);
 
 					// publish component ids
 					if (publishComponentIds) {
-						publishComponentIds(build, releaseFiles.releaseFileName());
+						publishComponentIds(build, releaseFiles.releaseFileName(), errors, warnings);
 					}
 
 					// copy the release package to published and versioned folders
-					try {
-						copyReleaseFileToPublishedAndVersionedDirectory(build, env, releaseFiles.releaseFileName(), publishFilePath);
-
-						// mark the build as Published
-						buildDao.addTag(build, Build.Tag.PUBLISHED);
-					} catch (Exception e) {
-						concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
-						throw e;
-					}
+					copyReleaseFileToPublishedAndVersionedDirectory(build, env, releaseFiles.releaseFileName(), publishFilePath, errors);
 				}
 
 				// copy MD5 file if available
@@ -211,54 +203,60 @@ public class PublishServiceImpl implements PublishService {
 				}
 
 				// upload to new versioned content bucket which will be used by Module Storage Coordinator
-				try {
-					uploadReleaseFileToNewVersionedContentBucket(build, releaseFiles, releaseFiles.md5FileName());
-					moduleStorageCoordinatorCache.clearCachedReleases();
-				} catch (Exception e) {
-					concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), "The build has been published successfully but failed to upload to new versioned content bucket (Module Storage Coordinator).  Error message: " + e.getMessage()));
-					throw new BusinessServiceException("Failed to upload to new versioned content bucket (Module Storage Coordinator). Error : " + e.getMessage(), e);
-				}
+				uploadReleaseFileToNewVersionedContentBucket(build, releaseFiles, releaseFiles.md5FileName(), warnings);
 
 				// update the release package in code system
 				if (!build.getConfiguration().isBetaRelease() && !StringUtils.isEmpty(build.getConfiguration().getBranchPath())) {
-					updateCodeSystemVersion(build, releaseFiles.releaseFileName());
+					updateCodeSystemVersion(build, releaseFiles.releaseFileName(), warnings);
 				}
-				concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), null));
 			}
 		} finally {
+			if (!errors.isEmpty()) {
+				concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), String.join("\n", errors)));
+			} else {
+				concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), !warnings.isEmpty() ? String.join("\n", warnings) : null));
+			}
 			MDC.remove(BuildService.MDC_BUILD_KEY);
 		}
 	}
 
-	private void uploadReleaseFileToNewVersionedContentBucket(Build build, ReleaseFile releaseFiles, String md5Filename) throws IOException, RestClientException, ModuleStorageCoordinatorException.InvalidArgumentsException, ModuleStorageCoordinatorException.ResourceNotFoundException, ModuleStorageCoordinatorException.DuplicateResourceException, ModuleStorageCoordinatorException.OperationFailedException, ScriptException {
+	private void uploadReleaseFileToNewVersionedContentBucket(Build build, ReleaseFile releaseFiles, String md5Filename, List<String> warnings) throws BusinessServiceException {
 		String branchPath = build.getConfiguration().getBranchPath();
 		String shortName = getShortName(branchPath);
 		if (shortName == null) {
 			String message = String.format("Cannot upload to versioned content bucket as shortName is unknown for branch: %s", branchPath);
+			warnings.add(message);
 			LOGGER.error(message);
-			throw new ModuleStorageCoordinatorException.InvalidArgumentsException(message);
+			throw new BusinessServiceException(message);
 		}
-
-		File releaseFile = new File(releaseFiles.releaseFileName());
-		File md5File = md5Filename != null ? new File(md5Filename) : null;
 		try {
-			try (InputStream inputFileStream = srsFileHelper.getFileStream(s3PathHelper.getBuildOutputFilePath(build, releaseFiles.releaseFileName()));
-				 FileOutputStream out = new FileOutputStream(releaseFile)) {
-				StreamUtils.copy(inputFileStream, out);
-			}
-			if (md5Filename != null) {
-				try (InputStream inputFileStream = srsFileHelper.getFileStream(s3PathHelper.getBuildOutputFilePath(build, md5Filename));
-					 FileOutputStream out = new FileOutputStream(md5File)) {
+			File releaseFile = new File(releaseFiles.releaseFileName());
+			File md5File = md5Filename != null ? new File(md5Filename) : null;
+			try {
+				try (InputStream inputFileStream = srsFileHelper.getFileStream(s3PathHelper.getBuildOutputFilePath(build, releaseFiles.releaseFileName()));
+					 FileOutputStream out = new FileOutputStream(releaseFile)) {
 					StreamUtils.copy(inputFileStream, out);
 				}
+				if (md5Filename != null) {
+					try (InputStream inputFileStream = srsFileHelper.getFileStream(s3PathHelper.getBuildOutputFilePath(build, md5Filename));
+						 FileOutputStream out = new FileOutputStream(md5File)) {
+						StreamUtils.copy(inputFileStream, out);
+					}
+				}
+				String moduleId = getModuleId(build);
+				moduleStorageCoordinator.upload(shortName, moduleId, build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFile, md5File);
+				moduleStorageCoordinatorCache.clearCachedReleases();
+			} finally {
+				org.apache.commons.io.FileUtils.forceDelete(releaseFile);
+				if (md5File != null) {
+					org.apache.commons.io.FileUtils.forceDelete(md5File);
+				}
 			}
-			String moduleId = getModuleId(build);
-			moduleStorageCoordinator.upload(shortName, moduleId, build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFile, md5File);
-		} finally {
-			org.apache.commons.io.FileUtils.forceDelete(releaseFile);
-			if (md5File != null) {
-				org.apache.commons.io.FileUtils.forceDelete(md5File);
-			}
+		} catch (Exception e) {
+			String message = String.format("Cannot upload to versioned content bucket. Error message: %s", e.getMessage());
+			warnings.add(message);
+			LOGGER.error(message);
+			throw new BusinessServiceException(message, e);
 		}
 	}
 
@@ -311,34 +309,40 @@ public class PublishServiceImpl implements PublishService {
 
 
 
-	private void validateReleaseFile(Build build, String publishFilePath) throws EntityAlreadyExistsException {
+	private void validateReleaseFile(Build build, String publishFilePath, List<String> errors) throws EntityAlreadyExistsException {
 		// verify if the published file already exists for this product
 		if (srsFileHelper.exists(publishFilePath)) {
 			String errorMessage = publishFilePath + " has already been published for Release Center " + build.getReleaseCenterKey() + " (" + build.getCreationTime() + ")";
-			concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), errorMessage));
+			errors.add(errorMessage);
 			throw new EntityAlreadyExistsException(errorMessage);
 		}
 	}
 
-	private void publishComponentIds(Build build, String releaseFileName) throws BusinessServiceException {
+	private void publishComponentIds(Build build, String releaseFileName, List<String> errors, List<String> warnings) throws BusinessServiceException {
 		try {
 			LOGGER.info("Start publishing component ids for product {}  with build id {} ", build.getProductKey(), build.getId());
 			String buildOutputDir = s3PathHelper.getBuildOutputFilesPath(build).toString();
 			boolean isBetaRelease = build.getConfiguration().isBetaRelease();
-			publishComponentIds(srsFileHelper, buildOutputDir, isBetaRelease, releaseFileName);
+			publishComponentIds(srsFileHelper, buildOutputDir, isBetaRelease, releaseFileName, warnings);
 			LOGGER.info("End publishing component ids for product {}  with build id {} ", build.getProductKey(), build.getId());
 		} catch (Exception e) {
-			concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.FAILED.name(), "Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage()));
+			errors.add("Failed to publish build " + build.getUniqueId() + ". Error message: " + e.getMessage());
 			throw e;
 		}
 	}
 
-	private void copyReleaseFileToPublishedAndVersionedDirectory(Build build, String env, String releaseFileName, String publishFilePath) throws IOException, DecoderException, BusinessServiceException {
-		String outputFileFullPath = s3PathHelper.getBuildOutputFilePath(build, releaseFileName);
-		srsFileHelper.copyFile(outputFileFullPath, publishFilePath);
-		LOGGER.info("Release file: {} is copied to the published path: {}", releaseFileName, publishFilePath);
-		publishExtractedVersionOfPackage(publishFilePath, srsFileHelper.getFileStream(publishFilePath));
-		copyBuildToVersionedContentsStore(outputFileFullPath, releaseFileName, env);
+	private void copyReleaseFileToPublishedAndVersionedDirectory(Build build, String env, String releaseFileName, String publishFilePath, List<String> errors) throws IOException, DecoderException, BusinessServiceException {
+		try {
+			String outputFileFullPath = s3PathHelper.getBuildOutputFilePath(build, releaseFileName);
+			srsFileHelper.copyFile(outputFileFullPath, publishFilePath);
+			LOGGER.info("Release file: {} is copied to the published path: {}", releaseFileName, publishFilePath);
+			buildDao.addTag(build, Build.Tag.PUBLISHED);
+			publishExtractedVersionOfPackage(publishFilePath, srsFileHelper.getFileStream(publishFilePath));
+			copyBuildToVersionedContentsStore(outputFileFullPath, releaseFileName, env);
+		} catch (Exception e) {
+			errors.add(e.getMessage());
+			throw e;
+		}
 	}
 
 	private void copyMd5FileToPublishedDirectory(Build build, String md5FileName) {
@@ -348,7 +352,7 @@ public class PublishServiceImpl implements PublishService {
 		LOGGER.info("MD5 file: {} is copied to the published path: {}", md5FileName, target);
 	}
 
-	private void updateCodeSystemVersion(Build build, String releaseFileName) throws BusinessServiceException {
+	private void updateCodeSystemVersion(Build build, String releaseFileName, List<String> warnings) throws BusinessServiceException {
 		try {
 			List<CodeSystem> codeSystems = termServerService.getCodeSystems();
 			ReleaseCenter releaseCenter = releaseCenterDAO.find(build.getReleaseCenterKey());
@@ -361,7 +365,7 @@ public class PublishServiceImpl implements PublishService {
 				termServerService.updateCodeSystemVersionPackage(codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
 			}
 		} catch (Exception e) {
-			concurrentPublishingBuildStatus.put(getBuildUniqueKey(build), new ProcessingStatus(Status.COMPLETED.name(), "The build has been published successfully but failed to update Code System Version Package.  Error message: " + e.getMessage()));
+			warnings.add("The build has been published successfully but failed to update Code System Version Package.  Error message: " + e.getMessage());
 			throw new BusinessServiceException("Failed to update Code System Version Package", e);
 		}
 	}
@@ -402,7 +406,7 @@ public class PublishServiceImpl implements PublishService {
 					boolean isBetaRelease = originalFilename.startsWith(RF2Constants.BETA_RELEASE_PREFIX);
 					String publishFileExtractedDir = publishFilePath.replace(".zip", "/");
 					LOGGER.info("Start publishing component ids for published file {} ", originalFilename);
-					publishComponentIds(srsFileHelper, publishFileExtractedDir, isBetaRelease, originalFilename);
+					publishComponentIds(srsFileHelper, publishFileExtractedDir, isBetaRelease, originalFilename, new ArrayList<>());
 					LOGGER.info("End publishing component ids for published file {} ", originalFilename);
 				}
 			}
@@ -466,7 +470,7 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	
-	private void publishComponentIds(FileHelper fileHelper, String fileRootPath, boolean isBetaRelease, String releaseFileName) throws BusinessServiceException {
+	private void publishComponentIds(FileHelper fileHelper, String fileRootPath, boolean isBetaRelease, String releaseFileName, List<String> warnings) throws BusinessServiceException {
 		try {
 			try {
 				idRestClient.logIn();
@@ -490,7 +494,7 @@ public class PublishServiceImpl implements PublishService {
 							try {
 								ComponentType type = schemaFactory.createSchemaBean(filenameToCheck).getComponentType();
 								if (ComponentType.REFSET != type && ComponentType.IDENTIFIER != type) {
-									publishSctIds(fileHelper.getFileStream(fileRootPath + fileName), fileName, releaseFileName);
+									publishSctIds(fileHelper.getFileStream(fileRootPath + fileName), fileName, releaseFileName, warnings);
 								}
 							} catch (IOException | RestClientException | FileRecognitionException e) {
 								throw new BusinessServiceException("Failed to publish SctIDs for file:" + fileName, e);
@@ -561,9 +565,9 @@ public class PublishServiceImpl implements PublishService {
 					List<String> idsAssigned = new ArrayList<>();
 					for (String id : idStatusMap.keySet()) {
 						String status = idStatusMap.get(id);
-						if (IdServiceRestClient.ID_STATUS.ASSIGNED.getName().equals(status)) {
+						if (IdServiceRestClient.ID_STATUS.ASSIGNED.getName().equalsIgnoreCase(status)) {
 							idsAssigned.add(id);
-						} else if (IdServiceRestClient.ID_STATUS.PUBLISHED.getName().equals(status)) {
+						} else if (IdServiceRestClient.ID_STATUS.PUBLISHED.getName().equalsIgnoreCase(status)) {
 							publishedIdCounter++;
 						}
 					}
@@ -579,13 +583,15 @@ public class PublishServiceImpl implements PublishService {
 		}
 	}
 
-	private void publishSctIds(InputStream inputFileStream, String filename, String buildId) throws IOException, RestClientException {
+	private void publishSctIds(InputStream inputFileStream, String filename, String buildId, List<String> warnings) throws IOException, RestClientException {
 		Set<Long> sctIds = getSctIdsFromFile(inputFileStream);
 		List<Long> batchJob = null;
 		int counter = 0;
 		int publishedAlreadyCounter = 0;
 		int assignedStatusCounter = 0;
+		int deprecatedStatusCounter = 0;
 		int availableStatusCounter = 0;
+		List<Long> deprecatedIds = new ArrayList<>();
 		List<Long> otherStatusIds = new ArrayList<>();
 		for (Long id : sctIds) {
 			if (batchJob == null) {
@@ -602,14 +608,18 @@ public class PublishServiceImpl implements PublishService {
 				List<Long> availableIds = new ArrayList<>();
 				for (Long sctId : batchJob) {
 					String status = sctIdStatusMap.get(sctId);
-					if (IdServiceRestClient.ID_STATUS.ASSIGNED.getName().equals(status)) {
+					if (IdServiceRestClient.ID_STATUS.ASSIGNED.getName().equalsIgnoreCase(status)) {
 						assignedStatusCounter++;
 						assignedIds.add(sctId);
-					} else if (IdServiceRestClient.ID_STATUS.PUBLISHED.getName().equals(status)) {
+					} else if (IdServiceRestClient.ID_STATUS.PUBLISHED.getName().equalsIgnoreCase(status)) {
 						publishedAlreadyCounter++;
-					} else if (IdServiceRestClient.ID_STATUS.AVAILABLE.getName().equals(status)){
+					} else if (IdServiceRestClient.ID_STATUS.AVAILABLE.getName().equalsIgnoreCase(status)
+							|| IdServiceRestClient.ID_STATUS.RESERVED.getName().equalsIgnoreCase(status)) {
 						availableStatusCounter++;
 						availableIds.add(sctId);
+					} else if (IdServiceRestClient.ID_STATUS.DEPRECATED.getName().equalsIgnoreCase(status)) {
+						deprecatedStatusCounter++;
+						deprecatedIds.add(sctId);
 					} else {
 						otherStatusIds.add(sctId);
 					}
@@ -631,15 +641,24 @@ public class PublishServiceImpl implements PublishService {
 						StringBuilder msgBuilder = new StringBuilder("the following SctIds are available but cannot be assigned or published:");
 						int firstNCount = Math.min(availableIds.size(), MAX_FAILURE);
 						msgBuilder.append(availableIds.subList(0, firstNCount).stream().map(String::valueOf).collect(Collectors.joining(",")));
-						LOGGER.warn("Total ids are available but cannot be assigned or published {} in file {} for example: {} ", availableIds.size(), filename, msgBuilder);
+						LOGGER.warn("Total ids are available but cannot be moved to assigned or published {} in file {} for example: {} ", availableIds.size(), filename, msgBuilder);
 					}
 				}
 				batchJob = null;
 			}
 		}
-		LOGGER.info("Found total sctIds {} in file {} with available status {},  assigned status {} , published status {} and other status {}",
-				sctIds.size(), filename, availableStatusCounter, assignedStatusCounter, publishedAlreadyCounter, otherStatusIds.size());
+
+		LOGGER.info("Found total sctIds {} in file {} with available status {}, deprecated status {},  assigned status {} , published status {} and other status {}",
+				sctIds.size(), filename, availableStatusCounter, deprecatedStatusCounter, assignedStatusCounter, publishedAlreadyCounter, otherStatusIds.size());
+		if (!deprecatedIds.isEmpty()) {
+			warnings.add("Some SCTIDs have been deprecated in file " + filename + ". Therefore they can not be published. Please check the log file for more information");
+			StringBuilder msgBuilder = new StringBuilder("the following SctIds are deprecated status:");
+			int firstNCount = Math.min(deprecatedIds.size(), MAX_FAILURE);
+			msgBuilder.append(deprecatedIds.subList(0, firstNCount).stream().map(String::valueOf).collect(Collectors.joining(",")));
+			LOGGER.warn("Total ids have not been deprecated {} in file {} for example: {} ", deprecatedIds.size(), filename, msgBuilder);
+		}
 		if (!otherStatusIds.isEmpty()) {
+			warnings.add("Some SCTIDs are not in available or assigned or published or deprecated statuses in file " + filename + ". Therefore they can not be published. Please check the log file for more information");
 			StringBuilder msgBuilder = new StringBuilder("the following SctIds are not in available or assigned or published status:");
 			int firstNCount = Math.min(otherStatusIds.size(), MAX_FAILURE);
 			msgBuilder.append(otherStatusIds.subList(0, firstNCount).stream().map(String::valueOf).collect(Collectors.joining(",")));
