@@ -37,6 +37,8 @@ public class RF2ClassificationService {
 
 	private static final String OWL_REFSET_FILE_PATTERN = ".*_sRefset_OWL.*";
 
+	private static final String MDOULE_DEPENDENCY_FILE_PATTERN = ".*_ModuleDependency_.*Delta.*";
+
 	private static final String MRCM_ATTRIBUTE_DOMAIN_DELTA = ".*_cissccRefset_MRCMAttributeDomainDelta";
 
 	private static final String CONCEPT_PATTERN = ".*_Concept_.*Delta.*";
@@ -176,9 +178,10 @@ public class RF2ClassificationService {
 		return errorMessageBuilder.toString();
 	}
 
+	@SuppressWarnings("java:S5852")
 	private boolean isRequiredFileForClassification(String filename) {
 		return filename.matches(CONCEPT_PATTERN) || filename.matches(STATED_RELATIONSHIP_PATTERN) || filename.matches(RELATIONSHIP_PATTERN)
-				|| filename.contains(MRCM_ATTRIBUTE_DOMAIN_DELTA) || filename.matches(OWL_REFSET_FILE_PATTERN);
+				|| filename.contains(MRCM_ATTRIBUTE_DOMAIN_DELTA) || filename.matches(OWL_REFSET_FILE_PATTERN) || filename.matches(MDOULE_DEPENDENCY_FILE_PATTERN);
 	}
 
 }
