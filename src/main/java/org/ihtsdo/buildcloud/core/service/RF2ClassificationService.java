@@ -48,6 +48,8 @@ public class RF2ClassificationService {
 
 	private static final String REFSET = "Refset_";
 
+	private static final String MODULE_DEPENDENCY_FILE_PATTERN = ".*_ModuleDependency_.*Delta.*";
+
 	public static final String EQUIVALENT_CONCEPT_REFSET = "der2_sRefset_EquivalentConceptSimpleMapDelta";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RF2ClassificationService.class);
@@ -178,7 +180,7 @@ public class RF2ClassificationService {
 
 	private boolean isRequiredFileForClassification(String filename) {
 		return filename.matches(CONCEPT_PATTERN) || filename.matches(STATED_RELATIONSHIP_PATTERN) || filename.matches(RELATIONSHIP_PATTERN)
-				|| filename.contains(MRCM_ATTRIBUTE_DOMAIN_DELTA) || filename.matches(OWL_REFSET_FILE_PATTERN);
+				|| filename.contains(MRCM_ATTRIBUTE_DOMAIN_DELTA) || filename.matches(OWL_REFSET_FILE_PATTERN) || filename.matches(MODULE_DEPENDENCY_FILE_PATTERN);
 	}
 
 }
