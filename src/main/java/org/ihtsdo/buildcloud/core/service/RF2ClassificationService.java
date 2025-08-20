@@ -37,7 +37,7 @@ public class RF2ClassificationService {
 
 	private static final String OWL_REFSET_FILE_PATTERN = ".*_sRefset_OWL.*";
 
-	private static final String MDOULE_DEPENDENCY_FILE_PATTERN = ".*_ModuleDependency_.*Delta.*";
+	private static final String MDOULE_DEPENDENCY_FILE_PATTERN = ".*_ModuleDependency.*Delta.*";
 
 	private static final String MRCM_ATTRIBUTE_DOMAIN_DELTA = ".*_cissccRefset_MRCMAttributeDomainDelta";
 
