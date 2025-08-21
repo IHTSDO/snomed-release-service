@@ -812,8 +812,7 @@ public class BuildServiceImpl implements BuildService {
 		try {
 			RF2Service rf2Service = new RF2Service();
 			Set<RF2Row> mdrsRows = rf2Service.getMDRS(rf2DeltaZipFile, true);
-			Set<String> uniqueModuleIds = rf2Service.getUniqueModuleIds(rf2DeltaZipFile, true);
-			Set<ModuleMetadata> dependencies = moduleStorageCoordinator.getRequiredDependencies(mdrsRows, uniqueModuleIds, true);
+			Set<ModuleMetadata> dependencies = moduleStorageCoordinator.getDependencies(mdrsRows,  true);
 			File extractedDirectory = null;
 			if (!dependencies.isEmpty()) {
 				int index = 0;
@@ -823,6 +822,9 @@ public class BuildServiceImpl implements BuildService {
 					if (index == 0) {
 						extractedDirectory = Files.createTempDirectory("temp-rf2-unzip").toFile();
 						ZipFileUtils.extractFilesFromZipToOneFolder(dependencyFile, extractedDirectory.getAbsolutePath());
+						LOGGER.info("Dependency {} found from Module Storage Coordinator", dependency.getFilename());
+					} else {
+						LOGGER.info("Other dependency {} found from Module Storage Coordinator", dependency.getFilename());
 					}
 					index++;
 					Files.delete(dependencyFile.toPath());
