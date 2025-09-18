@@ -10,6 +10,7 @@ import liquibase.integration.spring.SpringLiquibase;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.hibernate.SessionFactory;
+import org.ihtsdo.buildcloud.jira.JiraCloudClient;
 import org.ihtsdo.otf.dao.s3.OfflineS3ClientImpl;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.S3ClientFactory;
@@ -210,6 +211,11 @@ public abstract class Config extends BaseConfiguration {
 	@Bean
 	public ActiveMQTextMessage buildStatusTextMessage(@Value("${srs.jms.queue.prefix}.build-job-status") final String queue) throws JMSException {
 		return getActiveMQTextMessage(queue);
+	}
+
+	@Bean
+	public JiraCloudClient jiraCloudClient(@Value("${jira.cloud.base-url}") String baseUrl, @Value("${jira.cloud.username}") String email, @Value("${jira.cloud.api-token}") String apiToken) {
+		return new JiraCloudClient(baseUrl, email, apiToken);
 	}
 
 	@Bean

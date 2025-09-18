@@ -2,7 +2,8 @@ package org.ihtsdo.buildcloud.rest.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import net.rcarz.jiraclient.JiraException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.QATestConfig;
@@ -41,8 +42,6 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -634,7 +633,7 @@ public class BuildController {
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@Operation(summary = "Generate Jira issues for the RVF failures")
 	public ResponseEntity<Map<String, List<RVFFailureJiraAssociation>>>  createRVFFailureJiraAssociations(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-											  @PathVariable final String buildId, @RequestBody String[] assertionIds) throws BusinessServiceException, IOException, JiraException {
+											  @PathVariable final String buildId, @RequestBody String[] assertionIds) throws BusinessServiceException, IOException {
 		return new ResponseEntity<>(rvfFailureJiraAssociationService.createFailureJiraAssociations(releaseCenterKey, productKey, buildId, assertionIds), HttpStatus.CREATED);
 	}
 

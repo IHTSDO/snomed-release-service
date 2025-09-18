@@ -6,15 +6,13 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import net.rcarz.jiraclient.Field;
-import net.rcarz.jiraclient.Issue;
-import net.rcarz.jiraclient.JiraClient;
-import net.rcarz.jiraclient.JiraException;
+import net.sf.json.JSONObject;
 import org.ihtsdo.buildcloud.core.dao.RVFFailureJiraAssociationDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.RVFFailureJiraAssociation;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
-import org.ihtsdo.buildcloud.jira.ImpersonatingJiraClientFactory;
+import org.ihtsdo.buildcloud.jira.JiraCloudClient;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.sso.integration.SecurityUtil;
 import org.slf4j.Logger;
@@ -42,21 +40,20 @@ import java.util.regex.Pattern;
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
 public class RVFFailureJiraAssociationService {
 
+	public static final String VALUE = "value";
+	public static final String ACCOUNT_ID = "accountId";
 	private static Logger logger = LoggerFactory.getLogger(RVFFailureJiraAssociationService.class);
 
 	@Autowired
-	private ImpersonatingJiraClientFactory jiraClientFactory;
+	private JiraCloudClient jiraCloudClient;
 
-	@Value("${jira.url}")
-	private String jiraUrl;
-
-	@Value("${jira.project}")
+	@Value("${jira.cloud.project-key}")
 	private String project;
 
 	@Value("${jira.issueType}")
 	private String issueType;
 
-	@Value("${jira.ticket.assignee}")
+	@Value("${jira.cloud.assignee-accountid}")
 	private String assignee;
 
 	@Value("${jira.ticket.customField.product.release.date}")
@@ -76,6 +73,9 @@ public class RVFFailureJiraAssociationService {
 
 	@Value("${jira.ticket.customField.snomedct.product}")
 	private String snomedCtProduct;
+
+	@Value("${jira.cloud.reporter-accountid}")
+	private String reporter;
 
 	@Autowired
 	private RVFFailureJiraAssociationDAO rvfFailureJiraAssociationDAO;
@@ -104,7 +104,7 @@ public class RVFFailureJiraAssociationService {
 		return rvfFailureJiraAssociationDAO.findByBuildKey(centerKey, productKey, buildKey);
 	}
 
-	public Map<String, List<RVFFailureJiraAssociation>> createFailureJiraAssociations(String centerKey, String productKey, String buildKey, String[] assertionIds) throws BusinessServiceException, IOException, JiraException {
+	public Map<String, List<RVFFailureJiraAssociation>> createFailureJiraAssociations(String centerKey, String productKey, String buildKey, String[] assertionIds) throws BusinessServiceException, IOException {
 		if (assertionIds.length == 0) {
 			throw new IllegalArgumentException("Assertion IDs must not be empty");
 		}
@@ -140,20 +140,18 @@ public class RVFFailureJiraAssociationService {
 		List<ValidationReport.RvfValidationResult.TestResult.TestRunItem> assertionsFailedAndWarning = getAllAssertions(report);
 		for (String assertionId : validAssertionIds) {
 			ValidationReport.RvfValidationResult.TestResult.TestRunItem found = assertionsFailedAndWarning.stream().filter(item -> item.getAssertionUuid() != null && item.getAssertionUuid().equals(assertionId)).findAny().orElse(null);
-			if (found != null) {
-				Issue jiraIssue = createJiraIssue(generateSummary(product, build, found), generateDescription(build, found));
-				final RVFFailureJiraAssociation association = new RVFFailureJiraAssociation(product.getReleaseCenter(), product, buildKey, build.getConfiguration().getEffectiveTime(), found.getAssertionUuid(), jiraUrl + "browse/" + jiraIssue.getKey());
-				rvfFailureJiraAssociationDAO.save(association);
-				associations.add(association);
-
-				// Add attachment and update JIRA custom fields
-				Issue.NewAttachment[] attachments = new Issue.NewAttachment[1];
-				attachments[0] = new Issue.NewAttachment(found.getAssertionUuid() + ".json", getPrettyString(found.toString()).getBytes());
-				jiraIssue.addAttachments(attachments);
-				updateJiraIssue(product, build.getConfiguration().getEffectiveTimeFormatted(), jiraIssue);
-			} else {
+			if (found == null) {
 				logger.error("No failure found for the assertion {} for the build {}", assertionId, build.getId());
+				continue;
 			}
+			String issueKey = createJiraIssue(generateSummary(product, build, found), generateDescription(build, found));
+			final RVFFailureJiraAssociation association = new RVFFailureJiraAssociation(product.getReleaseCenter(), product, buildKey, build.getConfiguration().getEffectiveTime(), found.getAssertionUuid(), jiraCloudClient.getBaseUrl() + "browse/" + issueKey);
+			rvfFailureJiraAssociationDAO.save(association);
+			associations.add(association);
+
+			// Add attachment and update JIRA custom fields
+			jiraCloudClient.addAttachment(issueKey, found.getAssertionUuid() + ".json", getPrettyString(found.toString()).getBytes());
+			updateJiraIssue(product, build.getConfiguration().getEffectiveTimeFormatted(), issueKey);
 		}
 		Map<String, List<RVFFailureJiraAssociation>> result = new HashMap<>();
 		result.put("newlyCreatedRVFFailureJiraAssociations", associations);
@@ -212,39 +210,44 @@ public class RVFFailureJiraAssociationService {
 		return assertionsFailedAndWarning;
 	}
 
-	private Issue createJiraIssue(String summary, String description) throws BusinessServiceException {
-		Issue jiraIssue;
+	private String createJiraIssue(String summary, String description) throws BusinessServiceException {
 		try {
-			jiraIssue = getJiraClient().createIssue(project, issueType)
-					.field(Field.SUMMARY, summary)
-					.field(Field.DESCRIPTION, description)
-					.field(Field.ASSIGNEE, getUsername())
-					.execute();
-
-		} catch (JiraException e) {
-			logger.error(e.getMessage());
+			JSONObject issue = jiraCloudClient.createIssue(project, summary, description, issueType, reporter);
+			String issueKey = issue.getString("key");
+			logger.info("New JIRA ticket with key {} has been created", issueKey);
+			return issueKey;
+		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to create Jira ticket. Error: " + extractJiraException(e.getCause() != null ? e.getCause().getMessage() : e.getMessage()), e);
 		}
-		return jiraIssue;
 	}
 
-	private void updateJiraIssue(Product product, String releaseDate, Issue jiraIssue) throws BusinessServiceException {
+	private void updateJiraIssue(Product product, String releaseDate, String issueKey) throws BusinessServiceException {
 		ReleaseCenter releaseCenter = product.getReleaseCenter();
 		try {
-			final Issue.FluentUpdate updateRequest = jiraIssue.update();
-			updateRequest.field(productReleaseDate, releaseDate);
-			updateRequest.field(reportingEntity, Collections.singletonList(reportingEntityDefaultValue));
-			updateRequest.field(reportingStage, Collections.singletonList(reportingStageDefaultValue));
+			JSONObject issueFields = new JSONObject();
+			issueFields.put(productReleaseDate, releaseDate);
+
+			JSONObject reportingEntityField = new JSONObject();
+			reportingEntityField.put(VALUE, reportingEntityDefaultValue);
+			issueFields.put(reportingEntity, reportingEntityField);
+
+			JSONObject reportingStageField = new JSONObject();
+			reportingStageField.put(VALUE, reportingStageDefaultValue);
+			issueFields.put(reportingStage, Collections.singletonList(reportingStageField));
+
 			if (StringUtils.hasLength(assignee)) {
-				updateRequest.field(Field.ASSIGNEE, assignee);
+				JSONObject assigneeField = new JSONObject();
+				assigneeField.put(ACCOUNT_ID, assignee);
+				issueFields.put(Field.ASSIGNEE, assigneeField);
 			}
 			String snomedCtProductValue = StringUtils.hasLength(product.getOverriddenSnomedCtProduct()) ? product.getOverriddenSnomedCtProduct() : releaseCenter.getSnomedCtProduct();
 			if (StringUtils.hasLength(snomedCtProductValue)) {
-				updateRequest.field(snomedCtProduct, List.of(snomedCtProductValue.trim()));
+				JSONObject snomedCtProductField = new JSONObject();
+				snomedCtProductField.put(VALUE, snomedCtProductValue.trim());
+				issueFields.put(snomedCtProduct, snomedCtProductField);
 			}
-			updateRequest.execute();
-		} catch (JiraException e) {
-			logger.error(e.getMessage());
+			jiraCloudClient.updateIssue(issueKey, issueFields);
+		} catch (IOException e) {
 			throw new BusinessServiceException("Jira ticket has been created successfully but failed to update. Error: " + extractJiraException(e.getCause() != null ? e.getCause().getMessage() : e.getMessage()), e);
 		}
 	}
@@ -282,14 +285,6 @@ public class RVFFailureJiraAssociationService {
 
 		ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().failOnUnknownProperties(false).build();
 		return objectMapper.readValue(validationReportString, ValidationReport.class);
-	}
-
-	private JiraClient getJiraClient() {
-		return jiraClientFactory.getImpersonatingInstance(getUsername());
-	}
-
-	private String getUsername() {
-		return SecurityUtil.getUsername();
 	}
 
 	private static final class ValidationReport {
