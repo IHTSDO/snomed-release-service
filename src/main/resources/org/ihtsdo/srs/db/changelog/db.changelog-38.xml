@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+   <changeSet id="202509222" author="QLY">
+      <modifyDataType tableName="build_config" columnName="remove_rf2_files" newDataType="MEDIUMTEXT"/>
+      <modifyDataType tableName="build_config" columnName="rf2_input_files" newDataType="MEDIUMTEXT"/>
+   </changeSet>
+</databaseChangeLog>
