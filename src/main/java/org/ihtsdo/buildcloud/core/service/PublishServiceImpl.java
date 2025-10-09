@@ -29,6 +29,7 @@ import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.snomed.module.storage.ModuleMetadata;
 import org.snomed.module.storage.ModuleStorageCoordinator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -437,6 +438,25 @@ public class PublishServiceImpl implements PublishService {
 			exists = srsFileHelper.exists(path);
 		}
 		return exists;
+	}
+
+	/**
+	 * Checks if a release file exists in the Module Storage Coordinator (MSC).
+	 *
+	 * @param releasePackage the name of the release file to check for existence
+	 * @return true if the release file exists in MSC, false otherwise
+	 */
+	public boolean isReleaseFileExistInMSC(String releasePackage) {
+		try {
+			// Get all releases from MSC
+			Map<String, List<ModuleMetadata>> allReleasesMap = moduleStorageCoordinatorCache.getAllReleases();
+			List<ModuleMetadata> allModuleMetadata = new ArrayList<>();
+			allReleasesMap.values().forEach(allModuleMetadata::addAll);
+			return allModuleMetadata.stream().anyMatch(item -> item.getFilename().equals(releasePackage));
+		} catch (Exception e) {
+			LOGGER.error("Error checking release file existence in MSC: {}", e.getMessage());
+			return false;
+		}
 	}
 
 	// Publish extracted entries in a directory of the same name

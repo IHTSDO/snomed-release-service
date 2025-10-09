@@ -16,7 +16,6 @@ import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystemVersion;
 import org.ihtsdo.otf.rest.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.snomed.module.storage.ModuleMetadata;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -66,6 +65,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 	@Value("${srs.build.offlineMode}")
 	private Boolean offlineMode;
+
+	@Value("${srs.empty-release-file}")
+	private String emptyRf2Filename;
 
 	@Autowired
 	public ProductServiceImpl(final ProductDAO dao) {
@@ -207,7 +209,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 				propertyValues.put(MODULE_IDS, String.join(",", modules));
 			}
 
-			if (metaData.containsKey(PREVIOUS_PACKAGE)) {
+			if (metaData.containsKey(PREVIOUS_PACKAGE) && !emptyRf2Filename.equals(metaData.get(PREVIOUS_PACKAGE).toString())) {
 				propertyValues.put(PREVIOUS_PUBLISHED_PACKAGE, metaData.get(PREVIOUS_PACKAGE).toString());
 			}
 			else {
@@ -466,7 +468,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 				boolean pppExists = false;
 				Exception rootCause = new Exception("No further information");
 				try {
-					pppExists = isReleaseFileExistInMSC(pPP);
+					pppExists = publishService.isReleaseFileExistInMSC(pPP);
 					if (!pppExists) {
 						pppExists = publishService.exists(releaseCenter, pPP);
 					}
@@ -569,7 +571,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 				boolean pppExists = false;
 				Exception rootCause = new Exception("No further information");
 				try {
-					pppExists = isReleaseFileExistInMSC(dependencyPackageRelease);
+					pppExists = publishService.isReleaseFileExistInMSC(dependencyPackageRelease);
 					if (!pppExists) {
 						pppExists = publishService.exists(releaseCenter, dependencyPackageRelease);
 					}
@@ -582,25 +584,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 					throw new ResourceNotFoundException("Could not find dependency release package: " + dependencyPackageRelease, rootCause);
 				}
 			}
-		}
-	}
-
-	/**
-	 * Checks if a release file exists in the Module Storage Coordinator (MSC).
-	 *
-	 * @param releasePackage the name of the release file to check for existence
-	 * @return true if the release file exists in MSC, false otherwise
-	 */
-	private boolean isReleaseFileExistInMSC(String releasePackage) {
-		try {
-			// Get all releases from MSC
-			Map<String, List<ModuleMetadata>> allReleasesMap = moduleStorageCoordinatorCache.getAllReleases();
-			List<ModuleMetadata> allModuleMetadata = new ArrayList<>();
-			allReleasesMap.values().forEach(allModuleMetadata::addAll);
-			return allModuleMetadata.stream().anyMatch(item -> item.getFilename().equals(releasePackage));
-		} catch (Exception e) {
-			LOGGER.error("Error checking release file existence in MSC: {}", e.getMessage());
-            return false;
 		}
 	}
 

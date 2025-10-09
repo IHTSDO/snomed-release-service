@@ -85,6 +85,9 @@ public class ReleaseBuildManager {
 	@Value("${srs.manager}")
 	private boolean isSrsManager;
 
+	@Value("${srs.empty-release-file}")
+	private String emptyRf2Filename;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReleaseBuildManager.class);
 
 	@PostConstruct
@@ -187,7 +190,7 @@ public class ReleaseBuildManager {
 				throw new BadRequestException("Readme End Date must not be empty.");
 			}
 
-			if (StringUtils.hasLength(configuration.getPreviousPublishedPackage()) && !publishService.exists(releaseCenter, configuration.getPreviousPublishedPackage())) {
+			if (StringUtils.hasLength(configuration.getPreviousPublishedPackage()) && !emptyRf2Filename.equals(configuration.getPreviousPublishedPackage()) && !publishService.isReleaseFileExistInMSC(configuration.getPreviousPublishedPackage()) && !publishService.exists(releaseCenter, configuration.getPreviousPublishedPackage())) {
 				throw new ResourceNotFoundException("Could not find previously published package: " + configuration.getPreviousPublishedPackage());
 			}
 
