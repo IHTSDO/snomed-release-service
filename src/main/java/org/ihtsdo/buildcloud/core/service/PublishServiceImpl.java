@@ -611,7 +611,6 @@ public class PublishServiceImpl implements PublishService {
 		int assignedStatusCounter = 0;
 		int deprecatedStatusCounter = 0;
 		int availableStatusCounter = 0;
-		List<Long> deprecatedIds = new ArrayList<>();
 		List<Long> otherStatusIds = new ArrayList<>();
 		for (Long id : sctIds) {
 			if (batchJob == null) {
@@ -625,7 +624,7 @@ public class PublishServiceImpl implements PublishService {
 					LOGGER.warn("Total sctids reqeusted {} but total status returned {}", batchJob.size(),sctIdStatusMap.size());
 				}
 				List<Long> assignedIds = new ArrayList<>();
-				List<Long> availableIds = new ArrayList<>();
+				List<Long> availableOrReservedIds = new ArrayList<>();
 				for (Long sctId : batchJob) {
 					String status = sctIdStatusMap.get(sctId);
 					if (IdServiceRestClient.ID_STATUS.ASSIGNED.getName().equalsIgnoreCase(status)) {
@@ -636,10 +635,9 @@ public class PublishServiceImpl implements PublishService {
 					} else if (IdServiceRestClient.ID_STATUS.AVAILABLE.getName().equalsIgnoreCase(status)
 							|| IdServiceRestClient.ID_STATUS.RESERVED.getName().equalsIgnoreCase(status)) {
 						availableStatusCounter++;
-						availableIds.add(sctId);
+						availableOrReservedIds.add(sctId);
 					} else if (IdServiceRestClient.ID_STATUS.DEPRECATED.getName().equalsIgnoreCase(status)) {
 						deprecatedStatusCounter++;
-						deprecatedIds.add(sctId);
 					} else {
 						otherStatusIds.add(sctId);
 					}
@@ -647,21 +645,21 @@ public class PublishServiceImpl implements PublishService {
 				if (!assignedIds.isEmpty()) {
 					processPublishSctids(filename, buildId, assignedIds);
 				}
-				if (!availableIds.isEmpty()) {
-					Map<String,List<Long>> sctIdsByNamespaceMap = groupSctIdsByNamespace(availableIds);
+				if (!availableOrReservedIds.isEmpty()) {
+					Map<String,List<Long>> sctIdsByNamespaceMap = groupSctIdsByNamespace(availableOrReservedIds);
 					List<Long> registeredSctids = new ArrayList<>();
 					for (Map.Entry<String,List<Long>> entry : sctIdsByNamespaceMap.entrySet()) {
 						registeredSctids.addAll(idRestClient.registerSctIds(entry.getValue(), null, Integer.valueOf(entry.getKey()), buildId));
 					}
 					if (!registeredSctids.isEmpty()) {
 						List<Long> succeedSctids = processPublishSctids(filename, buildId, registeredSctids);
-						availableIds.removeAll(succeedSctids);
+						availableOrReservedIds.removeAll(succeedSctids);
 					}
-					if (!availableIds.isEmpty()) {
-						StringBuilder msgBuilder = new StringBuilder("the following SctIds are available but cannot be assigned or published:");
-						int firstNCount = Math.min(availableIds.size(), MAX_FAILURE);
-						msgBuilder.append(availableIds.subList(0, firstNCount).stream().map(String::valueOf).collect(Collectors.joining(",")));
-						LOGGER.warn("Total ids are available but cannot be moved to assigned or published {} in file {} for example: {} ", availableIds.size(), filename, msgBuilder);
+					if (!availableOrReservedIds.isEmpty()) {
+						StringBuilder msgBuilder = new StringBuilder("the following SctIds are available but cannot be assigned and published:");
+						int firstNCount = Math.min(availableOrReservedIds.size(), MAX_FAILURE);
+						msgBuilder.append(availableOrReservedIds.subList(0, firstNCount).stream().map(String::valueOf).collect(Collectors.joining(",")));
+						LOGGER.warn("Total ids are available but cannot be moved to assigned and published {} in file {} for example: {} ", availableOrReservedIds.size(), filename, msgBuilder);
 					}
 				}
 				batchJob = null;
@@ -670,13 +668,6 @@ public class PublishServiceImpl implements PublishService {
 
 		LOGGER.info("Found total sctIds {} in file {} with available status {}, deprecated status {},  assigned status {} , published status {} and other status {}",
 				sctIds.size(), filename, availableStatusCounter, deprecatedStatusCounter, assignedStatusCounter, publishedAlreadyCounter, otherStatusIds.size());
-		if (!deprecatedIds.isEmpty()) {
-			warnings.add("Some SCTIDs have been deprecated in file " + filename + ". Therefore they can not be published. Please check the log file for more information");
-			StringBuilder msgBuilder = new StringBuilder("the following SctIds are deprecated status:");
-			int firstNCount = Math.min(deprecatedIds.size(), MAX_FAILURE);
-			msgBuilder.append(deprecatedIds.subList(0, firstNCount).stream().map(String::valueOf).collect(Collectors.joining(",")));
-			LOGGER.warn("Total ids have not been deprecated {} in file {} for example: {} ", deprecatedIds.size(), filename, msgBuilder);
-		}
 		if (!otherStatusIds.isEmpty()) {
 			warnings.add("Some SCTIDs are not in available or assigned or published or deprecated statuses in file " + filename + ". Therefore they can not be published. Please check the log file for more information");
 			StringBuilder msgBuilder = new StringBuilder("the following SctIds are not in available or assigned or published status:");
