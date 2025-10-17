@@ -79,7 +79,7 @@ public class BuildController {
 
 	@Operation(summary = "Re-initialise")
 	@RequestMapping(value = "/builds/initialise", method = RequestMethod.GET)
-	public ResponseEntity<Void> initialise() throws BusinessServiceException {
+	public ResponseEntity<Void> initialise() {
 		releaseBuildManager.initialise();
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
@@ -335,7 +335,7 @@ public class BuildController {
 	@Operation(summary = "Retrieves build report details",
 			description = "Retrieves buildReport details for given product key, release center key, and build id")
 	public void getBuildReport(@PathVariable final String releaseCenterKey, @PathVariable final String productKey, @PathVariable final String buildId,
-			final HttpServletRequest request, final HttpServletResponse response) throws IOException, BusinessServiceException {
+			final HttpServletRequest request, final HttpServletResponse response) throws IOException {
 		
 		try (InputStream outputFileStream = buildService.getBuildReportFile(releaseCenterKey, productKey, buildId)) {
 			if (outputFileStream != null) {
@@ -464,7 +464,7 @@ public class BuildController {
 	@Operation(summary = "Publish a release for given build id",
 			description = "Publish release for given build id to make it available in repository for wider usages")
 	public void publishBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-			@PathVariable final String buildId, @RequestParam(required = false) String environment) throws BusinessServiceException {
+			@PathVariable final String buildId, @RequestParam(required = false) String environment) {
 
 		final Build build = buildService.find(releaseCenterKey, productKey, buildId, true, null, null, null);
 		ifBuildIsNullThrow(productKey, buildId, build);

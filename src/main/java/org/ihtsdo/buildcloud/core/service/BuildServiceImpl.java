@@ -141,6 +141,9 @@ public class BuildServiceImpl implements BuildService {
 	@Value("${srs.build.offlineMode}")
 	private Boolean offlineMode;
 
+	@Value("${srs.empty-release-file}")
+	private String emptyRf2Filename;
+
 	@Value("${srs.storage.bucketName}")
 	private String buildBucketName;
 
@@ -226,6 +229,10 @@ public class BuildServiceImpl implements BuildService {
 				configuration.setLoadExternalRefsetData(buildRequest.isLoadExternalRefsetData());
 				configuration.setLoadTermServerData(buildRequest.isLoadTermServerData());
 				configuration.setReplaceExistingEffectiveTime(buildRequest.isReplaceExistingEffectiveTime());
+				if (configuration.getExtensionConfig() != null && !Boolean.TRUE.equals(offlineMode)) {
+					// The dependency is now driven by MDRS via Module Storage Coordinator service
+					configuration.getExtensionConfig().setDependencyRelease(null);
+				}
 
 				build.setConfiguration(configuration);
 			}
@@ -685,6 +692,12 @@ public class BuildServiceImpl implements BuildService {
 
 			File previousReleaseDirectory = getReleaseFileFromMscOrNull(configuration.getPreviousPublishedPackage());
 			File dependencyReleaseDirectory = getDependencyFileFromModuleStorageCoordinatorOrNull(build);
+			if (org.springframework.util.StringUtils.hasLength(configuration.getPreviousPublishedPackage())
+				&& !emptyRf2Filename.equals(configuration.getPreviousPublishedPackage())
+				&& previousReleaseDirectory == null
+				&& !Boolean.TRUE.equals(offlineMode)) {
+				throw new BusinessServiceException("No previous package found from MSC for " + configuration.getPreviousPublishedPackage());
+			}
 			try {
 				transformationService.transformFiles(build, inputFileSchemaMap, previousReleaseDirectory);
 				// Convert Delta input files to Full, Snapshot and Delta release files
@@ -791,7 +804,10 @@ public class BuildServiceImpl implements BuildService {
 				List<ModuleMetadata> allModuleMetadata = new ArrayList<>();
 				allReleasesMap.values().forEach(allModuleMetadata::addAll);
 				ModuleMetadata moduleMetadata = allModuleMetadata.stream().filter(item -> item.getFilename().equals(releasePackageFilename)).findFirst().orElse(null);
-				if (moduleMetadata == null) return null;
+				if (moduleMetadata == null) {
+					LOGGER.warn("No release package found from MSC for {}", releasePackageFilename);
+					return null;
+				}
 
 				List<ModuleMetadata> moduleMetadataList = moduleStorageCoordinator.getRelease(moduleMetadata.getCodeSystemShortName(), moduleMetadata.getIdentifyingModuleId(), moduleMetadata.getEffectiveTimeString(), true, false);
 				File releasePackage = moduleMetadataList.get(0).getFile();
@@ -814,27 +830,39 @@ public class BuildServiceImpl implements BuildService {
 			Set<RF2Row> mdrsRows = rf2Service.getMDRS(rf2DeltaZipFile, true);
 			Set<ModuleMetadata> dependencies = moduleStorageCoordinator.getDependencies(mdrsRows,  true);
 			File extractedDirectory = null;
-			if (!dependencies.isEmpty()) {
-				int index = 0;
-				for (ModuleMetadata dependency : dependencies) {
-					File dependencyFile = dependency.getFile();
-					// At the moment, SRS only allows one dependency. So that the first one will be picked up
-					if (index == 0) {
-						extractedDirectory = Files.createTempDirectory("temp-rf2-unzip").toFile();
-						ZipFileUtils.extractFilesFromZipToOneFolder(dependencyFile, extractedDirectory.getAbsolutePath());
-						LOGGER.info("Dependency {} found from Module Storage Coordinator", dependency.getFilename());
-					} else {
-						LOGGER.info("Other dependency {} found from Module Storage Coordinator", dependency.getFilename());
-					}
-					index++;
-					Files.delete(dependencyFile.toPath());
-				}
-			} else {
+			if (dependencies.isEmpty()) {
 				LOGGER.info("No dependency found from Module Storage Coordinator");
+				if (build.getConfiguration().getExtensionConfig() != null) {
+					build.getConfiguration().getExtensionConfig().setDependencyRelease(null);
+					dao.updateBuildConfiguration(build);
+				}
+				return null;
+			}
+			int index = 0;
+			for (ModuleMetadata dependency : dependencies) {
+				File dependencyFile = dependency.getFile();
+				// At the moment, SRS only allows one dependency. So that the first one will be picked up
+				if (index == 0) {
+					extractedDirectory = Files.createTempDirectory("temp-rf2-unzip").toFile();
+					ZipFileUtils.extractFilesFromZipToOneFolder(dependencyFile, extractedDirectory.getAbsolutePath());
+					LOGGER.info("Dependency {} found from Module Storage Coordinator", dependency.getFilename());
+					if (build.getConfiguration().getExtensionConfig() != null) {
+						build.getConfiguration().getExtensionConfig().setDependencyRelease(dependency.getFilename());
+						dao.updateBuildConfiguration(build);
+					}
+				} else {
+					LOGGER.info("Other dependency {} found from Module Storage Coordinator", dependency.getFilename());
+				}
+				index++;
+				Files.delete(dependencyFile.toPath());
 			}
 			return extractedDirectory;
 		} catch (Exception e) {
 			LOGGER.error("Error retrieving dependencies from MSC: {}", e.getMessage());
+			if (build.getConfiguration().getExtensionConfig() != null) {
+				build.getConfiguration().getExtensionConfig().setDependencyRelease(null);
+				dao.updateBuildConfiguration(build);
+			}
 			return null;
 		} finally {
 			if (rf2DeltaZipFile != null) {
@@ -1543,6 +1571,9 @@ public class BuildServiceImpl implements BuildService {
 			buildConfiguration.setExportType(null);
 			buildConfiguration.setLoadExternalRefsetData(false);
 			buildConfiguration.setLoadTermServerData(false);
+			if (buildConfiguration.getExtensionConfig() != null) {
+				buildConfiguration.getExtensionConfig().setDependencyRelease(null);
+			}
 
 			newBuild.setConfiguration(buildConfiguration);
 			newBuild.setQaTestConfig(qaTestConfig);
