@@ -2,11 +2,10 @@ package org.ihtsdo.buildcloud.core.service;
 
 import com.google.common.io.Files;
 import org.apache.commons.io.FileUtils;
-import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.core.service.classifier.ClassificationServiceRestClient;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.buildcloud.core.entity.ExtensionConfig;
+import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.core.service.classifier.ClassificationServiceRestClient;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ProcessingException;
 import org.ihtsdo.otf.utils.ZipFileUtils;
@@ -31,9 +30,6 @@ public class RF2ClassificationService {
 
 	@Autowired
 	private BuildDAO buildDAO;
-
-	@Autowired
-	private InputFileService inputFileService;
 
 	private static final String OWL_REFSET_FILE_PATTERN = ".*_sRefset_OWL.*";
 
