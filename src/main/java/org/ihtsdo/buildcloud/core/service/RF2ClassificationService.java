@@ -64,27 +64,13 @@ public class RF2ClassificationService {
 			throw new IllegalArgumentException("File doesn't exist " + rf2DeltaFile.getAbsolutePath());
 		}
 		String previousPublished = build.getConfiguration().getPreviousPublishedPackage();
-		String dependencyRelease = null;
-		ExtensionConfig extensionConfig = build.getConfiguration().getExtensionConfig();
-		if (extensionConfig != null) {
-			dependencyRelease = extensionConfig.getDependencyRelease();
-			if (dependencyRelease == null || dependencyRelease.isEmpty()) {
-				if (extensionConfig.isReleaseAsAnEdition()) {
-					// This can happen when the previous edition release has got the latest published international release.
-					LOGGER.info("The product is configured as an edition without dependency package." +
-							" Only previous package {} will be used in classification", previousPublished);
-				} else {
-					throw new BusinessServiceException(String.format("International dependency release can't be null for extension release build %s", build.getProductKey()));
-				}
-			}
-		}
 		File zipTempDir = Files.createTempDir();
 		File rf2DeltaZipFile = new File(zipTempDir, "rf2Delta_" + build.getId() + ".zip");
 		// Create a Delta package based on the input files and send to classification service
 		try {
 			ZipFileUtils.zip(rf2DeltaFile.getAbsolutePath(), rf2DeltaZipFile.getAbsolutePath());
 			// Classify
-			return classificationRestClient.classify(rf2DeltaZipFile, previousPublished, dependencyRelease);
+			return classificationRestClient.classify(rf2DeltaZipFile, previousPublished, null);
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to zip rf2 delta files for classification", e);
 		} finally {
