@@ -876,13 +876,15 @@ public class BuildServiceImpl implements BuildService {
 		File rf2DeltaZipFile = new File("rf2Delta_" + build.getId() + ".zip");
 		try {
 			for (String downloadFilename : dao.listInputFileNames(build)) {
-				final File localFile = new File(deltaTempDir, downloadFilename);
-				try (InputStream inputFileStream = dao.getInputFileStream(build, downloadFilename);
-					 FileOutputStream out = new FileOutputStream(localFile)) {
-					if (inputFileStream != null) {
-						StreamUtils.copy(inputFileStream, out);
-					} else {
-						throw new ProcessingException("Didn't find input file:" + downloadFilename);
+				if (StringUtils.hasLength(downloadFilename) && downloadFilename.endsWith(RF2Constants.TXT_FILE_EXTENSION) && downloadFilename.contains(RF2Constants.DELTA)) {
+					final File localFile = new File(deltaTempDir, downloadFilename);
+					try (InputStream inputFileStream = dao.getInputFileStream(build, downloadFilename);
+						 FileOutputStream out = new FileOutputStream(localFile)) {
+						if (inputFileStream != null) {
+							StreamUtils.copy(inputFileStream, out);
+						} else {
+							throw new ProcessingException("Didn't find input file:" + downloadFilename);
+						}
 					}
 				}
 			}
