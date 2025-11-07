@@ -223,9 +223,22 @@ public class PublishServiceImpl implements PublishService {
 
 	private void uploadReleaseFileToNewVersionedContentBucket(Build build, ReleaseFile releaseFiles, String md5Filename, List<String> warnings) throws BusinessServiceException {
 		String branchPath = build.getConfiguration().getBranchPath();
-		String shortName = getShortName(branchPath);
+		String shortName = null;
+		if (!StringUtils.isEmpty(branchPath)) {
+			shortName = getShortNameFromBranch(branchPath);
+		} else {
+			List<CodeSystem> codeSystems = termServerService.getCodeSystems();
+			ReleaseCenter releaseCenter = releaseCenterDAO.find(build.getReleaseCenterKey());
+			CodeSystem codeSystem = codeSystems.stream().filter(item -> releaseCenter.getCodeSystem().equals(item.getShortName()))
+					.findAny()
+					.orElse(null);
+			if (codeSystem != null) {
+				shortName = getShortNameFromBranch(codeSystem.getBranchPath());
+			}
+		}
+
 		if (shortName == null) {
-			String message = String.format("Cannot upload to versioned content bucket as shortName is unknown for branch: %s", branchPath);
+			String message = "Cannot upload to versioned content bucket as shortName is unknown";
 			warnings.add(message);
 			LOGGER.error(message);
 			throw new BusinessServiceException(message);
@@ -777,11 +790,7 @@ public class PublishServiceImpl implements PublishService {
 		return build.getReleaseCenterKey() + "|" + build.getProductKey() + "|" + build.getId();
 	}
 
-	private String getShortName(String branchPath) {
-		if (branchPath == null || branchPath.isEmpty()) {
-			return null;
-		}
-
+	private String getShortNameFromBranch(String branchPath) {
 		if (!branchPath.startsWith("MAIN")) {
 			return null;
 		}
@@ -800,6 +809,6 @@ public class PublishServiceImpl implements PublishService {
 			}
 		}
 
-		return "INT";
+		return RF2Constants.INT;
 	}
 }
