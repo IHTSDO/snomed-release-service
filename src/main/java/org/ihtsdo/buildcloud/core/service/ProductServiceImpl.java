@@ -234,10 +234,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 	@Override
 	public Product update(final String releaseCenterKey, final String productKey, final Map<String, String> newPropertyValues) throws BusinessServiceException {
-		LOGGER.info("update product, newPropertyValues: {}", newPropertyValues);
+		LOGGER.info("Updating product {}, newPropertyValues: {}", productKey, newPropertyValues);
 		final Product product = find(releaseCenterKey, productKey, true);
 		if (product == null) {
-			throw new ResourceNotFoundException("No product found for product key:" + productKey);
+			throw new ResourceNotFoundException("No product found for product key: " + productKey);
 		}
 		try {
 			updateProductBuildConfiguration(newPropertyValues, product);

@@ -195,6 +195,7 @@ public abstract class Config extends BaseConfiguration {
 	public SimpleJmsListenerContainerFactory jmsListenerContainerFactory(@Autowired ConnectionFactory connectionFactory) {
 		final SimpleJmsListenerContainerFactory simpleJmsListenerContainerFactory = new SimpleJmsListenerContainerFactory();
 		simpleJmsListenerContainerFactory.setConnectionFactory(connectionFactory);
+		simpleJmsListenerContainerFactory.setSessionTransacted(true);
 		return simpleJmsListenerContainerFactory;
 	}
 
