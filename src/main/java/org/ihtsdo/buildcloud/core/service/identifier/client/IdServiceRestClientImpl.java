@@ -1,48 +1,66 @@
 package org.ihtsdo.buildcloud.core.service.identifier.client;
 
-import org.apache.http.HttpStatus;
+import com.google.gson.*;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.util.Timeout;
+import org.ihtsdo.otf.rest.client.ExpressiveErrorHandler;
 import org.ihtsdo.otf.rest.client.RestClientException;
-import org.ihtsdo.otf.rest.client.resty.RestyHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.converter.FormHttpMessageConverter;
+import org.springframework.http.converter.json.GsonHttpMessageConverter;
 import org.springframework.stereotype.Service;
-import us.monoid.json.JSONArray;
-import us.monoid.json.JSONException;
-import us.monoid.json.JSONObject;
-import us.monoid.web.JSONResource;
+import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class IdServiceRestClientImpl implements IdServiceRestClient {
 
-	private static final String TOKEN = "token";
+	private static final String COMMENT = "comment";
+	private static final String FALSE = "false";
+	private static final String GENERATE_LEGACY_IDS = "generateLegacyIds";
+	private static final String ITEMS = "items";
+	private static final String LOG_JOB_WITH_SIZE = "Bulk job id: {} with batch size: {}";
+	private static final String LOG_TIME_TAKEN = "Time taken in seconds: {}";
 	private static final String MESSAGE = "message";
-	private static final String STATUS = "status";
+	private static final String NAMESPACE = "namespace";
+	private static final String PARTITION_ID = "partitionId";
+	private static final String QUANTITY = "quantity";
 	private static final String SCHEME_ID = "schemeId";
 	private static final String SCHEME_IDS = "schemeIds";
-	private static final String SCTIDS = "sctids";
-	private static final String SRS = "srs";
-	private static final String SYSTEM_IDS = "systemIds";
-	private static final String QUANTITY = "quantity";
-	private static final String COMMENT = "comment";
-	private static final String GENERATE_LEGACY_IDS = "generateLegacyIds";
-	private static final String SOFTWARE = "software";
-	private static final String PARTITION_ID = "partitionId";
-	private static final String NAMESPACE = "namespace";
-	private static final String SYSTEM_ID = "systemId";
 	private static final String SCTID = "sctid";
-	private static final String APPLICATION_JSON = "application/json";
-	public static final String ANY_CONTENT_TYPE = "*/*";
+	private static final String SCTIDS = "sctids";
+	private static final String SOFTWARE = "software";
+	private static final String STATUS = "status";
+	private static final String SYSTEM_ID = "systemId";
+	private static final String SYSTEM_IDS = "systemIds";
+	private static final String SRS = "srs";
+	private static final String TOKEN_STR = "token";
+
+	private static final String JSON_CONTENT_TYPE = "application/json";
+
 	private final String idServiceUrl;
-	private final RestyHelper resty;
+	private final Gson gson;
 	private final IdServiceRestUrlHelper urlHelper;
 	private static String token;
 	private static final Object LOCK = new Object();
 	private static final Logger LOGGER = LoggerFactory.getLogger(IdServiceRestClientImpl.class);
+
+	private final HttpHeaders headers;
+	private final RestTemplate restTemplate;
 	
 	private static final AtomicInteger currentSessions = new AtomicInteger();
 
@@ -66,355 +84,508 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			@Value("${cis.password}") final String password) {
 		this.idServiceUrl = idServiceUrl;
 		urlHelper = new IdServiceRestUrlHelper(idServiceUrl);
-		this.resty = new RestyHelper(ANY_CONTENT_TYPE);
 		this.userName = username;
 		this.password = password;
-		
+		gson = new GsonBuilder().setPrettyPrinting().create();
+
+		headers = new HttpHeaders();
+		headers.add("Accept", JSON_CONTENT_TYPE);
+		headers.add("Content-Type", JSON_CONTENT_TYPE);
+
+		RequestConfig requestConfig = RequestConfig.custom()
+				.setConnectionRequestTimeout(Timeout.ofSeconds(10))
+				.setResponseTimeout(Timeout.ofMinutes(5))
+				.build();
+
+		CloseableHttpClient httpClient = HttpClients.custom()
+				.setDefaultRequestConfig(requestConfig)
+				.build();
+
+		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
+
+		restTemplate = new RestTemplateBuilder()
+				.rootUri(idServiceUrl)
+				.additionalMessageConverters(new GsonHttpMessageConverter(gson))
+				.additionalMessageConverters(new FormHttpMessageConverter())
+				.errorHandler(new ExpressiveErrorHandler())
+				.requestFactory(() -> factory)
+				.build();
 	}
-	
+
+	public int getTimeOutInSeconds() {
+		return timeOutInSeconds;
+	}
+
 	private boolean isServiceRunning() {
-		JSONResource response;
 		try {
-			response = resty.json(urlHelper.getTestServiceUrl());
-			if (response != null && HttpStatus.SC_OK == response.getHTTPStatus()) {
-				return true;
-			}
-		} catch (IOException e) {
+			ResponseEntity<Void> response =
+					restTemplate.exchange(urlHelper.getTestServiceUrl(), HttpMethod.GET, null, Void.class);
+
+			return response.getStatusCode().is2xxSuccessful();
+		} catch (Exception e) {
 			LOGGER.error("Error when testing service", e);
+			return false;
 		}
-		return false;
 	}
-	
+
 	@Override
 	public String logIn() throws RestClientException {
 		int attempt = 1;
-		boolean isDone = false;
-			while (!isDone) {
+		while (true) {
 			 try {
 				 synchronized (LOCK) {
 					 if (token != null) {
 						 LOGGER.debug("ID service rest client is already logged in.");
 					 } 
-					 //validate token
-
-					 if ( !isTokenValid(token) ) {
-						 //get a new token;
+					 if (!isTokenValid(token) ) {
 						 token = accquireToken();
 					 }
 					 currentSessions.getAndIncrement();
-					 isDone = true;
+					 break;
 				}
 			} catch (Exception e) {
-				if (attempt < maxTries) {
-					LOGGER.warn("Failed to log into the IdService on attempt {}. Waiting {} seconds before retrying.", attempt, retryDelaySeconds, e);
-					attempt++;
-					try {
-						Thread.sleep(retryDelaySeconds * 1000);
-					} catch (InterruptedException ie) {
-						LOGGER.warn("Retry delay interrupted.",e);
-					}
-				} else {
-					throw new RestClientException("Still failed to log into the IdService after " + attempt + " attempts", e);
-				}
+				 attempt++;
+				 sleepAndRetry("log into the IdService", attempt, e);
 			}
 		}
 		return token;
 	}
 
+	private void sleepAndRetry(String action, int attempt, Exception e) throws RestClientException {
+		if (attempt <= maxTries) {
+			LOGGER.warn("Failed to {} on attempt {}. Waiting {} seconds before retrying.", action, attempt, retryDelaySeconds, e);
+			try {
+				Thread.sleep(retryDelaySeconds * 1000L);
+			} catch (InterruptedException ie) {
+				Thread.currentThread().interrupt();
+				throw new RestClientException("Sleep interrupted during retry for action: " + action, ie);
+			}
+		} else {
+			String msg = String.format("Still failed to %s after %s attempts", action, attempt);
+			throw new RestClientException(msg, e);
+		}
+	}
+
 	private String accquireToken() throws RestClientException {
-		String securityToken;
 		if (!isServiceRunning()) {
 			throw new RestClientException("Id service is not currently running at URL:" + idServiceUrl);
 		}
-		LOGGER.info("Id service rest client logs in to get a new security token." );
+
+		LOGGER.info("Id service rest client logs in to get a new security token.");
+
 		try {
-			JSONObject jsonObject = new JSONObject();
-			jsonObject.put("username", this.userName);
-			jsonObject.put("password", this.password);
-			securityToken = (String) resty.json(urlHelper.getLoginUrl(), RestyHelper.content(jsonObject)).get(TOKEN);
+			// Prepare JSON body as a JsonObject
+			JsonObject request = new JsonObject();
+			request.addProperty("username", this.userName);
+			request.addProperty("password", this.password);
+
+			// Send POST request, get response as JsonObject
+			HttpEntity<String> httpRequest = new HttpEntity<>(gson.toJson(request), headers);
+			String responseBody = restTemplate.postForObject(urlHelper.getLoginUrl(), httpRequest, String.class);
+
+			JsonObject jsonResponse = gson.fromJson(responseBody, JsonObject.class);
+			if (!jsonResponse.has(TOKEN_STR)) {
+				throw new RestClientException("Login response did not contain token");
+			}
+
+			String securityToken = jsonResponse.get(TOKEN_STR).getAsString();
 			LOGGER.debug("Security token is acquired successfully.");
+			return securityToken;
+
 		} catch (Exception e) {
-			throw new RestClientException("Failed to login for user name:" + this.userName, e);
+			throw new RestClientException("Failed to login for user: " + this.userName, e);
 		}
-		return securityToken;
 	}
-	
+
+
 	private boolean isTokenValid(String token) {
 		if (token == null) {
 			return false;
 		}
-		boolean isValid = false;
+
 		try {
-			JSONObject jsonObject = new JSONObject();
-			jsonObject.put(TOKEN, token);
-			JSONResource response = resty.json(urlHelper.getTokenAuthenticationUrl(), RestyHelper.content(jsonObject,APPLICATION_JSON));
-			if (response != null) {
-				if (HttpStatus.SC_OK == (response.getHTTPStatus())) {
-					isValid = true;
-				} else {
-					LOGGER.info("Invalid token with failure reason from id server:" + response.get(MESSAGE));
-				}
+			JsonObject request = new JsonObject();
+			request.addProperty(TOKEN_STR, token);
+
+			HttpEntity<String> httpRequest = new HttpEntity<>(gson.toJson(request), headers);
+			ResponseEntity<JsonObject> response = restTemplate.exchange(
+					urlHelper.getTokenAuthenticationUrl(),
+					HttpMethod.POST,
+					httpRequest,
+					JsonObject.class
+			);
+
+			if (response.getStatusCode().is2xxSuccessful()) {
+				return true;
+			} else {
+				JsonObject body = response.getBody();
+				String message = (body != null && body.has(MESSAGE)) ? body.get(MESSAGE).getAsString() : "<no message>";
+				LOGGER.info("Invalid token with failure reason from id server: {}", message);
 			}
+
 		} catch (Exception e) {
 			LOGGER.error("Failed to log in", e);
 		}
-		return isValid;
+
+		return false;
+	}
+
+
+	@Override
+	public Map<Long, String> getStatusForSctIds(Collection<Long> sctIds) throws RestClientException {
+		if (sctIds == null || sctIds.isEmpty()) {
+			return new HashMap<>();
+		}
+
+		String scdStrList = sctIds.stream()
+				.map(Object::toString)
+				.collect(Collectors.joining(","));
+
+		Map<Long, String> result = new HashMap<>();
+		int attempt = 1;
+		while (attempt <= maxTries) {
+			try {
+				fetchSctIdStatusBatch(scdStrList, result);
+				break; // Successfully fetched, exit loop
+			} catch (Exception e) {
+				attempt++;
+				String action = "get sctIds for batch size:" + sctIds.size();
+				sleepAndRetry(action, attempt, e);
+			}
+		}
+
+
+		return result;
+	}
+
+	private void fetchSctIdStatusBatch(String scdStrList, Map<Long, String> result) throws RestClientException {
+		try {
+			JsonObject requestData = new JsonObject();
+			requestData.addProperty(SCTIDS, scdStrList);
+
+			HttpEntity<String> request = new HttpEntity<>(gson.toJson(requestData), headers);
+			ResponseEntity<JsonObject> response = restTemplate.postForEntity(urlHelper.getSctIdBulkUrl(token), request, JsonObject.class);
+
+			if (!response.getStatusCode().is2xxSuccessful()) {
+				throw new RestClientException(getFailureMessage(response));
+			}
+
+			JsonObject body = response.getBody();
+			if (body != null && body.has(ITEMS)) {
+				for (var element : body.getAsJsonArray(ITEMS)) {
+					JsonObject item = element.getAsJsonObject();
+					long sctId = Long.parseLong(item.get(SCTID).getAsString());
+					String status = item.get(STATUS).getAsString();
+					result.put(sctId, status);
+				}
+			}
+
+		} catch (Exception e) {
+			throw new RestClientException("Error fetching SCT ID status batch", e);
+		}
 	}
 
 	@Override
-	public Map<Long,String> getStatusForSctIds(Collection<Long> sctIds) throws RestClientException {
-		Map<Long,String> result = new HashMap<>();
-		if (sctIds == null || sctIds.isEmpty()) {
-			return result;
-		}
-		StringBuilder scdStrList = new StringBuilder();
-		boolean isFirst = true;
-		for (Long id : sctIds) {
-			if (!isFirst) {
-				scdStrList.append(",");
-			}
-			if (isFirst) {
-				isFirst = false;
-			}
-			scdStrList.append(id.toString());
-		}
-		int attempt = 1;
-		boolean isDone = false;
-		while (!isDone) {
-				try {
-					JSONObject requestData = new JSONObject();
-					requestData.put(SCTIDS, scdStrList.toString());
-					JSONResource response = resty.json(urlHelper.getSctIdBulkUrl(token),RestyHelper.content(requestData, APPLICATION_JSON));
-					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
-						JSONArray items = response.array();
-						for (int i =0; i < items.length();i++) {
-							result.put(Long.valueOf((String)items.getJSONObject(i).get(SCTID)), (String)items.getJSONObject(i).get(STATUS));
-						}
-					} else {
-						throw new RestClientException(getFailureMessage(response));
-					}
-					isDone = true;
-				} catch (Exception e) {
-					
-					if (attempt < maxTries) {
-						LOGGER.warn("Id service failed on attempt {}. Waiting {} seconds before retrying.", attempt, retryDelaySeconds, e);
-						attempt++;
-						try {
-							Thread.sleep(retryDelaySeconds * 1000);
-						} catch (InterruptedException ie) {
-							LOGGER.warn("Retry delay interrupted.",e);
-						}
-					} else {
-						throw new RestClientException("Failed to get sctIds for batch size:" + sctIds.size(), e);
-					}
-				}
-		}
-		return result;
-	}
-	
-	@Override
-	public Long getOrCreateSctId(UUID componentUuid, Integer namespaceId, String partitionId, String comment) throws RestClientException {
+	public Long getOrCreateSctId(UUID componentUuid,
+	                             Integer namespaceId,
+	                             String partitionId,
+	                             String comment) throws RestClientException {
 		Long result = null;
 		int attempt = 1;
-		while (result == null) {
-				try {
-					JSONObject requestData = new JSONObject();
-					requestData.put(NAMESPACE, namespaceId.intValue());
-					requestData.put(PARTITION_ID, partitionId);
-					requestData.put(SYSTEM_ID, componentUuid.toString());
-					requestData.put(SOFTWARE, SRS);
-					requestData.put(GENERATE_LEGACY_IDS, "false");
-					requestData.put(COMMENT, comment);
-					JSONResource response = resty.json(urlHelper.getSctIdGenerateUrl(token), RestyHelper.content((requestData),APPLICATION_JSON));
-					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
-						 result = Long.valueOf((String)response.get(SCTID));
-					} else {
-						throw new RestClientException(getFailureMessage(response));
-					}
-				} catch (Exception e) {
-					
-					if (attempt < maxTries) {
-						LOGGER.warn("Id service failed on attempt {}. Waiting {} seconds before retrying.", attempt, retryDelaySeconds, e);
-						attempt++;
-						try {
-							Thread.sleep(retryDelaySeconds * 1000);
-						} catch (InterruptedException ie) {
-							LOGGER.warn("Retry delay interrupted.",e);
-						}
-					} else {
-						throw new RestClientException("Failed to create sctId for uuid:" + componentUuid.toString(), e);
-					}
-				}
+
+		while (attempt <= maxTries) {
+			try {
+				result = executeGetOrCreateSctId(componentUuid, namespaceId, partitionId, comment);
+				break; // Explicit end condition
+			} catch (Exception e) {
+				attempt++;
+				String action = "create sctId for uuid: " + componentUuid;
+				sleepAndRetry(action, attempt, e);
+			}
 		}
-		
 		return result;
 	}
-	
+
+	/**
+	 * Executes a single attempt to get or create the SCT ID via the ID service.
+	 */
+	private Long executeGetOrCreateSctId(UUID componentUuid,
+	                                     Integer namespaceId,
+	                                     String partitionId,
+	                                     String comment) throws RestClientException {
+
+		try {
+			// Build request JSON
+			JsonObject requestJson = new JsonObject();
+			requestJson.addProperty(NAMESPACE, namespaceId);
+			requestJson.addProperty(PARTITION_ID, partitionId);
+			requestJson.addProperty(SYSTEM_ID, componentUuid.toString());
+			requestJson.addProperty(SOFTWARE, SRS);
+			requestJson.addProperty(GENERATE_LEGACY_IDS, FALSE);
+			requestJson.addProperty(COMMENT, comment);
+
+			HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestJson), headers);
+
+			// Call the ID service
+			ResponseEntity<String> response = restTemplate.postForEntity(
+					urlHelper.getSctIdGenerateUrl(token),
+					requestEntity,
+					String.class
+			);
+
+			if (!response.getStatusCode().is2xxSuccessful()) {
+				throw new RestClientException("ID service returned status " + response.getStatusCode()
+				);
+			}
+
+			// Parse JSON response
+			JsonObject body = JsonParser.parseString(response.getBody()).getAsJsonObject();
+			if (!body.has(SCTID)) {
+				throw new RestClientException("ID service response missing SCTID field");
+			}
+
+			return Long.valueOf(body.get(SCTID).getAsString());
+
+		} catch (RestClientException e) {
+			throw e; // propagate explicitly thrown exceptions
+		} catch (Exception e) {
+			throw new RestClientException("Error while executing getOrCreateSctId", e);
+		}
+	}
+
+
 	@Override
-	public HashMap<UUID,Long> getOrCreateSctIds(List<UUID> uuids,Integer namespaceId,String partitionId, String comment) throws RestClientException {
+	public HashMap<UUID, Long> getOrCreateSctIds(List<UUID> uuids,
+	                                             Integer namespaceId,
+	                                             String partitionId,
+	                                             String comment) throws RestClientException {
 		LOGGER.debug("Start creating sctIds with batch size {} for namespace {} and partitionId {}", uuids.size(), namespaceId, partitionId);
+
 		HashMap<UUID, Long> result = new HashMap<>();
-		if (uuids == null || uuids.isEmpty()) {
+		if (uuids.isEmpty()) {
 			LOGGER.warn("Empty UUIDs submitted for requesting sctIds");
 			return result;
 		}
-		long startTime = new Date().getTime();
-		List<String> batchJob = null;
-		int counter=0;
+
+		long startTime = System.currentTimeMillis();
+		List<String> batchJob = new ArrayList<>();
+		int counter = 0;
+
 		for (UUID uuid : uuids) {
-			if (batchJob == null) {
-				batchJob = new ArrayList<>();
-			}
 			batchJob.add(uuid.toString());
 			counter++;
+
 			if (counter % batchSize == 0 || counter == uuids.size()) {
-				try {
-					JSONObject requestData = new JSONObject();
-					requestData.put(NAMESPACE, namespaceId.intValue());
-					requestData.put(PARTITION_ID, partitionId);
-					requestData.put(QUANTITY,batchJob.size());
-					requestData.put(SYSTEM_IDS, batchJob.toArray());
-					requestData.put(SOFTWARE, SRS);
-					requestData.put(GENERATE_LEGACY_IDS, "false");
-					requestData.put(COMMENT, comment);
-					JSONResource response = resty.json(urlHelper.getSctIdBulkGenerateUrl(token), RestyHelper.content((requestData),APPLICATION_JSON));
-					if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
-						String jobId =  response.get("id").toString();
-						LOGGER.info("Bulk job id:" + jobId + " with batch size:" + batchJob.size());
-						if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
-							JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
-							for (int i =0;i < items.length();i++) {
-								result.put(UUID.fromString((String)items.getJSONObject(i).get(SYSTEM_ID)), Long.valueOf((String)items.getJSONObject(i).get(SCTID)));
-							}
-						}
-					} else {
-						String statusMsg = getFailureMessage(response);
-						LOGGER.error(statusMsg);
-						throw new RestClientException(statusMsg);
-					}
-				} catch (Exception e) {
-					String message = "Bulk getOrCreateSctIds job failed.";
-					LOGGER.error(message, e);
-					throw new RestClientException(message,e);
-				}
-				batchJob = null;
+				// Execute batch as separate method
+				processSctIdBatch(batchJob, namespaceId, partitionId, comment, result);
+				batchJob.clear();
 			}
 		}
+
 		LOGGER.debug("End creating sctIds with batch size {} for namespace {} and partitionId {}", uuids.size(), namespaceId, partitionId);
-		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
+		LOGGER.info(LOG_TIME_TAKEN, (System.currentTimeMillis() - startTime) / 1000);
 		return result;
 	}
+
+	/**
+	 * Process a single batch of UUIDs and populate the result map with SCT IDs.
+	 */
+	private void processSctIdBatch(List<String> batchJob,
+	                               Integer namespaceId,
+	                               String partitionId,
+	                               String comment,
+	                               Map<UUID, Long> result) throws RestClientException {
+		try {
+			// Build request JSON
+			JsonObject requestJson = new JsonObject();
+			requestJson.addProperty(NAMESPACE, namespaceId);
+			requestJson.addProperty(PARTITION_ID, partitionId);
+			requestJson.addProperty(QUANTITY, batchJob.size());
+			requestJson.add(SYSTEM_IDS, gson.toJsonTree(batchJob));
+			requestJson.addProperty(SOFTWARE, SRS);
+			requestJson.addProperty(GENERATE_LEGACY_IDS, FALSE);
+			requestJson.addProperty(COMMENT, comment);
+
+			// Send request
+			HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestJson), headers);
+			String url = urlHelper.getSctIdBulkGenerateUrl(token);
+
+			JsonElement jsonElement = makeHttpCall(url, HttpMethod.POST, requestEntity);
+
+			String jobId = jsonElement.getAsJsonObject().get("id").getAsString();
+			LOGGER.info(LOG_JOB_WITH_SIZE, jobId, batchJob.size());
+			recoverResultsFromBulkJob(jobId, token, result, SCTID, JsonElement::getAsLong);
+		} catch (Exception e) {
+			throw new RestClientException("Bulk getOrCreateSctIds job failed.", e);
+		}
+	}
+
 
 	@Override
-	public Map<UUID, String> getOrCreateSchemeIds(List<UUID> uuids, SchemeIdType schemeType, String comment) throws RestClientException {
-		LOGGER.debug("Start creating scheme id {} with batch size {} ", schemeType, uuids.size());
-		HashMap<UUID, String> result = new HashMap<>();
-		if (uuids == null || uuids.isEmpty()) {
-			LOGGER.warn("Empty UUIDs submitted for requesting schemeIdType:" + schemeType);
+	public Map<UUID, String> getOrCreateSchemeIds(List<UUID> uuids,
+	                                              SchemeIdType schemeType,
+	                                              String comment) throws RestClientException {
+		LOGGER.debug("Start creating scheme id {} with batch size {}", schemeType, uuids.size());
+
+		Map<UUID, String> result = new HashMap<>();
+		if (uuids.isEmpty()) {
+			LOGGER.warn("Empty UUIDs submitted for requesting schemeIdType: {}", schemeType);
 			return result;
 		}
-		long startTime = new Date().getTime();
-		List<String> batchJob = null;
-		int counter=0;
+
+		long startTime = System.currentTimeMillis();
+		List<String> batchJob = new ArrayList<>();
+		int counter = 0;
+
 		for (UUID uuid : uuids) {
-			if (batchJob == null) {
-				batchJob = new ArrayList<>();
-			}
 			batchJob.add(uuid.toString());
 			counter++;
+
 			if (counter % batchSize == 0 || counter == uuids.size()) {
-				//processing batch
-				try {
-					JSONObject requestData = new JSONObject();
-					requestData.put(QUANTITY,batchJob.size());
-					requestData.put(SYSTEM_IDS, batchJob.toArray());
-					requestData.put(SOFTWARE, SRS);
-					requestData.put(COMMENT, comment);
-					JSONResource response = resty.json(urlHelper.getSchemeIdBulkGenerateUrl(token, schemeType), RestyHelper.content((requestData),APPLICATION_JSON));
-					if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
-						String jobId =  response.get("id").toString();
-						LOGGER.info("Scheme ids bulk job id:" + jobId + " with batch size:" + batchJob.size());
-						if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
-							JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
-							for (int i =0;i < items.length();i++) {
-								result.put(UUID.fromString((String)items.getJSONObject(i).get(SYSTEM_ID)), (String)items.getJSONObject(i).get(SCHEME_ID));
-							}
-						}
-					} else {
-						throw new RestClientException(getFailureMessage(response));
-					}
-				} catch (Exception e) {
-					String message = "Bulk job getOrCreateSchemeIds failed for schemeType:" + schemeType;
-					LOGGER.error(message, e);
-					throw new RestClientException(message, e);
-				}
-				batchJob = null;
+				processSchemeIdBatch(batchJob, schemeType, comment, result);
+				batchJob.clear();
 			}
 		}
-		LOGGER.debug("End creating scheme id {} with batch size {} ", schemeType, uuids.size());
-		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
+
+		LOGGER.debug("End creating scheme id {} with batch size {}", schemeType, uuids.size());
+		LOGGER.info(LOG_TIME_TAKEN, (System.currentTimeMillis() - startTime) / 1000);
 		return result;
 	}
 
+	/**
+	 * Processes a single batch of UUIDs for scheme ID creation.
+	 */
+	private void processSchemeIdBatch(List<String> batchJob,
+	                                  SchemeIdType schemeType,
+	                                  String comment,
+	                                  Map<UUID, String> result) throws RestClientException {
+		try {
+			// Build request JSON
+			JsonObject requestJson = new JsonObject();
+			requestJson.addProperty(QUANTITY, batchJob.size());
+			requestJson.add(SYSTEM_IDS, gson.toJsonTree(batchJob));
+			requestJson.addProperty(SOFTWARE, SRS);
+			requestJson.addProperty(COMMENT, comment);
 
-	private String getFailureMessage(JSONResource response) throws Exception {
-		return "Received Http status from id service:" + response.getHTTPStatus() + " message:" + response.get(MESSAGE);
+			HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestJson), headers);
+			String url = urlHelper.getSchemeIdBulkGenerateUrl(token, schemeType);
+			JsonElement jsonElement = makeHttpCall(url, HttpMethod.POST, requestEntity);
+			String jobId = jsonElement.getAsJsonObject().get("id").getAsString();
+			LOGGER.info("Scheme ids bulk job id: {} with batch size: {}", jobId, batchJob.size());
+			recoverResultsFromBulkJob(jobId, token, result, SCHEME_ID, JsonElement::getAsString);
+		} catch (Exception e) {
+			throw new RestClientException("Bulk job getOrCreateSchemeIds failed for schemeType: " + schemeType, e);
+		}
 	}
-	
-	
-	private int waitForCompleteStatus(String jobId, int timeoutInSeconds)
-			throws RestClientException, InterruptedException {
+
+	private <T> void recoverResultsFromBulkJob(String jobId, String token, Map<UUID, T> result, String itemToRecover, Function<JsonElement, T> valueMapper) throws RestClientException {
+		// Wait for bulk job completion
+		int statusCode = waitForCompleteStatus(jobId, getTimeOutInSeconds());
+		if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() != statusCode) {
+			throw new RestClientException("Bulk job did not complete successfully: " + jobId);
+		}
+
+		// Retrieve bulk job results
+		ResponseEntity<String> resultResponse = restTemplate.getForEntity(
+				urlHelper.getBulkJobResultUrl(jobId, token),
+				String.class
+		);
+
+		if (!resultResponse.getStatusCode().is2xxSuccessful()) {
+			throw new RestClientException("Failed to retrieve bulk job results for job: " + jobId);
+		}
+
+		JsonArray items = JsonParser.parseString(resultResponse.getBody())
+				.getAsJsonObject()
+				.getAsJsonArray(ITEMS);
+
+		for (JsonElement element : items) {
+			JsonObject item = element.getAsJsonObject();
+			UUID systemId = UUID.fromString(item.get(SYSTEM_ID).getAsString());
+			T value = valueMapper.apply(item.get(itemToRecover));
+			result.put(systemId, value);
+		}
+	}
+
+
+	private String getFailureMessage(ResponseEntity<JsonObject> response) {
+		String msg = "Message Unknown";
+		try {
+			JsonObject json =  response.getBody();
+			if (json != null) {
+				msg = json.get(MESSAGE).toString();
+			}
+		} catch (Exception e) {
+			//Welp, we tried
+		}
+		return "Received Http status from id service:" + response.getStatusCode() + " message:" + msg;
+	}
+
+
+	private int waitForCompleteStatus(String jobId, int timeoutInSeconds) throws RestClientException {
+
 		String url = urlHelper.getBulkJobStatusUrl(token, jobId);
-		long startTime = new Date().getTime();
+		long startTime = System.currentTimeMillis();
 		int status = 0;
 		boolean isCompleted = false;
 		String logMsg = null;
+
 		while (!isCompleted) {
-			try {
-				JSONResource response = resty.json(url);
-				Object statusObj = response.get(STATUS);
-				status = Integer.parseInt(statusObj.toString()) ;
-				Object log = response.get("log");
-				if (log != null) {
-					logMsg = log.toString();
-				}
-				
-			} catch (Exception e) {
-				String msg = "Rest client error while checking bulk job status:" + url;
-				LOGGER.error(msg, e);
-				throw new RestClientException(msg, e);
-			}
-			isCompleted = (BULK_JOB_STATUS.PENDING.getCode() != status && BULK_JOB_STATUS.RUNNING.getCode() != status);
-			if (!isCompleted && ((new Date().getTime() - startTime) > timeoutInSeconds *1000)) {
-				String message = "Client timeout after waiting " + timeoutInSeconds + " seconds for bulk job to complete:" + url;
+			// Fetch latest status and optional log
+			StatusLog statusLog = fetchBulkJobStatus(url);
+			status = statusLog.status();
+			logMsg = statusLog.log();
+
+			isCompleted = (BULK_JOB_STATUS.PENDING.getCode() != status &&
+					BULK_JOB_STATUS.RUNNING.getCode() != status);
+
+			if (!isCompleted && (System.currentTimeMillis() - startTime) > timeoutInSeconds * 1000L) {
+				String message = "Client timeout after waiting " + timeoutInSeconds +
+						" seconds for bulk job to complete: " + url;
 				LOGGER.warn(message);
 				throw new RestClientException(message);
 			}
+
 			if (!isCompleted) {
-				Thread.sleep(1000 * 10);
+				try {
+					Thread.sleep(10_000L); // 10 seconds
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					throw new RestClientException("Sleep interrupted which waiting for jobId " + jobId + " to complete");
+				}
 			}
 		}
+
 		if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() != status) {
-			LOGGER.error("Bulk job id {} finsihed with non successful status {} failureReason: {}", jobId, status, logMsg);
-			throw new RestClientException("Bulk job :" + jobId + " did not complete successfully with status code:" + status);
+			LOGGER.error("Bulk job id {} finished with non-successful status {} failureReason: {}", jobId, status, logMsg);
+			throw new RestClientException("Bulk job: " + jobId + " did not complete successfully with status code: " + status);
 		}
+
 		return status;
 	}
 
-	public int getMaxTries() {
-		return maxTries;
-	}
+	/**
+	 * Fetches the current status and log message for a bulk job.
+	 */
+	private StatusLog fetchBulkJobStatus(String url) throws RestClientException {
+		try {
+			ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+			if (!response.getStatusCode().is2xxSuccessful()) {
+				throw new RestClientException("Failed to get bulk job status: " + response.getStatusCode());
+			}
 
-	public void setMaxTries(int maxTries) {
-		this.maxTries = maxTries;
-	}
+			JsonObject body = JsonParser.parseString(response.getBody()).getAsJsonObject();
+			int status = body.get(STATUS).getAsInt();
+			String log = null;
 
-	public int getRetryDelaySeconds() {
-		return retryDelaySeconds;
-	}
+			if (body.has("log") && !body.get("log").isJsonNull()) {
+				log = body.get("log").getAsString();
+			}
 
-	public void setRetryDelaySeconds(int retryDelaySeconds) {
-		this.retryDelaySeconds = retryDelaySeconds;
+			return new StatusLog(status, log);
+		} catch (Exception e) {
+			throw new RestClientException("Rest client error while checking bulk job status: " + url, e);
+		}
 	}
 
 	@Override
@@ -422,415 +593,438 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		currentSessions.getAndDecrement();
 		synchronized (LOCK) {
 			if (token != null) {
-				LOGGER.debug("Total current sessions:" + currentSessions.get());
+				LOGGER.debug("Total current sessions: {}", currentSessions.get());
 				if (currentSessions.get() == 0) {
 					try {
-						JSONObject jsonObject = new JSONObject();
-						jsonObject.put(TOKEN, token);
-						resty.json(urlHelper.getLogoutUrl(), RestyHelper.content((jsonObject)));
+						// Build request JSON using Gson
+						JsonObject requestJson = new JsonObject();
+						requestJson.addProperty(TOKEN_STR, token);
+						HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestJson), headers);
+						makeHttpCall(urlHelper.getLogoutUrl(), HttpMethod.POST, requestEntity);
 						LOGGER.info("Id service rest client logs out successfully.");
 						token = null;
 					} catch (Exception e) {
-						throw new RestClientException("Failed to login out " + this.userName, e);
+						throw new RestClientException("Failed to log out user " + this.userName, e);
 					}
 				}
 			}
 		}
-	}
-
-	public int getTimeOutInSeconds() {
-		return timeOutInSeconds;
-	}
-
-	public void setTimeOutInSeconds(int timeOutInSeconds) {
-		this.timeOutInSeconds = timeOutInSeconds;
-	}
-	
-	public int getBatchSize() {
-		return batchSize;
-	}
-
-	public void setBatchSize(int batchSize) {
-		this.batchSize = batchSize;
 	}
 
 	@Override
 	public boolean publishSctIds(List<Long> sctIds, Integer namespaceId, String comment) throws RestClientException {
 		LOGGER.debug("Start publishing sctIds with batch size {} for namespace {}", sctIds.size(), namespaceId);
-		if (sctIds == null || sctIds.isEmpty()) {
+		if (sctIds.isEmpty()) {
 			return true;
 		}
+
 		boolean isPublished = false;
-		long startTime = new Date().getTime();
-		List<String> batchJob = null;
-		int counter=0;
+		long startTime = System.currentTimeMillis();
+		List<String> batchJob = new ArrayList<>();
+		int counter = 0;
+
 		for (Long sctId : sctIds) {
-			if (batchJob == null) {
-				batchJob = new ArrayList<>();
-			}
 			batchJob.add(String.valueOf(sctId));
 			counter++;
+
 			if (counter % batchSize == 0 || counter == sctIds.size()) {
-				//processing batch
-				try {
-					JSONObject requestData = new JSONObject();
-					requestData.put(SCTIDS, batchJob.toArray());
-					requestData.put(NAMESPACE, namespaceId.intValue());
-					requestData.put(SOFTWARE, SRS);
-					requestData.put(COMMENT, comment);
-					JSONResource response = resty.put(urlHelper.getSctIdBulkPublishingUrl(token), requestData, APPLICATION_JSON);
-					if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
-						String jobId =  response.get("id").toString();
-						LOGGER.info("Bulk job id:" + jobId + " for publishing sctIds with batch size:" + batchJob.size());
-						if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
-							isPublished = true;
-						}
-					} else {
-						String statusMsg = "Received http status code from id service:" + response.getHTTPStatus();
-						LOGGER.error(statusMsg);
-						throw new RestClientException(statusMsg);
-					}
-				} catch (Exception e) {
-					String message = "Bulk publishSctIds job failed.";
-					LOGGER.error(message, e);
-					throw new RestClientException(message, e);
-				}
-				batchJob = null;
+				isPublished = processPublishSctIdBatch(batchJob, namespaceId, comment) || isPublished;
+				batchJob.clear();
 			}
 		}
+
 		LOGGER.debug("End publishing sctIds with batch size {} for namespace {}", sctIds.size(), namespaceId);
-		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
+		LOGGER.info(LOG_TIME_TAKEN, (System.currentTimeMillis() - startTime) / 1000);
 		return isPublished;
 	}
+
+	/**
+	 * Processes a single batch of sctIds for publishing.
+	 */
+	private boolean processPublishSctIdBatch(List<String> batchJob, Integer namespaceId, String comment) throws RestClientException {
+		try {
+			// Build request JSON
+			JsonObject requestJson = new JsonObject();
+			requestJson.add(NAMESPACE, gson.toJsonTree(namespaceId));
+			requestJson.add(SCTIDS, gson.toJsonTree(batchJob));
+			requestJson.addProperty(SOFTWARE, SRS);
+			requestJson.addProperty(COMMENT, comment);
+			HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestJson), headers);
+			String url = urlHelper.getSctIdBulkPublishingUrl(token);
+
+			JsonElement jsonElement = makeHttpCall(url, HttpMethod.PUT, requestEntity);
+			String jobId = jsonElement.getAsJsonObject().get("id").getAsString();
+			LOGGER.info("Bulk job id: {} for publishing sctIds with batch size: {}", jobId, batchJob.size());
+			return BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() ==
+					waitForCompleteStatus(jobId, getTimeOutInSeconds());
+		} catch (Exception e) {
+			throw new RestClientException("Bulk publishSctIds job failed.", e);
+		}
+	}
+
 
 	@Override
 	public boolean publishSchemeIds(List<String> schemeIds, SchemeIdType schemeType, String comment) throws RestClientException {
 		LOGGER.debug("Start publishing scheme ids with batch size {} for scheme type {}", schemeIds.size(), schemeType);
-		if (schemeIds == null || schemeIds.isEmpty()) {
+
+		if (schemeIds.isEmpty()) {
 			return true;
 		}
+
 		boolean isPublished = false;
-		long startTime = new Date().getTime();
-		List<String> batchJob = null;
-		int counter=0;
+		long startTime = System.currentTimeMillis();
+		List<String> batchJob = new ArrayList<>();
+		int counter = 0;
+
 		for (String schemeId : schemeIds) {
-			if (batchJob == null) {
-				batchJob = new ArrayList<>();
-			}
 			batchJob.add(schemeId);
 			counter++;
+
 			if (counter % batchSize == 0 || counter == schemeIds.size()) {
-				//processing batch
-				try {
-					JSONObject requestData = new JSONObject();
-					requestData.put(SCHEME_IDS, batchJob.toArray());
-					requestData.put(SOFTWARE, SRS);
-					requestData.put(COMMENT, comment);
-					JSONResource response = resty.put(urlHelper.getSchemeIdBulkPublishingUrl(schemeType,token), requestData, APPLICATION_JSON);
-					if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
-						String jobId =  response.get("id").toString();
-						LOGGER.info("Bulk job id:" + jobId + " for publishing scheme ids with batch size:" + batchJob.size());
-						if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())){
-							isPublished = true;
-						}
-					} else {
-						String statusMsg = "Received http status code from id service:" + response.getHTTPStatus() + " message:" + response.get(MESSAGE);
-						LOGGER.error(statusMsg);
-						throw new RestClientException(statusMsg);
-					}
-				} catch (Exception e) {
-					String message = "Bulk publish scheme ids job failed.";
-					LOGGER.error(message, e);
-					throw new RestClientException(message, e);
-				}
-				batchJob = null;
+				isPublished = processPublishSchemeIdBatch(batchJob, schemeType, comment) || isPublished;
+				batchJob.clear();
 			}
 		}
+
 		LOGGER.debug("End publishing scheme ids with batch size {}", schemeIds.size());
-		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
+		LOGGER.info(LOG_TIME_TAKEN, (System.currentTimeMillis() - startTime) / 1000);
 		return isPublished;
 	}
 
-	
+	/**
+	 * Processes a single batch of scheme ids for publishing.
+	 */
+	private boolean processPublishSchemeIdBatch(List<String> batchJob, SchemeIdType schemeType, String comment) throws RestClientException {
+		try {
+			// Build request JSON
+			JsonObject requestJson = new JsonObject();
+			requestJson.add(SCHEME_IDS, gson.toJsonTree(batchJob));
+			requestJson.addProperty(SOFTWARE, SRS);
+			requestJson.addProperty(COMMENT, comment);
+
+			HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestJson), headers);
+			String url = urlHelper.getSchemeIdBulkPublishingUrl(schemeType, token);
+			JsonElement jsonElement = makeHttpCall(url, HttpMethod.PUT, requestEntity);
+
+			String jobId = jsonElement.getAsJsonObject().get("id").getAsString();
+			LOGGER.info("Bulk job id: {} for publishing scheme ids with batch size: {}", jobId, batchJob.size());
+			return BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() ==
+					waitForCompleteStatus(jobId, getTimeOutInSeconds());
+		} catch (Exception e) {
+			throw new RestClientException("Bulk publish scheme ids job failed.", e);
+		}
+	}
+
 	@Override
 	public Map<String, String> getStatusForSchemeIds(SchemeIdType schemeType, Collection<String> legacyIds) throws RestClientException {
-		Map<String,String> result = new HashMap<>();
+		Map<String, String> result = new HashMap<>();
 		if (legacyIds == null || legacyIds.isEmpty()) {
 			return result;
 		}
+
 		int attempt = 1;
 		boolean isDone = false;
+
 		while (!isDone) {
-				JSONResource response;
-				try {
-					response = resty.json(urlHelper.getSchemeIdBulkUrl(token, schemeType, legacyIds));
-					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
-						JSONArray items = response.array();
-						for (int i =0;i < items.length();i++) {
-							result.put((String)items.getJSONObject(i).get(SCHEME_ID), (String)items.getJSONObject(i).get(STATUS));
-						}
-					} else {
-						String errorMsg = (response != null) ? ("http status code is:" + response.getHTTPStatus() + " message:" + response.get(MESSAGE)) : "No response received!";
-						throw new RestClientException(errorMsg);
-					}
-					isDone = true;
-				} catch (Exception e) {
-					
-					if (attempt < maxTries) {
-						LOGGER.warn("Id service failed on attempt {}. Waiting {} seconds before retrying.", attempt, retryDelaySeconds, e);
-						attempt++;
-						try {
-							Thread.sleep(retryDelaySeconds * 1000);
-						} catch (InterruptedException ie) {
-							LOGGER.warn("Retry delay interrupted.",e);
-						}
-					} else {
-						throw new RestClientException("Failed to get scheme Ids for batch size:" + legacyIds.size(), e);
-					}
-				}
+			try {
+				result.putAll(fetchSchemeIdStatusBatch(schemeType, legacyIds));
+				isDone = true;
+			} catch (Exception e) {
+				attempt++;
+				String action = "get scheme Ids for batch size: " + legacyIds.size();
+				sleepAndRetry(action, attempt, e);
+			}
 		}
+
 		return result;
 	}
-	
-	public Map<Long,JSONObject> getSctIdRecords(Collection<Long> sctIds) throws RestClientException {
-		Map<Long,JSONObject> result = new HashMap<>();
+
+	/**
+	 * Fetches a single batch of schemeId statuses from the ID service.
+	 */
+	private Map<String, String> fetchSchemeIdStatusBatch(SchemeIdType schemeType, Collection<String> legacyIds) throws RestClientException {
+		try {
+			// Build URL with query params
+			String url = urlHelper.getSchemeIdBulkUrl(token, schemeType, legacyIds);
+			JsonElement responseElement = makeHttpCall(url, HttpMethod.GET, HttpEntity.EMPTY);
+
+			Map<String, String> statusMap = new HashMap<>();
+			JsonArray items = responseElement.getAsJsonArray();
+			for (JsonElement itemElement : items) {
+				JsonObject item = itemElement.getAsJsonObject();
+				String schemeId = item.get(SCHEME_ID).getAsString();
+				String status = item.get(STATUS).getAsString();
+				statusMap.put(schemeId, status);
+			}
+
+			return statusMap;
+		} catch (Exception e) {
+			throw new RestClientException("Error fetching scheme id statuses", e);
+		}
+	}
+
+	private JsonElement makeHttpCall(String url, HttpMethod method, HttpEntity<?> requestEntity) throws RestClientException {
+		ResponseEntity<String> response = restTemplate.exchange(
+				url,
+				method,
+				requestEntity,
+				String.class
+		);
+
+		if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+			String errorMsg = "HTTP status code: " + response.getStatusCode() + " for URL: " + url;
+			if (response.getBody() == null) {
+				errorMsg += ", but response body is null";
+			}
+			throw new RestClientException(errorMsg);
+		}
+
+		return JsonParser.parseString(response.getBody());
+	}
+
+
+	public Map<Long, JsonObject> getSctIdRecords(Collection<Long> sctIds) throws RestClientException {
+		Map<Long, JsonObject> result = new HashMap<>();
 		if (sctIds == null || sctIds.isEmpty()) {
 			return result;
 		}
+
 		int attempt = 1;
-		boolean isDone = false;
-		while (!isDone) {
-				JSONResource response;
-				try {
-					response = resty.json(urlHelper.getSctIdBulkUrl(token, sctIds));
-					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
-						JSONArray items = response.array();
-						for (int i =0;i < items.length();i++) {
-							result.put(Long.valueOf((String)items.getJSONObject(i).get(SCTID)), items.getJSONObject(i));
-						}
-					} else {
-						String errorMsg = (response != null) ? "http status code is:" + response.getHTTPStatus() : "No response received.";
-						throw new RestClientException(errorMsg);
-					}
-					isDone = true;
-				} catch (Exception e) {
-					if (attempt < maxTries) {
-						LOGGER.warn("Id service failed on attempt {}. Waiting {} seconds before retrying.", attempt, retryDelaySeconds, e);
-						attempt++;
-						try {
-							Thread.sleep(retryDelaySeconds * 1000);
-						} catch (InterruptedException ie) {
-							LOGGER.warn("Retry delay interrupted.",e);
-						}
-					} else {
-						throw new RestClientException("Failed to get sctIds for batch size:" + sctIds.size(), e);
-					}
-				}
+		while (true) {
+			try {
+				result.putAll(fetchSctIdRecordsBatch(sctIds));
+				break;
+			} catch (Exception e) {
+				attempt++;
+				String action = "get sctIds for batch size: " + sctIds.size();
+				sleepAndRetry(action, attempt, e);
+			}
 		}
 		return result;
 	}
-	
-	public Map<String, JSONObject> getSchemeIds(SchemeIdType schemeType, Collection<String> legacyIds) throws RestClientException {
-		Map<String,JSONObject> result = new HashMap<>();
-		if (legacyIds == null || legacyIds.isEmpty()) {
-			return result;
+
+	/**
+	 * Fetches a single batch of SCT ID records.
+	 */
+	private Map<Long, JsonObject> fetchSctIdRecordsBatch(Collection<Long> sctIds) throws RestClientException {
+		try {
+			// Build URL with query parameters
+			String url = urlHelper.getSctIdBulkUrl(token, sctIds);
+			JsonElement responseElement = makeHttpCall(url, HttpMethod.GET, HttpEntity.EMPTY);
+
+			Map<Long, JsonObject> resultMap = new HashMap<>();
+			JsonArray items = responseElement.getAsJsonArray();
+			for (JsonElement itemElement : items) {
+				JsonObject item = itemElement.getAsJsonObject();
+				Long sctId = item.get(SCTID).getAsLong();
+				resultMap.put(sctId, item);
+			}
+
+			return resultMap;
+		} catch (Exception e) {
+			throw new RestClientException("Error fetching SCT ID records", e);
 		}
-		int attempt = 1;
-		boolean isDone = false;
-		while (!isDone) {
-				JSONResource response;
-				try {
-					response = resty.json(urlHelper.getSchemeIdBulkUrl(token, schemeType, legacyIds));
-					if ( response != null && HttpStatus.SC_OK == (response.getHTTPStatus()) ){
-						JSONArray items = response.array();
-						for (int i =0;i < items.length();i++) {
-							result.put((String)items.getJSONObject(i).get(SCHEME_ID), items.getJSONObject(i));
-						}
-					} else {
-						throw new RestClientException("http status code is:" + response.getHTTPStatus());
-					}
-					isDone = true;
-				} catch (Exception e) {
-					
-					if (attempt < maxTries) {
-						LOGGER.warn("Id service failed on attempt {}. Waiting {} seconds before retrying.", attempt, retryDelaySeconds, e);
-						attempt++;
-						try {
-							Thread.sleep(retryDelaySeconds * 1000);
-						} catch (InterruptedException ie) {
-							LOGGER.warn("Retry delay interrupted.",e);
-						}
-					} else {
-						throw new RestClientException("Failed to get sctIds for batch size:" + legacyIds.size(), e);
-					}
-				}
-		}
-		return result;
 	}
 
 	@Override
 	public Map<Long, UUID> getUuidsForSctIds(Collection<Long> sctIds) throws RestClientException {
 		Map<Long, UUID> sctIdUuidMap = new HashMap<>();
-		List<Long> batchJob = null;
-		int counter=0;
+		if (sctIds == null || sctIds.isEmpty()) {
+			return sctIdUuidMap;
+		}
+
+		List<Long> batchJob = new ArrayList<>();
+		int counter = 0;
+
 		for (Long sctId : sctIds) {
-			if (batchJob == null) {
-				batchJob = new ArrayList<>();
-			}
 			batchJob.add(sctId);
 			counter++;
 			if (counter % batchSize == 0 || counter == sctIds.size()) {
-				Map<Long,JSONObject> sctIdRecords = getSctIdRecords(batchJob);
-				String uuidStr = "";
-				String jsonStr = "";
-				for (Long id : sctIdRecords.keySet()) {
+				Map<Long, JsonObject> sctIdRecords = fetchSctIdRecordsBatchForUUID(batchJob);
+				for (Map.Entry<Long, JsonObject> entry : sctIdRecords.entrySet()) {
+					Long id = entry.getKey();
+					JsonObject json = entry.getValue();
 					try {
-						jsonStr = sctIdRecords.get(id).toString();
-						uuidStr = (String)sctIdRecords.get(id).get(SYSTEM_ID);
+						String uuidStr = json.get(SYSTEM_ID).getAsString();
 						sctIdUuidMap.put(id, UUID.fromString(uuidStr));
-					} catch (IllegalArgumentException|JSONException e) {
-						throw new RestClientException("Error when fetching system id for sctId: " + id + " using UUID '" + uuidStr + "'.  Received JSON: " + jsonStr, e);
+					} catch (IllegalArgumentException | NullPointerException e) {
+						throw new RestClientException("Error fetching system ID for sctId: " + id
+								+ " from JSON: " + json.toString(), e);
 					}
 				}
-				batchJob = null;
+				batchJob = new ArrayList<>();
 			}
 		}
+
 		return sctIdUuidMap;
 	}
 
+	/**
+	 * Fetches a batch of SCT ID records from the ID service.
+	 */
+	private Map<Long, JsonObject> fetchSctIdRecordsBatchForUUID(Collection<Long> sctIds) throws RestClientException {
+		try {
+			String url = urlHelper.getSctIdBulkUrl(token, sctIds);
+			JsonElement responseElement = makeHttpCall(url, HttpMethod.GET, HttpEntity.EMPTY);
+
+			Map<Long, JsonObject> resultMap = new HashMap<>();
+			JsonArray items = responseElement.getAsJsonArray();
+			for (JsonElement element : items) {
+				JsonObject item = element.getAsJsonObject();
+				Long sctId = item.get(SCTID).getAsLong();
+				resultMap.put(sctId, item);
+			}
+			return resultMap;
+		} catch (Exception e) {
+			throw new RestClientException("Error fetching SCT ID records batch", e);
+		}
+	}
 
 	@Override
-	public List<Long> registerSctIds(List<Long> sctIdsToRegister, Map<Long,UUID> sctIdSystemIdMap, Integer namespaceId, String comment) throws RestClientException {
+	public List<Long> registerSctIds(List<Long> sctIdsToRegister, Map<Long, UUID> sctIdSystemIdMap,
+	                                 Integer namespaceId, String comment) throws RestClientException {
 		LOGGER.debug("Start registering sctIds with batch size {} for namespace {}", sctIdsToRegister.size(), namespaceId);
 		List<Long> result = new ArrayList<>();
 		if (sctIdsToRegister.isEmpty()) {
-			LOGGER.warn("No sctIds submitted for requesting sctIds");
+			LOGGER.warn("No sctIds submitted for registration");
 			return result;
 		}
+
 		long startTime = new Date().getTime();
-		List<JSONObject> records = new ArrayList<>();
-		for (Long sctId : sctIdsToRegister) {
-			JSONObject jsonObj = new JSONObject();
-			try {
-				jsonObj.put(SCTID, sctId.toString());
-				UUID systemId = null;
-				if (sctIdSystemIdMap != null ) {
-					systemId = sctIdSystemIdMap.get(sctId);
-				}
-				systemId = (systemId == null) ? UUID.randomUUID() : systemId;
-				jsonObj.put(SYSTEM_ID, systemId.toString().toLowerCase());
-				records.add(jsonObj);
-			} catch (JSONException e) {
-				String msg = "Failed to create json object";
-				LOGGER.error(msg,e);
-				throw new RestClientException(msg,e);
-			}
-		}
+
+		JsonArray records = prepareSctIdRegistrationRecords(sctIdsToRegister, sctIdSystemIdMap);
+
 		try {
-			JSONObject requestData = new JSONObject();
-			requestData.put(NAMESPACE, namespaceId.intValue());
-			requestData.put("records", records.toArray());
-			requestData.put(SOFTWARE, SRS);
-			requestData.put(COMMENT, comment);
-			JSONResource response = resty.json(urlHelper.getSctIdBulkRegisterUrl(token), RestyHelper.content((requestData),APPLICATION_JSON));
-			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
-				String jobId =  response.get("id").toString();
-				LOGGER.info("Bulk job id:" + jobId + " with batch size:" + sctIdsToRegister.size());
-				if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
-					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
-					for (int i =0;i < items.length();i++) {
-						result.add(Long.valueOf((String)items.getJSONObject(i).get(SCTID)));
-					}
+			JsonObject requestData = new JsonObject();
+			requestData.addProperty(NAMESPACE, namespaceId);
+			requestData.add("records", records);
+			requestData.addProperty(SOFTWARE, SRS);
+			requestData.addProperty(COMMENT, comment);
+			HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestData), headers);
+			String url = urlHelper.getSctIdBulkRegisterUrl(token);
+			JsonElement responseElement = makeHttpCall(url, HttpMethod.POST, requestEntity);
+
+			// Wait for completion
+			JsonObject responseObject = responseElement.getAsJsonObject();
+			String jobId = responseObject.get("id").getAsString();
+			LOGGER.info(LOG_JOB_WITH_SIZE, jobId, sctIdsToRegister.size());
+
+			if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
+				String resultJson = restTemplate.getForObject(urlHelper.getBulkJobResultUrl(jobId, token), String.class);
+				JsonArray items = JsonParser.parseString(resultJson).getAsJsonArray();
+				for (JsonElement itemEl : items) {
+					JsonObject item = itemEl.getAsJsonObject();
+					result.add(item.get(SCTID).getAsLong());
 				}
-			} else {
-				String statusMsg = getFailureMessage(response);
-				LOGGER.error(statusMsg);
-				throw new RestClientException(statusMsg);
 			}
 		} catch (Exception e) {
-			String message = "Bulk register sctIds job failed.";
-			LOGGER.error(message, e);
-			throw new RestClientException(message,e);
+			throw new RestClientException("Bulk register sctIds job failed.", e);
 		}
+
 		LOGGER.debug("End registering sctIds with batch size {} for namespace {}", sctIdsToRegister.size(), namespaceId);
-		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
+		LOGGER.info(LOG_TIME_TAKEN, (new Date().getTime() - startTime) / 1000);
 		return result;
-		
 	}
+
+	/** Helper to convert SCT IDs + system IDs into a JSON array for registration */
+	private JsonArray prepareSctIdRegistrationRecords(List<Long> sctIdsToRegister, Map<Long, UUID> sctIdSystemIdMap) {
+		JsonArray records = new JsonArray();
+		for (Long sctId : sctIdsToRegister) {
+			JsonObject regRecord = new JsonObject();
+			regRecord.addProperty(SCTID, sctId);
+			UUID systemId = (sctIdSystemIdMap != null && sctIdSystemIdMap.containsKey(sctId))
+					? sctIdSystemIdMap.get(sctId)
+					: UUID.randomUUID();
+			regRecord.addProperty(SYSTEM_ID, systemId.toString().toLowerCase());
+			records.add(regRecord);
+		}
+		return records;
+	}
+
 
 	@Override
 	public List<Long> reserveSctIds(Integer namespaceId, int totalToReserve, String partitionId, String comment) throws RestClientException {
 		long startTime = new Date().getTime();
 		List<Long> result = new ArrayList<>();
+
 		try {
-			JSONObject requestData = new JSONObject();
-			requestData.put(NAMESPACE, namespaceId.intValue());
-			requestData.put(SOFTWARE, SRS);
-			requestData.put(QUANTITY, totalToReserve);
-			requestData.put(PARTITION_ID, partitionId);
-			requestData.put(COMMENT, comment);
-			JSONResource response = resty.json(urlHelper.getSctIdBulkReserveUrl(token), RestyHelper.content((requestData),APPLICATION_JSON));
-			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
-				String jobId =  response.get("id").toString();
-				LOGGER.info("Bulk job id:" + jobId + " with batch size:" + totalToReserve);
-				if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
-					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
-					for (int i =0;i < items.length();i++) {
-						
-						result.add(Long.valueOf((String)items.getJSONObject(i).get(SCTID)));
-					}
+			// Prepare request JSON
+			JsonObject requestData = new JsonObject();
+			requestData.addProperty(NAMESPACE, namespaceId);
+			requestData.addProperty(SOFTWARE, SRS);
+			requestData.addProperty(QUANTITY, totalToReserve);
+			requestData.addProperty(PARTITION_ID, partitionId);
+			requestData.addProperty(COMMENT, comment);
+			HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestData), headers);
+			String url = urlHelper.getSctIdBulkReserveUrl(token);
+			JsonElement responseElement = makeHttpCall(url, HttpMethod.POST, requestEntity);
+
+			// Get jobId from response
+			String jobId = responseElement.getAsJsonObject().get("id").getAsString();
+			LOGGER.info(LOG_JOB_WITH_SIZE, jobId, totalToReserve);
+
+			// Wait for job completion
+			if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
+				String resultJson = restTemplate.getForObject(urlHelper.getBulkJobResultUrl(jobId, token), String.class);
+				JsonArray items = JsonParser.parseString(resultJson).getAsJsonArray();
+				for (JsonElement itemEl : items) {
+					JsonObject item = itemEl.getAsJsonObject();
+					result.add(item.get(SCTID).getAsLong());
 				}
-			} else {
-				String statusMsg = getFailureMessage(response);
-				LOGGER.error(statusMsg);
-				throw new RestClientException(statusMsg);
 			}
 		} catch (Exception e) {
-			String message = "Bulk reserving sctIds job failed.";
-			LOGGER.error(message, e);
-			throw new RestClientException(message,e);
+			throw new RestClientException("Bulk reserving sctIds job failed.", e);
 		}
+
 		LOGGER.debug("End reserving sctIds with batch size {} for namespace {}", totalToReserve, namespaceId);
-		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
-		
+		LOGGER.info(LOG_TIME_TAKEN, (new Date().getTime() - startTime) / 1000);
 		return result;
 	}
+
 
 	@Override
 	public List<Long> generateSctIds(Integer namespaceId, int totalToGenerate, String partitionId, String comment) throws RestClientException {
 		long startTime = new Date().getTime();
 		List<Long> result = new ArrayList<>();
+
 		try {
-			JSONObject requestData = new JSONObject();
-			requestData.put(NAMESPACE, namespaceId.intValue());
-			requestData.put(SOFTWARE, SRS);
-			requestData.put(QUANTITY, totalToGenerate);
-			requestData.put(PARTITION_ID, partitionId);
-			requestData.put(GENERATE_LEGACY_IDS, "false");
-			requestData.put(COMMENT, comment);
-			JSONResource response = resty.json(urlHelper.getSctIdBulkGenerateUrl(token), RestyHelper.content((requestData),APPLICATION_JSON));
-			if ( HttpStatus.SC_OK == response.getHTTPStatus()) {
-				String jobId =  response.get("id").toString();
-				LOGGER.info("Bulk job id:" + jobId + " with batch size:" + totalToGenerate);
-				if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
-					JSONArray items = resty.json(urlHelper.getBulkJobResultUrl(jobId, token)).array();
-					for (int i =0;i < items.length();i++) {
-						result.add(Long.valueOf((String)items.getJSONObject(i).get(SCTID)));
-					}
+			// Prepare request JSON
+			JsonObject requestData = new JsonObject();
+			requestData.addProperty(NAMESPACE, namespaceId);
+			requestData.addProperty(SOFTWARE, SRS);
+			requestData.addProperty(QUANTITY, totalToGenerate);
+			requestData.addProperty(PARTITION_ID, partitionId);
+			requestData.addProperty(GENERATE_LEGACY_IDS, FALSE);
+			requestData.addProperty(COMMENT, comment);
+			HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestData), headers);
+			String url = urlHelper.getSctIdBulkGenerateUrl(token);
+			JsonElement responseElement = makeHttpCall(url, HttpMethod.POST, requestEntity);
+
+			String jobId = responseElement.getAsJsonObject().get("id").getAsString();
+			LOGGER.info(LOG_JOB_WITH_SIZE, jobId, totalToGenerate);
+
+			// Wait for job completion
+			if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
+				String resultJson = restTemplate.getForObject(urlHelper.getBulkJobResultUrl(jobId, token), String.class);
+				JsonArray items = JsonParser.parseString(resultJson).getAsJsonArray();
+				for (JsonElement itemEl : items) {
+					JsonObject item = itemEl.getAsJsonObject();
+					result.add(item.get(SCTID).getAsLong());
 				}
-			} else {
-				String statusMsg = getFailureMessage(response);
-				LOGGER.error(statusMsg);
-				throw new RestClientException(statusMsg);
 			}
 		} catch (Exception e) {
-			String message = "Bulk generating sctIds job failed.";
-			LOGGER.error(message, e);
-			throw new RestClientException(message,e);
+			throw new RestClientException("Bulk generating sctIds job failed.", e);
 		}
-		
+
 		LOGGER.debug("End generating sctIds with batch size {} for namespace {}", totalToGenerate, namespaceId);
-		LOGGER.info("Time taken in seconds:" + (new Date().getTime() - startTime) /1000);
+		LOGGER.info(LOG_TIME_TAKEN, (new Date().getTime() - startTime) / 1000);
+
 		return result;
 	}
+
+	/**
+	 * Simple holder class for status and log.
+	 */
+	private record StatusLog(int status, String log) {}
+
 }

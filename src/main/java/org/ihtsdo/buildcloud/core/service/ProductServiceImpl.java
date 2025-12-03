@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.core.service;
 
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.ihtsdo.buildcloud.core.dao.ExtensionConfigDAO;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
@@ -26,8 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
-import us.monoid.json.JSONException;
-import us.monoid.json.JSONObject;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -64,7 +64,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	private ModuleStorageCoordinatorCache moduleStorageCoordinatorCache;
 
 	@Value("${srs.build.offlineMode}")
-	private Boolean offlineMode;
+	private boolean offlineMode;
 
 	@Value("${srs.empty-release-file}")
 	private String emptyRf2Filename;
@@ -600,10 +600,12 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 	public boolean isJSONValid(String test) {
 		try {
-			new JSONObject(test);
-		} catch (JSONException ex) {
+			JsonParser.parseString(test);
+		} catch (JsonSyntaxException ex) {
+			LOGGER.error("Invalid JSON: {}. Error: {}", test, ex.getMessage());
 			return false;
 		}
 		return true;
 	}
+
 }

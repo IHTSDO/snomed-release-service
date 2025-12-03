@@ -21,9 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -46,7 +44,7 @@ public class TermServerServiceImpl implements TermServerService {
 	@Value("${srs.file-export.retry.delay:20000}")
 	private long retryDelayInMillis;
 
-	private static final Logger logger = LoggerFactory.getLogger(TermServerService.class);
+	private static final Logger logger = LoggerFactory.getLogger(TermServerServiceImpl.class);
 
 	private static final String DELTA = "Delta";
 	private static final String SNAPSHOT = "Snapshot";
@@ -54,54 +52,69 @@ public class TermServerServiceImpl implements TermServerService {
 	@Override
 	public File export(String branchPath, String effectiveDate, Set<String> exportModuleIds, ExportCategory exportCategory) throws BusinessServiceException {
 		SnowstormRestClient snowstormRestClient = getSnowstormClient();
+		waitForBranchUnlock(snowstormRestClient, branchPath);
+		File exportFile = performExportWithRetry(snowstormRestClient, branchPath, effectiveDate, exportModuleIds, exportCategory);
+		return processExportFile(exportFile, effectiveDate);
+	}
+
+	private void waitForBranchUnlock(SnowstormRestClient client, String branchPath) throws BusinessServiceException {
 		int counter = 0;
-		boolean isBranchLocked = false;
 		while (counter++ < maxExportRetry) {
 			try {
-				isBranchLocked = snowstormRestClient.isBranchLocked(branchPath);
+				if (!client.isBranchLocked(branchPath)) {
+					return;
+				}
 			} catch (RestClientException e) {
-				throw new BusinessServiceException(String.format("Failed to check branch lock status for %s. Error: %s", branchPath, e.getCause() != null ? e.getCause().getMessage() : e.getMessage()), e);
+				throw new BusinessServiceException(
+						String.format("Failed to check branch lock status for %s. Error: %s",
+								branchPath, e.getCause() != null ? e.getCause().getMessage() : e.getMessage()), e);
 			}
-			if (!isBranchLocked) {
-				break;
-			}
-			logger.info("Branch {} is locked. SRS will wait {} seconds and retry.", branchPath, retryDelayInMillis/1000);
+
+			logger.info("Branch {} is locked. SRS will wait {} seconds and retry.", branchPath, retryDelayInMillis / 1000);
 			try {
 				Thread.sleep(retryDelayInMillis);
 			} catch (InterruptedException e) {
-				logger.warn("Retry delay failed", e);
+				Thread.currentThread().interrupt();
+				throw new BusinessServiceException("Sleep interrupted while retrying export on locked branch", e);
 			}
 		}
+		throw new BusinessServiceException("Branch " + branchPath + " remained locked after " + maxExportRetry + " retries.");
+	}
 
-		counter = 0;
-		File export = null;
-		boolean isSuccessful = false;
-		while (!isSuccessful && counter++ < maxExportRetry) {
+	private File performExportWithRetry(SnowstormRestClient client, String branchPath, String effectiveDate,
+	                                    Set<String> exportModuleIds, ExportCategory exportCategory) throws BusinessServiceException {
+		int counter = 0;
+		while (counter++ < maxExportRetry) {
 			try {
-				export = snowstormRestClient.export(branchPath, effectiveDate, exportModuleIds, exportCategory, ExportType.SNAPSHOT);
-				isSuccessful = true;
-			} catch(Exception e) {
+				return client.export(branchPath, effectiveDate, exportModuleIds, exportCategory, ExportType.SNAPSHOT);
+			} catch (Exception e) {
 				logger.error("Failed to export from branch {} on attempt {} due to {}", branchPath, counter, ExceptionUtils.getRootCauseMessage(e));
 				if (counter == maxExportRetry) {
-					throw new BusinessServiceException(String.format("Failed to export from %s after retry %d times. Error: %s", branchPath, maxExportRetry, e.getCause() != null ? e.getCause().getMessage() : e.getMessage()), e);
+					throw new BusinessServiceException(
+							String.format("Failed to export from %s after %d retries. Error: %s",
+									branchPath, maxExportRetry, e.getCause() != null ? e.getCause().getMessage() : e.getMessage()), e);
 				} else {
-					logger.info("Retry will start in {} seconds", retryDelayInMillis/1000);
+					logger.info("Retry will start in {} seconds", retryDelayInMillis / 1000);
 					try {
 						Thread.sleep(retryDelayInMillis);
 					} catch (InterruptedException ie) {
-						logger.warn("Export retry delay failed", e);
+						Thread.currentThread().interrupt();
+						throw new BusinessServiceException("Sleep interrupted while retrying failed export", e);
 					}
 				}
 			}
 		}
+		throw new BusinessServiceException("Export failed after maximum retries for branch " + branchPath);
+	}
 
+	private File processExportFile(File exportFile, String effectiveDate) throws BusinessServiceException {
 		File tempDir = null;
 		try {
 			tempDir = Files.createTempDirectory("export-temp").toFile();
-			unzipFlat(export, tempDir);
+			unzipFlat(exportFile, tempDir);
 			renameFiles(tempDir, SNAPSHOT, DELTA);
 			enforceReleaseDate(tempDir, effectiveDate);
-			File newZipFile = File.createTempFile("term-server-export",".zip");
+			File newZipFile = File.createTempFile("term-server-export", ".zip");
 			ZipFileUtils.zip(tempDir.getAbsolutePath(), newZipFile.getAbsolutePath());
 			return newZipFile;
 		} catch (IOException e) {
@@ -112,6 +125,7 @@ public class TermServerServiceImpl implements TermServerService {
 			}
 		}
 	}
+
 
 	@Override
 	public List<CodeSystem> getCodeSystems() {
@@ -184,7 +198,9 @@ public class TermServerServiceImpl implements TermServerService {
 			String newName = currentName.replace(find, replace);
 			if (!newName.equals(currentName)) {
 				File newFile = new File(parentDir, newName);
-				thisFile.renameTo(newFile);
+				if (!thisFile.renameTo(newFile)) {
+					throw new IllegalStateException("Failed to rename " + thisFile + " to " + newFile);
+				}
 			}
 		}
 	}
@@ -195,7 +211,7 @@ public class TermServerServiceImpl implements TermServerService {
 			if (thisFile.isFile()) {
 				String thisReleaseDate = findDateInString(thisFile.getName(), true);
 				if (thisReleaseDate != null && !thisReleaseDate.equals("_" + enforcedReleaseDate)) {
-					logger.debug("Modifying releaseDate in " + thisFile.getName() + " to _" + enforcedReleaseDate);
+					logger.debug("Modifying releaseDate in {} to _{}", thisFile.getName(), enforcedReleaseDate);
 					renameFile(extractDir, thisFile, thisReleaseDate, "_" + enforcedReleaseDate);
 				}
 			}
