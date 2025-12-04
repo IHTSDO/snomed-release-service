@@ -636,7 +636,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 		// I think adding a pipe to the end of the status filename and using that as the delimiter would be
 		// the simplest way to give performance - KK
-		LOGGER.info("Finding all Builds in {}, {}.", buildBucketName, directoryPathPrefix);
+		LOGGER.trace("Finding all Builds in {}, {}.", buildBucketName, directoryPathPrefix);
 		BuildResponse response = getAllBuildsFromS3(directoryPathPrefix, requestParameter.releaseCenterKey, requestParameter.productKey, requestParameter.forYears);
 		List<Build> builds = response.builds();
 		builds = removeInvisibleBuilds(requestParameter.visibility, response.visibilityPaths, builds);
@@ -644,7 +644,7 @@ public class BuildDAOImpl implements BuildDAO {
 		addDataToBuilds(builds, response.userPaths, response.userRolesPaths, response.tagPaths, requestParameter);
 		Collections.reverse(builds);
 
-		LOGGER.info("{} Builds being returned to client.", builds.size());
+		LOGGER.trace("{} Builds being returned to client.", builds.size());
 		return builds;
 	}
 
@@ -657,7 +657,7 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 
 
-		LOGGER.info("Finding all Builds in {}, {}.", buildBucketName, productDirectoryPath);
+		LOGGER.trace("Finding all builds in {}, {}.", buildBucketName, productDirectoryPath);
 		BuildResponse response = getAllBuildsFromS3(productDirectoryPath, requestParameter.releaseCenterKey, requestParameter.productKey, requestParameter.forYears);
 		List<Build> allBuilds = response.builds();
 		allBuilds = filterByViewMode(allBuilds, response.tagPaths, requestParameter.viewMode);
@@ -694,7 +694,7 @@ public class BuildDAOImpl implements BuildDAO {
 			}
 		}
 		int totalPages = ListHelper.getTotalPages(allBuilds, pageSize);
-		LOGGER.info("{} Builds being returned to client. {} pages of Builds available.", pagedBuilds.size(), totalPages);
+		LOGGER.info("Returning {} builds to client from {}, {}. {} pages available.", pagedBuilds.size(), buildBucketName, productDirectoryPath, totalPages);
 		return new BuildPage<>(allBuilds.size(), totalPages, pageNumber, pageSize, pagedBuilds);
 	}
 
@@ -739,18 +739,18 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	private BuildResponse getAllBuildsFromS3(String directoryPathPrefix, String releaseCenterKey, String productKey, List<Integer> forYears) {
-		LOGGER.debug("Reading Builds in {}, {} in batches.", buildBucketName, directoryPathPrefix);
+		LOGGER.trace("Reading Builds in {}, {} in batches.", buildBucketName, directoryPathPrefix);
         GetS3ObjectResponse getS3ObjectResponse = getS3Objects(buildBucketName, releaseCenterKey, productKey, directoryPathPrefix, forYears);
         BuildResponse response = findBuilds(releaseCenterKey, productKey, getS3ObjectResponse.s3Objects());
         if (Boolean.TRUE.equals(getS3ObjectResponse.isGetAllBuild())) {
             this.buildIdsToProductMap.put(releaseCenterKey + org.ihtsdo.otf.RF2Constants.DASH + productKey, response.builds.stream().map(Build::getId).collect(Collectors.toSet()));
         }
-        LOGGER.debug("Found {} Builds in {}, {}.", response.builds.size(), buildBucketName, directoryPathPrefix);
+        LOGGER.trace("Found {} Builds in {}, {}.", response.builds.size(), buildBucketName, directoryPathPrefix);
         return response;
     }
 
 	private List<Build> removeInvisibleBuilds(Boolean visibility, List<String> visibilityPaths, List<Build> builds) {
-		LOGGER.debug("Removing invisible Builds.");
+		LOGGER.trace("Removing invisible builds.");
 		if (visibility != null && !visibilityPaths.isEmpty() && !builds.isEmpty()) {
 			List<String> invisibleBuildIds = getInvisibleBuilds(visibilityPaths);
 			if (visibility) {
@@ -764,7 +764,7 @@ public class BuildDAOImpl implements BuildDAO {
 			}
 		}
 
-		LOGGER.debug("{} Builds remaining.", builds.size());
+		LOGGER.trace("{} Builds remaining.", builds.size());
 		return builds;
 	}
 
@@ -811,7 +811,7 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	private List<Build> pageBuilds(List<Build> builds, int pageNumber, int pageSize) {
-		LOGGER.debug("Fetching pageNumber {} with pageSize {} from {} Builds.", pageNumber, pageSize, builds.size());
+		LOGGER.trace("Fetching pageNumber {} with pageSize {} from {} builds.", pageNumber, pageSize, builds.size());
 		return ListHelper.page(builds, pageNumber, pageSize);
 	}
 
@@ -873,7 +873,7 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	private void addDataToBuilds(List<Build> builds, List<String> userPaths, List<String> userRolesPaths, List<String> tagPaths, BuildRequestParameter requestParameter) {
-		LOGGER.info("Adding users, tags & build reports to Builds.");
+		LOGGER.trace("Adding users, tags & build reports to builds.");
 		if (!builds.isEmpty()) {
 			builds.forEach(build -> {
 				build.setBuildUser(getBuildUser(build, userPaths));
