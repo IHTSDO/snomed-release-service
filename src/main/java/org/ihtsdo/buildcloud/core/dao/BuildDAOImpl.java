@@ -327,16 +327,27 @@ public class BuildDAOImpl implements BuildDAO {
 				}
 			}
 			if (!isLatestStatus) {
-				Build lastBuild = find(build.getReleaseCenterKey(), build.getProductKey(), build.getId(), null, null, null, null);
-				origStatus = lastBuild.getStatus();
+				// Reload the latest persisted build status from storage. This may return null for
+				// newly created builds which have not yet been fully written to S3.
+				Build lastBuild = find(build.getReleaseCenterKey(), build.getProductKey(), build.getId(),
+						null, null, null, null);
+				if (lastBuild != null && lastBuild.getStatus() != null) {
+					origStatus = lastBuild.getStatus();
+				}
 			}
+
+			// Allow a single controlled transition from INTERRUPTED -> FAILED (used by InterruptedBuildRetryProcessor)
+			if (origStatus == Build.Status.INTERRUPTED && newStatus != Build.Status.FAILED) {
+				throw new IllegalStateException("Could not update build status as it has been already " + origStatus.name());
+			}
+
+			// All other terminal states remain immutable
 			if (Build.Status.FAILED_INPUT_GATHER_REPORT_VALIDATION == origStatus
-				|| Build.Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION == origStatus
-				|| Build.Status.FAILED_PRE_CONDITIONS == origStatus
-				|| Build.Status.FAILED_POST_CONDITIONS == origStatus
-				|| Build.Status.CANCELLED == origStatus
-				|| Build.Status.FAILED == origStatus
-				) {
+					|| Build.Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION == origStatus
+					|| Build.Status.FAILED_PRE_CONDITIONS == origStatus
+					|| Build.Status.FAILED_POST_CONDITIONS == origStatus
+					|| Build.Status.CANCELLED == origStatus
+					|| Build.Status.FAILED == origStatus) {
 				throw new IllegalStateException("Could not update build status as it has been already " + origStatus.name());
 			}
 		}

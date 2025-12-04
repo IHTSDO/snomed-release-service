@@ -16,7 +16,6 @@ import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.S3ClientFactory;
 import org.ihtsdo.otf.dao.s3.S3ClientImpl;
 import org.ihtsdo.otf.jms.MessagingHelper;
-import org.ihtsdo.otf.resourcemanager.ResourceConfiguration;
 import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
 import org.snomed.module.storage.ModuleStorageCoordinator;
@@ -34,7 +33,6 @@ import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
-import org.springframework.jms.config.SimpleJmsListenerContainerFactory;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
 import org.springframework.jms.support.converter.MessageConverter;
@@ -44,6 +42,7 @@ import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -62,6 +61,7 @@ import java.util.Arrays;
 @EnableJms
 @EnableAsync
 @EnableTransactionManagement
+@EnableScheduling
 public abstract class Config extends BaseConfiguration {
 
 	private static final String CHANGE_LOG_PATH = "classpath:org/ihtsdo/srs/db/changelog/db.changelog-master.xml";
@@ -192,14 +192,6 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean
-	public SimpleJmsListenerContainerFactory jmsListenerContainerFactory(@Autowired ConnectionFactory connectionFactory) {
-		final SimpleJmsListenerContainerFactory simpleJmsListenerContainerFactory = new SimpleJmsListenerContainerFactory();
-		simpleJmsListenerContainerFactory.setConnectionFactory(connectionFactory);
-		simpleJmsListenerContainerFactory.setSessionTransacted(true);
-		return simpleJmsListenerContainerFactory;
-	}
-
-	@Bean
 	public ActiveMQConnectionFactoryPrefetchCustomizer queuePrefetchCustomizer(@Value("${spring.activemq.queuePrefetch:1}") int queuePrefetch) {
 		return new ActiveMQConnectionFactoryPrefetchCustomizer(queuePrefetch);
 	}
@@ -234,7 +226,7 @@ public abstract class Config extends BaseConfiguration {
 	}
 
 	@Bean(name = "topicJmsListenerContainerFactory")
-	public DefaultJmsListenerContainerFactory getTopicFactory(@Autowired ConnectionFactory connectionFactory) {
+	public DefaultJmsListenerContainerFactory getTopicFactory(ConnectionFactory connectionFactory) {
 		DefaultJmsListenerContainerFactory factory = new  DefaultJmsListenerContainerFactory();
 		factory.setConnectionFactory(connectionFactory);
 		factory.setSessionTransacted(true);

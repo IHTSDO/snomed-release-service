@@ -21,6 +21,7 @@ import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.QATestConfig;
 import org.ihtsdo.buildcloud.core.entity.helper.TestEntityFactory;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.test.AbstractTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
 @WebAppConfiguration
-public class HypermediaGeneratorTest {
+public class HypermediaGeneratorTest extends AbstractTest {
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;

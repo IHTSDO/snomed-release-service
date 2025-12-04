@@ -3,7 +3,6 @@ package org.ihtsdo.buildcloud.core.service;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.EnumSet;
 
@@ -15,7 +14,6 @@ import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.entity.helper.TestEntityGenerator;
-import org.ihtsdo.buildcloud.core.service.build.transform.TransformationException;
 import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
 import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.buildcloud.test.AbstractTest;
@@ -31,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -58,9 +57,10 @@ public class PublishServiceImpl2Test extends AbstractTest {
 	@Autowired
 	private S3Client s3Client;
 
-	private TestEntityGenerator generator;
+    @MockitoBean
+    private org.snomed.module.storage.ModuleStorageCoordinator moduleStorageCoordinator;
 
-	Build build = null;
+	private TestEntityGenerator generator;
 
 	private static final String TEST_FILENAME = "test.zip";
 
@@ -68,13 +68,22 @@ public class PublishServiceImpl2Test extends AbstractTest {
 	private String releaseCenterName;
 
 	@BeforeEach
-	public void setup() throws BusinessServiceException, IOException, NoSuchAlgorithmException, TransformationException {
-
+    @Override
+	public void setup() {
 		generator = new TestEntityGenerator();
 		releaseCenterName = EntityHelper.formatAsBusinessKey(generator.releaseCenterShortNames[0]);
+	}
 
-		//Packages get looked up using a product composite key (ie include the unique ID)
-		//so first lets find the first product for a known product, and use that
+	@AfterEach
+    @Override
+	public void tearDown() throws IOException {
+		((TestS3Client) s3Client).freshBucketStore();
+	}
+
+	@Test
+	public void testPublishing() throws IOException, InterruptedException, BusinessServiceException {
+		// Packages get looked up using a product composite key (ie include the unique ID)
+		// so first lets find the first product for a known product, and use that
 		EnumSet<FilterOption> filterOptions = EnumSet.of(FilterOption.INCLUDE_LEGACY);
 		Page<Product> page = productService.findAll(releaseCenterName, filterOptions, PageRequest.of(0, 10), false);
 		Product product = page.getContent().get(0);
@@ -85,20 +94,15 @@ public class PublishServiceImpl2Test extends AbstractTest {
 		buildRequest.setLoadTermServerData(false);
 		buildRequest.setBuildName("Test");
 		buildRequest.setEffectiveDate("20210731");
-		build = buildService.createBuildFromProduct(releaseCenterName, product.getBusinessKey(), buildRequest, null, null);
+		// Set a synthetic branch path so PublishService can derive a code system short name
+		// without calling out to a real Snowstorm instance.
+		buildRequest.setBranchPath("MAIN/SNOMEDCT-INT");
+		Build build = buildService.createBuildFromProduct(releaseCenterName, product.getBusinessKey(), buildRequest, null, null);
 
-		//Put a zip file into the build's output directory so we have something to publish.
+		// Put a zip file into the build's output directory so we have something to publish.
 		String testFile = getClass().getResource("/" + TEST_FILENAME).getFile();
 		buildDAO.putOutputFile(build, new File(testFile), false);
-	}
 
-	@AfterEach
-	public void tearDown() throws IOException {
-		((TestS3Client) s3Client).freshBucketStore();
-	}
-
-	@Test
-	public void testPublishing() throws IOException, InterruptedException, BusinessServiceException {
 		//Using separate threads to check second thread detects file already written.
 		Thread a = runThread("one", publishService, build, null);
 		// Give thread a a head start to ensure it enters the sync block first
@@ -126,14 +130,14 @@ public class PublishServiceImpl2Test extends AbstractTest {
 		Thread thread = new Thread(() -> {
             try {
                 service.publishBuild(build, true, null);
-                LOGGER.info("Publishing complete in thread " + threadName);
+                LOGGER.info("Publishing complete in thread {}", threadName);
             } catch (Exception e) {
                 if (expectedExceptionClass == null) {
                     throw new RuntimeException("Unexpected exception thrown in thread " + threadName + " of PublishServiceTest2: ", e);
                 }
 
                 if (expectedExceptionClass != null && e.getClass() != expectedExceptionClass) {
-                    throw new RuntimeException("Incorrect exception thrown in thread " + threadName + " of PublishServiceTest2: ", e);
+                    throw new RuntimeException("Incorrect exception thrown in thread {} " + threadName + " of PublishServiceTest2: ", e);
                 }
             }
         });
@@ -142,7 +146,7 @@ public class PublishServiceImpl2Test extends AbstractTest {
 	}
 
 	@Test
-	public void testPublishingAdhocFile() {
+    void testPublishingAdhocFile() {
 		InputStream inputStream = ClassLoader.getSystemResourceAsStream(BETA_TEST_FILENAME);
 		long size = 1000;
 		ReleaseCenter releaseCenter = new ReleaseCenter();
@@ -150,13 +154,12 @@ public class PublishServiceImpl2Test extends AbstractTest {
 		try {
 			publishService.publishAdHocFile(releaseCenter, inputStream, BETA_TEST_FILENAME, size, true);
 		} catch (BusinessServiceException e) {
-			e.printStackTrace();
-			fail("Should not result in exception");
+			fail("Should not result in exception", e);
 		}
 	}
 
 	@Test
-	public void testPublishingOwlAxiom() {
+    void testPublishingOwlAxiom() {
 		String fileToPublish = "test_axiom.zip";
 		InputStream inputStream = ClassLoader.getSystemResourceAsStream(fileToPublish);
 		long size = 1000;
@@ -165,8 +168,7 @@ public class PublishServiceImpl2Test extends AbstractTest {
 		try {
 			publishService.publishAdHocFile(releaseCenter, inputStream, fileToPublish, size, true);
 		} catch (BusinessServiceException e) {
-			e.printStackTrace();
-			fail("Should not result in exception");
+			fail("Should not result in exception", e);
 		}
 	}
 }

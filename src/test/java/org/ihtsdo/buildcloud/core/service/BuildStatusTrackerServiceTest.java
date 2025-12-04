@@ -1,8 +1,9 @@
-package org.ihtsdo.buildcloud.core.dao;
+package org.ihtsdo.buildcloud.core.service;
 
 import org.ihtsdo.buildcloud.TestConfig;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildStatusTracker;
+import org.ihtsdo.buildcloud.core.service.manager.BuildStatusTrackerService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,31 +17,26 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
-@Transactional()
-public class BuildStatusTrackerDaoImplTest {
+@Transactional
+class BuildStatusTrackerServiceTest {
 
 	@Autowired
-	private BuildStatusTrackerDao buildStatusTrackerDao;
-
-	private String productKey;
-
-	private String buildId;
-
+	private BuildStatusTrackerService buildStatusTrackerService;
 
 	@Test
-	public void testCRUD() {
-		BuildStatusTracker tracker = new BuildStatusTracker();
-		productKey = "international_edition_releases";
+    void testCRUD() {
+        BuildStatusTracker tracker = new BuildStatusTracker();
+		String productKey = "international_edition_releases";
 		tracker.setProductKey(productKey);
-		buildId = "2021-06-07T12:18:00";
+		String buildId = "2021-06-07T12:18:00";
 		tracker.setBuildId(buildId);
 		tracker.setStatus(Build.Status.QUEUED.name());
 		tracker.setReleaseCenterKey("international");
-		buildStatusTrackerDao.save(tracker);
+		buildStatusTrackerService.save(tracker);
 		Timestamp startTime = tracker.getStartTime();
 		Timestamp lastUpdated = tracker.getLastUpdatedTime();
 
-		BuildStatusTracker result = buildStatusTrackerDao.findByProductKeyAndBuildId(productKey, buildId);
+		BuildStatusTracker result = buildStatusTrackerService.findByProductKeyAndBuildId(productKey, buildId);
 		assertNotNull(result);
 		assertEquals(buildId, result.getBuildId());
 		assertEquals(productKey, result.getProductKey());
@@ -49,9 +45,9 @@ public class BuildStatusTrackerDaoImplTest {
 		assertEquals(lastUpdated, result.getLastUpdatedTime());
 
 		result.setStatus(Build.Status.BUILDING.name());
-		buildStatusTrackerDao.update(result);
+		buildStatusTrackerService.update(result);
 
-		result = buildStatusTrackerDao.findByProductKeyAndBuildId(productKey, buildId);
+		result = buildStatusTrackerService.findByProductKeyAndBuildId(productKey, buildId);
 		assertNotNull(result);
 		assertEquals("BUILDING", result.getStatus());
 		assertEquals(startTime, result.getStartTime());
@@ -60,8 +56,8 @@ public class BuildStatusTrackerDaoImplTest {
 
 		result.setRvfRunId("12345");
 		result.setStatus(Build.Status.RVF_RUNNING.name());
-		buildStatusTrackerDao.update(result);
-		result = buildStatusTrackerDao.findByRvfRunIdAndBuildId("12345", buildId);
+		buildStatusTrackerService.update(result);
+		result = buildStatusTrackerService.findByRvfRunIdAndBuildId("12345", buildId);
 
 		assertNotNull(result);
 		assertEquals("12345", result.getRvfRunId());

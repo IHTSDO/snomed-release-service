@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd">
+
+    <changeSet id="2025120201-add-retry-build-id-to-build-status-tracker" author="cursor-ai">
+        <addColumn tableName="build_status_tracker">
+            <column name="retry_build_id" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <rollback>
+            <dropColumn tableName="build_status_tracker" columnName="retry_build_id"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
+
+
+
+

@@ -19,7 +19,8 @@ public class BuildStatusTrackerDaoImpl extends EntityDAOImpl<BuildStatusTracker>
 				"select statusTracker " +
 						"from BuildStatusTracker statusTracker " +
 						"where statusTracker.productKey = :productKey " +
-						" and statusTracker.status in (:status)", BuildStatusTracker.class);
+						" and statusTracker.status in (:status)",
+				BuildStatusTracker.class);
 		query.setParameter("productKey", productKey);
 		query.setParameterList("status", status);
 		return query.list();
@@ -30,7 +31,8 @@ public class BuildStatusTrackerDaoImpl extends EntityDAOImpl<BuildStatusTracker>
 		Query<BuildStatusTracker> query = getCurrentSession().createQuery(
 				"select statusTracker " +
 						"from BuildStatusTracker statusTracker " +
-						"where statusTracker.rvfRunId = :rvfRunId and statusTracker.buildId = :buildId", BuildStatusTracker.class);
+						"where statusTracker.rvfRunId = :rvfRunId and statusTracker.buildId = :buildId",
+				BuildStatusTracker.class);
 		query.setParameter("rvfRunId", rvfRunId);
 		query.setParameter("buildId", buildId);
 		return query.uniqueResult();
@@ -42,9 +44,36 @@ public class BuildStatusTrackerDaoImpl extends EntityDAOImpl<BuildStatusTracker>
 				"select statusTracker " +
 						"from BuildStatusTracker statusTracker " +
 						"where statusTracker.productKey = :productKey " +
-						" and statusTracker.buildId = :buildId", BuildStatusTracker.class);
+						" and statusTracker.buildId = :buildId",
+				BuildStatusTracker.class);
 		query.setParameter("productKey", productKey);
 		query.setParameter("buildId", buildId);
+		return query.uniqueResult();
+	}
+
+	@Override
+	public List<BuildStatusTracker> findByStatus(String... status) {
+		Query<BuildStatusTracker> query = getCurrentSession().createQuery(
+				"select statusTracker " +
+						"from BuildStatusTracker statusTracker " +
+						"where statusTracker.status in (:status)",
+				BuildStatusTracker.class);
+		query.setParameterList("status", status);
+		return query.list();
+	}
+
+	@Override
+	public BuildStatusTracker findLatestByReleaseCenterAndProduct(String releaseCenterKey, String productKey) {
+		Query<BuildStatusTracker> query = getCurrentSession().createQuery(
+				"select statusTracker " +
+						"from BuildStatusTracker statusTracker " +
+						"where statusTracker.releaseCenterKey = :releaseCenterKey " +
+						" and statusTracker.productKey = :productKey " +
+						"order by statusTracker.startTime desc",
+				BuildStatusTracker.class);
+		query.setParameter("releaseCenterKey", releaseCenterKey);
+		query.setParameter("productKey", productKey);
+		query.setMaxResults(1);
 		return query.uniqueResult();
 	}
 }

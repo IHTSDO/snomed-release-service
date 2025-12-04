@@ -3,7 +3,6 @@ package org.ihtsdo.buildcloud.core.service.manager;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ihtsdo.buildcloud.core.dao.BuildStatusTrackerDao;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.BuildServiceImpl;
@@ -59,7 +58,7 @@ public class BuildStatusListenerService {
 	private ObjectMapper objectMapper;
 
 	@Autowired
-	private BuildStatusTrackerDao statusTrackerDao;
+	private BuildStatusTrackerService trackerService;
 
 	@Autowired
 	private CacheService cacheService;
@@ -93,7 +92,7 @@ public class BuildStatusListenerService {
 		String[] split = storageLocation.split("/");
 		String buildId = split.length == 3 ? split[2] : null;
 		LOGGER.info("RVF status response message: {} for run ID: {}", message, runId);
-		BuildStatusTracker tracker = statusTrackerDao.findByRvfRunIdAndBuildId(String.valueOf(runId), buildId);
+		BuildStatusTracker tracker = trackerService.findByRvfRunIdAndBuildId(String.valueOf(runId), buildId);
 		if (tracker == null) {
 			throw new IllegalStateException("No build status tracker found with RVF run id " + runId);
 		}
@@ -187,14 +186,15 @@ public class BuildStatusListenerService {
 		final String buildId = (String) message.get(BUILD_ID_KEY);
 		final String status = (String) message.get(BUILD_STATUS_KEY);
 
-		BuildStatusTracker tracker = statusTrackerDao.findByProductKeyAndBuildId(productBusinessKey, buildId);
+		BuildStatusTracker tracker = trackerService.findByProductKeyAndBuildId(productBusinessKey, buildId);
 		if (tracker == null) {
-			throw new IllegalStateException(String.format("No build status tracker exists for product %s and build id %s", productBusinessKey, buildId));
+			LOGGER.warn("No build status tracker exists for product {} and build id {}. Skipping status update message {}",
+					productBusinessKey, buildId, message);
+			return;
 		}
 		String previousStatus = tracker.getStatus();
 		Timestamp previousUpdatedTime = tracker.getLastUpdatedTime();
-		tracker.setStatus(status);
-		statusTrackerDao.update(tracker);
+		trackerService.updateStatus(tracker, status);
 		long timeTakenInMinutes = (tracker.getLastUpdatedTime().getTime() - previousUpdatedTime.getTime())/(1000*60);
 		if (previousStatus != null && !previousStatus.equals(status)) {
 			LOGGER.info("Status tracking stats for build id {}: It took {} minutes from {} to {}", buildId, timeTakenInMinutes, previousStatus, status);
@@ -213,8 +213,8 @@ public class BuildStatusListenerService {
 		final String buildId = (String) message.get(BUILD_ID_KEY);
 		final String productKey = (String) message.get(PRODUCT_KEY);
 		final Long rvfRunId = (Long) message.get(RUN_ID_KEY);
-		BuildStatusTracker tracker = statusTrackerDao.findByProductKeyAndBuildId(productKey, buildId);
+		BuildStatusTracker tracker = trackerService.findByProductKeyAndBuildId(productKey, buildId);
 		tracker.setRvfRunId(String.valueOf(rvfRunId));
-		statusTrackerDao.update(tracker);
+		trackerService.update(tracker);
 	}
 }

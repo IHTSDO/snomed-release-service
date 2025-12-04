@@ -155,7 +155,11 @@ public class BuildConfiguration {
 	}
 
 	public void setEffectiveTimeFormatted(final String effectiveTimeFormatted) throws ParseException {
-		effectiveTime = DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(effectiveTimeFormatted);
+		if (effectiveTimeFormatted == null || effectiveTimeFormatted.isBlank()) {
+			this.effectiveTime = null;
+		} else {
+			this.effectiveTime = DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(effectiveTimeFormatted);
+		}
 	}
 
 	@JsonIgnore

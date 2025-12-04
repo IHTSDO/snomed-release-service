@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd">
+
+    <changeSet id="2025112802-build-status-tracker-indexes" author="cursor-ai">
+
+        <!-- For findByProductAndStatus(productKey, status...) -->
+        <createIndex tableName="build_status_tracker"
+                     indexName="idx_bst_product_status">
+            <column name="product_key"/>
+            <column name="status"/>
+        </createIndex>
+
+        <!-- For findByProductKeyAndBuildId(productKey, buildId) -->
+        <createIndex tableName="build_status_tracker"
+                     indexName="idx_bst_product_build">
+            <column name="product_key"/>
+            <column name="build_id"/>
+        </createIndex>
+
+        <!-- For findLatestByReleaseCenterAndProduct(releaseCenterKey, productKey) ordered by start_time -->
+        <createIndex tableName="build_status_tracker"
+                     indexName="idx_bst_rc_product_start">
+            <column name="release_center_key"/>
+            <column name="product_key"/>
+            <column name="start_time"/>
+        </createIndex>
+
+        <!-- For findByRvfRunIdAndBuildId(rvfRunId, buildId); rvf_run_id is unique in the entity -->
+        <createIndex tableName="build_status_tracker"
+                     indexName="uk_bst_rvf_run_id"
+                     unique="true">
+            <column name="rvf_run_id"/>
+        </createIndex>
+
+        <!-- For findByStatus(status...) scans (INTERRUPTED, QUEUED, etc.) -->
+        <createIndex tableName="build_status_tracker"
+                     indexName="idx_bst_status">
+            <column name="status"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="build_status_tracker" indexName="idx_bst_product_status"/>
+            <dropIndex tableName="build_status_tracker" indexName="idx_bst_product_build"/>
+            <dropIndex tableName="build_status_tracker" indexName="idx_bst_rc_product_start"/>
+            <dropIndex tableName="build_status_tracker" indexName="uk_bst_rvf_run_id"/>
+            <dropIndex tableName="build_status_tracker" indexName="idx_bst_status"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
+
+
+
+
+
+
