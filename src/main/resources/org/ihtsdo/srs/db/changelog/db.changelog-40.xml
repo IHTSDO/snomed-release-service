@@ -5,20 +5,29 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd">
 
-    <changeSet id="2025112802-build-status-tracker-indexes" author="cursor-ai">
+    <!-- Conditionally create idx_bst_product_status if it does not already exist -->
+    <changeSet id="2025112801-build-status-tracker-product-status-index" author="cursor-ai">
+
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN">
+            <not>
+                <indexExists tableName="build_status_tracker"
+                             indexName="idx_bst_product_status"/>
+            </not>
+        </preConditions>
 
         <!-- For findByProductAndStatus(productKey, status...) -->
         <createIndex tableName="build_status_tracker"
                      indexName="idx_bst_product_status">
-            <preConditions onFail="MARK_RAN" onError="MARK_RAN">
-                <not>
-                    <indexExists tableName="build_status_tracker"
-                                 indexName="idx_bst_product_status"/>
-                </not>
-            </preConditions>
             <column name="product_key"/>
             <column name="status"/>
         </createIndex>
+
+        <rollback>
+            <dropIndex tableName="build_status_tracker" indexName="idx_bst_product_status"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="2025112802-build-status-tracker-indexes" author="cursor-ai">
 
         <!-- For findByProductKeyAndBuildId(productKey, buildId) -->
         <createIndex tableName="build_status_tracker"
@@ -49,7 +58,6 @@
         </createIndex>
 
         <rollback>
-            <dropIndex tableName="build_status_tracker" indexName="idx_bst_product_status"/>
             <dropIndex tableName="build_status_tracker" indexName="idx_bst_product_build"/>
             <dropIndex tableName="build_status_tracker" indexName="idx_bst_rc_product_start"/>
             <dropIndex tableName="build_status_tracker" indexName="uk_bst_rvf_run_id"/>
