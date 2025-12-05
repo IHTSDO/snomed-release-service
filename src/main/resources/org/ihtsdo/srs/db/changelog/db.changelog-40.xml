@@ -10,6 +10,12 @@
         <!-- For findByProductAndStatus(productKey, status...) -->
         <createIndex tableName="build_status_tracker"
                      indexName="idx_bst_product_status">
+            <preConditions onFail="MARK_RAN" onError="MARK_RAN">
+                <not>
+                    <indexExists tableName="build_status_tracker"
+                                 indexName="idx_bst_product_status"/>
+                </not>
+            </preConditions>
             <column name="product_key"/>
             <column name="status"/>
         </createIndex>
