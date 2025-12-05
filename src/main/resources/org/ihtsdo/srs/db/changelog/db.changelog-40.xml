@@ -27,7 +27,15 @@
         </rollback>
     </changeSet>
 
-    <changeSet id="2025112802-build-status-tracker-indexes" author="cursor-ai">
+    <!-- Conditionally create idx_bst_product_build if it does not already exist -->
+    <changeSet id="2025112802-build-status-tracker-product-build-index" author="cursor-ai">
+
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN">
+            <not>
+                <indexExists tableName="build_status_tracker"
+                             indexName="idx_bst_product_build"/>
+            </not>
+        </preConditions>
 
         <!-- For findByProductKeyAndBuildId(productKey, buildId) -->
         <createIndex tableName="build_status_tracker"
@@ -35,6 +43,21 @@
             <column name="product_key"/>
             <column name="build_id"/>
         </createIndex>
+
+        <rollback>
+            <dropIndex tableName="build_status_tracker" indexName="idx_bst_product_build"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Conditionally create idx_bst_rc_product_start if it does not already exist -->
+    <changeSet id="2025112803-build-status-tracker-rc-product-start-index" author="cursor-ai">
+
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN">
+            <not>
+                <indexExists tableName="build_status_tracker"
+                             indexName="idx_bst_rc_product_start"/>
+            </not>
+        </preConditions>
 
         <!-- For findLatestByReleaseCenterAndProduct(releaseCenterKey, productKey) ordered by start_time -->
         <createIndex tableName="build_status_tracker"
@@ -44,12 +67,42 @@
             <column name="start_time"/>
         </createIndex>
 
+        <rollback>
+            <dropIndex tableName="build_status_tracker" indexName="idx_bst_rc_product_start"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Conditionally create uk_bst_rvf_run_id if it does not already exist -->
+    <changeSet id="2025112804-build-status-tracker-rvf-run-id-unique-index" author="cursor-ai">
+
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN">
+            <not>
+                <indexExists tableName="build_status_tracker"
+                             indexName="uk_bst_rvf_run_id"/>
+            </not>
+        </preConditions>
+
         <!-- For findByRvfRunIdAndBuildId(rvfRunId, buildId); rvf_run_id is unique in the entity -->
         <createIndex tableName="build_status_tracker"
                      indexName="uk_bst_rvf_run_id"
                      unique="true">
             <column name="rvf_run_id"/>
         </createIndex>
+
+        <rollback>
+            <dropIndex tableName="build_status_tracker" indexName="uk_bst_rvf_run_id"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Conditionally create idx_bst_status if it does not already exist -->
+    <changeSet id="2025112805-build-status-tracker-status-index" author="cursor-ai">
+
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN">
+            <not>
+                <indexExists tableName="build_status_tracker"
+                             indexName="idx_bst_status"/>
+            </not>
+        </preConditions>
 
         <!-- For findByStatus(status...) scans (INTERRUPTED, QUEUED, etc.) -->
         <createIndex tableName="build_status_tracker"
@@ -58,9 +111,6 @@
         </createIndex>
 
         <rollback>
-            <dropIndex tableName="build_status_tracker" indexName="idx_bst_product_build"/>
-            <dropIndex tableName="build_status_tracker" indexName="idx_bst_rc_product_start"/>
-            <dropIndex tableName="build_status_tracker" indexName="uk_bst_rvf_run_id"/>
             <dropIndex tableName="build_status_tracker" indexName="idx_bst_status"/>
         </rollback>
     </changeSet>
