@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.Files;
 import io.awspring.cloud.s3.ObjectMetadata;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.apache.commons.codec.DecoderException;
@@ -45,12 +44,30 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.FileCopyUtils;
 import software.amazon.awssdk.services.s3.model.*;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -72,8 +89,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	private final FileHelper srsFileHelper;
 
-	@Autowired
-	private ObjectMapper objectMapper;
+	private final ObjectMapper objectMapper;
 
 	private final File tempDir;
 
@@ -81,19 +97,15 @@ public class BuildDAOImpl implements BuildDAO {
 
 	private final S3Client s3Client;
 
-	@Autowired
-	private MessagingHelper messagingHelper;
+	private final MessagingHelper messagingHelper;
 
-	@Autowired
-	private ActiveMQTextMessage buildStatusTextMessage;
+	private final ActiveMQTextMessage buildStatusTextMessage;
 
-	@Autowired
-	private S3PathHelper pathHelper;
+	private final S3PathHelper pathHelper;
 
 	private final String buildBucketName;
 
-	@Autowired
-	private InputFileDAO inputFileDAO;
+	private final InputFileDAO inputFileDAO;
 
 	@Value("${srs.published.releases.storage.path}")
 	private String publishedReleasesStoragePath;
@@ -104,6 +116,25 @@ public class BuildDAOImpl implements BuildDAO {
 	private final Map<String, Set<String>> buildIdsToProductMap = new ConcurrentHashMap<>();
 
 	private static final List<String> requiredFileExtensions = Arrays.asList("status:", "tag:", "user:", "user-roles:", "visibility:", S3PathHelper.MARK_AS_DELETED);
+
+	private static final String RVF_RESPONSE_KEY = "rvf_response";
+
+	private static final String SORT_PROPERTY_BUILD_NAME = "buildName";
+
+	private static final String SORT_PROPERTY_CREATION_TIME = "creationTime";
+
+	private static final String SORT_PROPERTY_STATUS = "status";
+
+	private static final String SORT_PROPERTY_BUILD_USER = "buildUser";
+
+	private static final Set<Build.Status> TERMINAL_STATUSES = EnumSet.of(
+			Build.Status.FAILED_INPUT_GATHER_REPORT_VALIDATION,
+			Build.Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION,
+			Build.Status.FAILED_PRE_CONDITIONS,
+			Build.Status.FAILED_POST_CONDITIONS,
+			Build.Status.CANCELLED,
+			Build.Status.FAILED
+	);
 
 	private record BuildRequestParameter (
 			String releaseCenterKey,
@@ -131,13 +162,23 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Autowired
 	public BuildDAOImpl(@Value("${srs.storage.bucketName}") final String storageBucketName,
-			final S3Client s3Client) {
+						final S3Client s3Client,
+						final MessagingHelper messagingHelper,
+						final ObjectMapper objectMapper,
+						final S3PathHelper pathHelper,
+						final InputFileDAO inputFileDAO,
+						final ActiveMQTextMessage buildStatusTextMessage) throws IOException {
 		executorService = Executors.newCachedThreadPool();
 		buildBucketName = storageBucketName;
 		srsFileHelper = new FileHelper(storageBucketName, s3Client);
-		this.tempDir = Files.createTempDir();
+		this.tempDir = Files.createTempDirectory("srs-temp").toFile();
 		rf2FileNameTransformation = new Rf2FileNameTransformation();
 		this.s3Client = s3Client;
+        this.messagingHelper = messagingHelper;
+        this.objectMapper = objectMapper;
+        this.pathHelper = pathHelper;
+        this.inputFileDAO = inputFileDAO;
+        this.buildStatusTextMessage = buildStatusTextMessage;
 	}
 
 	@Override
@@ -163,10 +204,10 @@ public class BuildDAOImpl implements BuildDAO {
 			s3Client.putObject(buildBucketName, pathHelper.getQATestConfigFilePath(build), qaConfigInputStream, ObjectMetadata.builder().build(), qaConfigJson.length());
 		} finally {
 			if (configJson != null) {
-				configJson.delete();
+                Files.deleteIfExists(configJson.toPath());
 			}
 			if (qaConfigJson != null) {
-				qaConfigJson.delete();
+                Files.deleteIfExists(qaConfigJson.toPath());
 			}
 		}
 
@@ -199,7 +240,7 @@ public class BuildDAOImpl implements BuildDAO {
 			s3Client.putObject(buildBucketName, pathHelper.getQATestConfigFilePath(build), qaConfigInputStream, ObjectMetadata.builder().build(), qaConfigJson.length());
 		} finally {
 			if (qaConfigJson != null) {
-				qaConfigJson.delete();
+                Files.deleteIfExists(qaConfigJson.toPath());
 			}
 		}
 	}
@@ -212,7 +253,7 @@ public class BuildDAOImpl implements BuildDAO {
 			s3Client.putObject(buildBucketName, pathHelper.getBuildConfigFilePath(build), buildConfigInputStream, ObjectMetadata.builder().build(), configJson.length());
 		} finally {
 			if (configJson != null) {
-				configJson.delete();
+                Files.deleteIfExists(configJson.toPath());
 			}
 		}
 	}
@@ -264,7 +305,7 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void markBuildAsDeleted(Build build) throws IOException {
+	public void markBuildAsDeleted(Build build) {
 		final String newTagFilePath = pathHelper.getBuildPath(build).append(S3PathHelper.MARK_AS_DELETED).toString();
 		putFile(newTagFilePath, BLANK);
 	}
@@ -313,43 +354,9 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public void updateStatus(final Build build, final Build.Status newStatus) throws IOException {
-		String buildStatusPath = pathHelper.getStatusFilePath(build, build.getStatus());
-		Build.Status origStatus = build.getStatus();
+		Build.Status origStatus = resolveOriginalStatus(build);
 		if (origStatus != null) {
-			boolean isLatestStatus = false;
-			try (InputStream inputStream = s3Client.getObject(buildBucketName, buildStatusPath)) {
-				if (inputStream != null) {
-					isLatestStatus = true;
-				}
-			} catch (S3Exception e) {
-				if (404 != e.statusCode()) {
-					throw e;
-				}
-			}
-			if (!isLatestStatus) {
-				// Reload the latest persisted build status from storage. This may return null for
-				// newly created builds which have not yet been fully written to S3.
-				Build lastBuild = find(build.getReleaseCenterKey(), build.getProductKey(), build.getId(),
-						null, null, null, null);
-				if (lastBuild != null && lastBuild.getStatus() != null) {
-					origStatus = lastBuild.getStatus();
-				}
-			}
-
-			// Allow a single controlled transition from INTERRUPTED -> FAILED (used by InterruptedBuildRetryProcessor)
-			if (origStatus == Build.Status.INTERRUPTED && newStatus != Build.Status.FAILED) {
-				throw new IllegalStateException("Could not update build status as it has been already " + origStatus.name());
-			}
-
-			// All other terminal states remain immutable
-			if (Build.Status.FAILED_INPUT_GATHER_REPORT_VALIDATION == origStatus
-					|| Build.Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION == origStatus
-					|| Build.Status.FAILED_PRE_CONDITIONS == origStatus
-					|| Build.Status.FAILED_POST_CONDITIONS == origStatus
-					|| Build.Status.CANCELLED == origStatus
-					|| Build.Status.FAILED == origStatus) {
-				throw new IllegalStateException("Could not update build status as it has been already " + origStatus.name());
-			}
+			validateStatusTransition(origStatus, newStatus);
 		}
 
 		build.setStatus(newStatus);
@@ -365,6 +372,55 @@ public class BuildDAOImpl implements BuildDAO {
 		sendStatusUpdateResponseMessage(build);
 	}
 
+	private Build.Status resolveOriginalStatus(final Build build) throws IOException {
+		Build.Status currentStatus = build.getStatus();
+		if (currentStatus == null) {
+			return null;
+		}
+
+		if (statusFileExists(build, currentStatus)) {
+			return currentStatus;
+		}
+
+		// Reload the latest persisted build status from storage. This may return null for
+		// newly created builds which have not yet been fully written to S3.
+		Build lastBuild = find(build.getReleaseCenterKey(), build.getProductKey(), build.getId(),
+				null, null, null, null);
+		if (lastBuild != null && lastBuild.getStatus() != null) {
+			return lastBuild.getStatus();
+		}
+
+		return currentStatus;
+	}
+
+	private boolean statusFileExists(final Build build, final Build.Status status) throws IOException {
+		final String buildStatusPath = pathHelper.getStatusFilePath(build, status);
+		try (InputStream inputStream = s3Client.getObject(buildBucketName, buildStatusPath)) {
+			return inputStream != null;
+		} catch (S3Exception e) {
+			if (404 == e.statusCode()) {
+				return false;
+			}
+			throw e;
+		}
+	}
+
+	private void validateStatusTransition(final Build.Status currentStatus, final Build.Status newStatus) {
+		// Allow a single controlled transition from INTERRUPTED -> FAILED (used by InterruptedBuildRetryProcessor)
+		if (currentStatus == Build.Status.INTERRUPTED && newStatus != Build.Status.FAILED) {
+			throw new IllegalStateException("Could not update build status as it has been already " + currentStatus.name());
+		}
+
+		// All other terminal states remain immutable
+		if (isTerminalStatus(currentStatus)) {
+			throw new IllegalStateException("Could not update build status as it has been already " + currentStatus.name());
+		}
+	}
+
+	private boolean isTerminalStatus(final Build.Status status) {
+		return TERMINAL_STATUSES.contains(status);
+	}
+
 	private void sendStatusUpdateResponseMessage(final Build build) {
 		messagingHelper.sendResponse(buildStatusTextMessage,
 				ImmutableMap.of("releaseCenterKey", build.getReleaseCenterKey(),
@@ -374,7 +430,7 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void addTag(Build build, Tag tag) throws IOException {
+	public void addTag(Build build, Tag tag) {
 		List<Tag> tags = build.getTags();
 		if (CollectionUtils.isEmpty(tags)) {
 			tags = new ArrayList<>();
@@ -389,7 +445,7 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public void saveTags(Build build, List<Tag> tags) throws IOException {
+	public void saveTags(Build build, List<Tag> tags) {
 		List<Tag> oldTags = build.getTags();
 		if (!CollectionUtils.isEmpty(oldTags)) {
 			String oldTagFilePath = pathHelper.getTagFilePath(build, oldTags.stream().sorted(Comparator.comparingInt(Tag::getOrder)).map(Enum::name).collect(Collectors.joining(",")));
@@ -582,9 +638,9 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	@Override
-	public InputStream getPublishedFileArchiveEntry(final String releaseCenterKey, final String targetFileName, final String previousPublishedPackage) throws IOException {
+	public InputStream getPublishedFileArchiveEntry(final String releaseCenterKey, final String targetFileName, final String previousPublishedPackage) {
 		// For scenarios in UAT and DEV where we use locally published release packages for a new build,
-		// if the file is not found in ${srs.published.releases.storage.path}, then look in ${srs.publish.job.storage.path}
+		// if the file is not found in srs.published.releases.storage.path, then look in srs.publish.job.storage.path
 		String publishedZipPath = pathHelper.getPublishedReleasesFilePath(releaseCenterKey, previousPublishedPackage);
 		if (!srsFileHelper.exists(publishedZipPath) && !publishedReleasesStoragePath.equals(publishJobStoragePath)) {
 			LOGGER.warn("Could not find previously published package {}", publishedZipPath);
@@ -622,7 +678,7 @@ public class BuildDAOImpl implements BuildDAO {
 		String reportPath = pathHelper.getReportPath(build);
 		// Get the build report as a string we can write to disk/S3 synchronously because it's small
 		String buildReportJSON = build.getBuildReport().toString();
-		try (InputStream is = IOUtils.toInputStream(buildReportJSON, "UTF-8")) {
+		try (InputStream is = IOUtils.toInputStream(buildReportJSON, StandardCharsets.UTF_8)) {
 			srsFileHelper.putFile(is, buildReportJSON.length(), reportPath);
 		} catch (final IOException e) {
 			LOGGER.error("Unable to persist build report", e);
@@ -667,86 +723,113 @@ public class BuildDAOImpl implements BuildDAO {
 			return BuildPage.empty();
 		}
 
-
 		LOGGER.trace("Finding all builds in {}, {}.", buildBucketName, productDirectoryPath);
 		BuildResponse response = getAllBuildsFromS3(productDirectoryPath, requestParameter.releaseCenterKey, requestParameter.productKey, requestParameter.forYears);
-		List<Build> allBuilds = response.builds();
-		allBuilds = filterByViewMode(allBuilds, response.tagPaths, requestParameter.viewMode);
-		allBuilds = removeInvisibleBuilds(requestParameter.visibility, response.visibilityPaths, allBuilds);
-		allBuilds = removeBuildsMarkAsDeleted(response.buildsMarkAsDeleted, allBuilds);
 
-		List<Build> pagedBuilds = new ArrayList<>();
-		if (!allBuilds.isEmpty()) {
-			requestParameter.pageRequest.getSort();
-            if (!Sort.unsorted().equals(requestParameter.pageRequest.getSort())) {
-				joinUsers(allBuilds, response.userPaths);
-				if (requestParameter.pageRequest.getSort().getOrderFor("buildName") != null) {
-					joinBuildConfigurations(allBuilds);
-				}
+		List<Build> allBuilds = prepareAllBuilds(response, requestParameter);
+		List<Build> pagedBuilds = buildPagedBuilds(response, requestParameter, allBuilds, pageNumber, pageSize);
 
-				sortBuilds(requestParameter.pageRequest, allBuilds);
-				pagedBuilds = pageBuilds(allBuilds, pageNumber, pageSize);
-
-				if (requestParameter.pageRequest.getSort().getOrderFor("buildName") == null && Boolean.TRUE.equals(requestParameter.includeBuildConfiguration)) {
-					joinBuildConfigurations(pagedBuilds);
-				}
-				if (Boolean.TRUE.equals(requestParameter.includeQAConfiguration)) {
-					joinQAConfigurations(pagedBuilds);
-				}
-				if (Boolean.TRUE.equals(requestParameter.includeRvfURL)) {
-					joinRvfUrls(pagedBuilds);
-				}
-				joinRoles(allBuilds, response.userRolesPaths);
-				joinTags(allBuilds, response.tagPaths);
-			} else {
-				Collections.reverse(allBuilds);
-				pagedBuilds = pageBuilds(allBuilds, pageNumber, pageSize);
-				addDataToBuilds(pagedBuilds, response.userPaths, response.userRolesPaths, response.tagPaths, requestParameter);
-			}
-		}
 		int totalPages = ListHelper.getTotalPages(allBuilds, pageSize);
 		LOGGER.info("Returning {} builds to client from {}, {}. {} pages available.", pagedBuilds.size(), buildBucketName, productDirectoryPath, totalPages);
 		return new BuildPage<>(allBuilds.size(), totalPages, pageNumber, pageSize, pagedBuilds);
+	}
+
+	private List<Build> prepareAllBuilds(final BuildResponse response, final BuildRequestParameter requestParameter) {
+		List<Build> allBuilds = response.builds();
+		allBuilds = filterByViewMode(allBuilds, response.tagPaths, requestParameter.viewMode);
+		allBuilds = removeInvisibleBuilds(requestParameter.visibility, response.visibilityPaths, allBuilds);
+		return removeBuildsMarkAsDeleted(response.buildsMarkAsDeleted, allBuilds);
+	}
+
+	private List<Build> buildPagedBuilds(final BuildResponse response,
+										 final BuildRequestParameter requestParameter,
+										 final List<Build> allBuilds,
+										 final int pageNumber,
+										 final int pageSize) {
+		if (allBuilds.isEmpty()) {
+			return new ArrayList<>();
+		}
+
+		if (Sort.unsorted().equals(requestParameter.pageRequest.getSort())) {
+			return buildPagedBuildsWithoutSort(response, requestParameter, allBuilds, pageNumber, pageSize);
+		}
+
+		return buildPagedBuildsWithSort(response, requestParameter, allBuilds, pageNumber, pageSize);
+	}
+
+	private List<Build> buildPagedBuildsWithSort(final BuildResponse response,
+												 final BuildRequestParameter requestParameter,
+												 final List<Build> allBuilds,
+												 final int pageNumber,
+												 final int pageSize) {
+		joinUsers(allBuilds, response.userPaths);
+		if (requestParameter.pageRequest.getSort().getOrderFor(SORT_PROPERTY_BUILD_NAME) != null) {
+			joinBuildConfigurations(allBuilds);
+		}
+
+		sortBuilds(requestParameter.pageRequest, allBuilds);
+		List<Build> pagedBuilds = pageBuilds(allBuilds, pageNumber, pageSize);
+
+		if (requestParameter.pageRequest.getSort().getOrderFor(SORT_PROPERTY_BUILD_NAME) == null
+				&& Boolean.TRUE.equals(requestParameter.includeBuildConfiguration)) {
+			joinBuildConfigurations(pagedBuilds);
+		}
+		if (Boolean.TRUE.equals(requestParameter.includeQAConfiguration)) {
+			joinQAConfigurations(pagedBuilds);
+		}
+		if (Boolean.TRUE.equals(requestParameter.includeRvfURL)) {
+			joinRvfUrls(pagedBuilds);
+		}
+		joinRoles(allBuilds, response.userRolesPaths);
+		joinTags(allBuilds, response.tagPaths);
+
+		return pagedBuilds;
+	}
+
+	private List<Build> buildPagedBuildsWithoutSort(final BuildResponse response,
+													final BuildRequestParameter requestParameter,
+													final List<Build> allBuilds,
+													final int pageNumber,
+													final int pageSize) {
+		List<Build> reversedBuilds = new ArrayList<>(allBuilds);
+		Collections.reverse(reversedBuilds);
+		List<Build> pagedBuilds = pageBuilds(reversedBuilds, pageNumber, pageSize);
+		addDataToBuilds(pagedBuilds, response.userPaths, response.userRolesPaths, response.tagPaths, requestParameter);
+		return pagedBuilds;
 	}
 
 	private void sortBuilds(PageRequest pageRequest, List<Build> allBuilds) {
 		Comparator<Build> comparator = Comparator.nullsLast(null);
 		Sort sort = pageRequest.getSort();
 		for (Sort.Order order : sort.toList()) {
-            switch (order.getProperty()) {
-                case "buildName" -> {
-                    if (order.getDirection().isDescending()) {
-                        comparator = comparator.thenComparing(Build::getBuildName, Comparator.nullsLast(Comparator.reverseOrder()));
-                    } else {
-                        comparator = comparator.thenComparing(Build::getBuildName, Comparator.nullsLast(Comparator.naturalOrder()));
-                    }
-                }
-                case "creationTime" -> {
-                    if (order.getDirection().isDescending()) {
-                        comparator = comparator.thenComparing(Build::getCreationTime, Comparator.nullsLast(Comparator.reverseOrder()));
-                    } else {
-                        comparator = comparator.thenComparing(Build::getCreationTime, Comparator.nullsLast(Comparator.naturalOrder()));
-                    }
-                }
-                case "status" -> {
-                    if (order.getDirection().isDescending()) {
-                        comparator = comparator.thenComparing(Build::getStatus, Comparator.nullsLast(Comparator.reverseOrder()));
-                    } else {
-                        comparator = comparator.thenComparing(Build::getStatus, Comparator.nullsLast(Comparator.naturalOrder()));
-                    }
-                }
-                case "buildUser" -> {
-                    if (order.getDirection().isDescending()) {
-                        comparator = comparator.thenComparing(Build::getBuildUser, Comparator.nullsLast(Comparator.reverseOrder()));
-                    } else {
-                        comparator = comparator.thenComparing(Build::getBuildUser, Comparator.nullsLast(Comparator.naturalOrder()));
-                    }
-                }
-                default -> {
-                }
-            }
+			comparator = applySortOrder(comparator, order);
 		}
 		allBuilds.sort(comparator);
+	}
+
+	private Comparator<Build> applySortOrder(final Comparator<Build> comparator, final Sort.Order order) {
+		Comparator<Build> updatedComparator = comparator;
+		boolean descending = order.getDirection().isDescending();
+
+		switch (order.getProperty()) {
+			case SORT_PROPERTY_BUILD_NAME -> updatedComparator = updatedComparator.thenComparing(
+					Build::getBuildName,
+					descending ? Comparator.nullsLast(Comparator.reverseOrder()) : Comparator.nullsLast(Comparator.naturalOrder()));
+			case SORT_PROPERTY_CREATION_TIME -> updatedComparator = updatedComparator.thenComparing(
+					Build::getCreationTime,
+					descending ? Comparator.nullsLast(Comparator.reverseOrder()) : Comparator.nullsLast(Comparator.naturalOrder()));
+			case SORT_PROPERTY_STATUS -> updatedComparator = updatedComparator.thenComparing(
+					Build::getStatus,
+					descending ? Comparator.nullsLast(Comparator.reverseOrder()) : Comparator.nullsLast(Comparator.naturalOrder()));
+			case SORT_PROPERTY_BUILD_USER -> updatedComparator = updatedComparator.thenComparing(
+					Build::getBuildUser,
+					descending ? Comparator.nullsLast(Comparator.reverseOrder()) : Comparator.nullsLast(Comparator.naturalOrder()));
+			default -> {
+				// No-op for unsupported properties
+			}
+		}
+
+		return updatedComparator;
 	}
 
 	private BuildResponse getAllBuildsFromS3(String directoryPathPrefix, String releaseCenterKey, String productKey, List<Integer> forYears) {
@@ -767,11 +850,11 @@ public class BuildDAOImpl implements BuildDAO {
 			if (visibility) {
 				return builds.stream()
 						.filter(build -> !invisibleBuildIds.contains(build.getCreationTime()))
-						.collect(Collectors.toList());
+						.toList();
 			} else {
 				return builds.stream()
 						.filter(build -> invisibleBuildIds.contains(build.getCreationTime()))
-						.collect(Collectors.toList());
+						.toList();
 			}
 		}
 
@@ -782,42 +865,53 @@ public class BuildDAOImpl implements BuildDAO {
 	private List<Build> removeBuildsMarkAsDeleted(List<String> buildsMarkAsDeleted, List<Build> builds) {
 		if (!buildsMarkAsDeleted.isEmpty()) {
 			return builds.stream()
-					.filter(build -> !buildsMarkAsDeleted.contains(build.getCreationTime()))
-					.collect(Collectors.toList());
+					.filter(build -> !buildsMarkAsDeleted.contains(build.getCreationTime())).toList();
 		}
 		return builds;
 	}
 
 	private List<Build> filterByViewMode(List<Build> allBuilds, List<String> tagPaths, BuildService.View viewMode) {
-        switch (viewMode) {
-            case PUBLISHED ->
-                    allBuilds = allBuilds.stream().filter(build -> getTags(build, tagPaths) != null && getTags(build, tagPaths).contains(Tag.PUBLISHED)).collect(Collectors.toList());
-            case UNPUBLISHED ->
-                    allBuilds = allBuilds.stream().filter(build -> getTags(build, tagPaths) == null || !getTags(build, tagPaths).contains(Tag.PUBLISHED)).collect(Collectors.toList());
-            case ALL_RELEASES -> {
-				// do nothing
-            }
-            case DEFAULT -> {
-                List<Build> copy = new ArrayList<>(allBuilds);
-                Collections.reverse(copy);
-                Build latestPublishedBuild = null;
-                List<Build> publishedBuilds = new ArrayList<>();
-                for (Build build : copy) {
-                    if (getTags(build, tagPaths) != null && getTags(build, tagPaths).contains(Tag.PUBLISHED)) {
-                        if (latestPublishedBuild == null) {
-                            latestPublishedBuild = build;
-                        } else {
-                            publishedBuilds.add(build);
-                        }
-                    }
-                }
-                if (latestPublishedBuild != null) {
-                    allBuilds = copy.subList(0, copy.indexOf(latestPublishedBuild) + 1);
-                    allBuilds.addAll(publishedBuilds);
-                    Collections.reverse(allBuilds);
-                }
-            }
-        }
+		return switch (viewMode) {
+			case PUBLISHED -> filterPublishedBuilds(allBuilds, tagPaths);
+			case UNPUBLISHED -> filterUnpublishedBuilds(allBuilds, tagPaths);
+			case ALL_RELEASES -> allBuilds;
+			case DEFAULT -> filterDefaultViewBuilds(allBuilds, tagPaths);
+			default -> allBuilds;
+		};
+	}
+
+	private List<Build> filterPublishedBuilds(final List<Build> allBuilds, final List<String> tagPaths) {
+		return allBuilds.stream()
+				.filter(build -> getTags(build, tagPaths).contains(Tag.PUBLISHED))
+				.toList();
+	}
+
+	private List<Build> filterUnpublishedBuilds(final List<Build> allBuilds, final List<String> tagPaths) {
+		return allBuilds.stream()
+				.filter(build -> !getTags(build, tagPaths).contains(Tag.PUBLISHED))
+				.toList();
+	}
+
+	private List<Build> filterDefaultViewBuilds(final List<Build> allBuilds, final List<String> tagPaths) {
+		List<Build> copy = new ArrayList<>(allBuilds);
+		Collections.reverse(copy);
+		Build latestPublishedBuild = null;
+		List<Build> publishedBuilds = new ArrayList<>();
+		for (Build build : copy) {
+			if (getTags(build, tagPaths).contains(Tag.PUBLISHED)) {
+				if (latestPublishedBuild == null) {
+					latestPublishedBuild = build;
+				} else {
+					publishedBuilds.add(build);
+				}
+			}
+		}
+		if (latestPublishedBuild != null) {
+			List<Build> result = new ArrayList<>(copy.subList(0, copy.indexOf(latestPublishedBuild) + 1));
+			result.addAll(publishedBuilds);
+			Collections.reverse(result);
+			return result;
+		}
 		return allBuilds;
 	}
 
@@ -859,73 +953,80 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	private void joinRvfUrls(List<Build> builds) {
-		builds.forEach(build -> {
-			if (build.getStatus().equals(Build.Status.BUILT)
-				|| build.getStatus().equals(Build.Status.RVF_QUEUED)
-				|| build.getStatus().equals(Build.Status.RVF_RUNNING)
-				|| build.getStatus().equals(Build.Status.RELEASE_COMPLETE)
-				|| build.getStatus().equals(Build.Status.RELEASE_COMPLETE_WITH_WARNINGS)) {
-				InputStream buildReportStream = getBuildReportFileStream(build);
-				if (buildReportStream != null) {
-					JSONParser jsonParser = new JSONParser();
-					try {
-						JSONObject jsonObject = (org.json.simple.JSONObject) jsonParser.parse(new InputStreamReader(buildReportStream, StandardCharsets.UTF_8));
-						if (jsonObject.containsKey("rvf_response")) {
-							build.setRvfURL(jsonObject.get("rvf_response").toString());
-						}
-					} catch (IOException e) {
-						LOGGER.error("Error reading rvf_url from build_report file. Error: {}", e.getMessage());
-					} catch (ParseException e) {
-						LOGGER.error("Error parsing build_report file. Error: {}", e.getMessage());
-					}
-				}
-			}
-		});
+		builds.forEach(this::populateRvfUrlIfPresent);
 	}
 
 	private void addDataToBuilds(List<Build> builds, List<String> userPaths, List<String> userRolesPaths, List<String> tagPaths, BuildRequestParameter requestParameter) {
 		LOGGER.trace("Adding users, tags & build reports to builds.");
 		if (!builds.isEmpty()) {
 			builds.forEach(build -> {
-				build.setBuildUser(getBuildUser(build, userPaths));
-				build.setUserRoles(getUserRoles(build, userRolesPaths));
-				build.setTags(getTags(build, tagPaths));
-				if (Boolean.TRUE.equals(requestParameter.includeRvfURL) &&
-						(build.getStatus().equals(Build.Status.BUILT)
-								|| build.getStatus().equals(Build.Status.RVF_QUEUED)
-								|| build.getStatus().equals(Build.Status.RVF_RUNNING)
-								|| build.getStatus().equals(Build.Status.RELEASE_COMPLETE)
-								|| build.getStatus().equals(Build.Status.RELEASE_COMPLETE_WITH_WARNINGS))) {
-					InputStream buildReportStream = getBuildReportFileStream(build);
-					if (buildReportStream != null) {
-						JSONParser jsonParser = new JSONParser();
-						try {
-							JSONObject jsonObject = (org.json.simple.JSONObject) jsonParser.parse(new InputStreamReader(buildReportStream, StandardCharsets.UTF_8));
-							if (jsonObject.containsKey("rvf_response")) {
-								build.setRvfURL(jsonObject.get("rvf_response").toString());
-							}
-						} catch (IOException e) {
-							LOGGER.error("Error reading rvf_url from build_report file. Error: {}", e.getMessage());
-						} catch (ParseException e) {
-							LOGGER.error("Error parsing build_report file. Error: {}", e.getMessage());
-						}
-					}
-				}
-				if (Boolean.TRUE.equals(requestParameter.includeBuildConfiguration)) {
-					try {
-						this.loadBuildConfiguration(build);
-					} catch (IOException e) {
-						LOGGER.error("Error retrieving Build Configuration for build {}", build.getId());
-					}
-				}
-				if (Boolean.TRUE.equals(requestParameter.includeQAConfiguration)) {
-					try {
-						this.loadQaTestConfig(build);
-					} catch (IOException e) {
-						LOGGER.error("Error retrieving QA Configuration for build {}", build.getId());
-					}
-				}
+				enrichBuildWithUserAndTags(build, userPaths, userRolesPaths, tagPaths);
+				enrichBuildWithRvfIfRequested(build, requestParameter);
+				enrichBuildWithConfigurationsIfRequested(build, requestParameter);
 			});
+		}
+	}
+
+	private void enrichBuildWithUserAndTags(final Build build,
+											final List<String> userPaths,
+											final List<String> userRolesPaths,
+											final List<String> tagPaths) {
+		build.setBuildUser(getBuildUser(build, userPaths));
+		build.setUserRoles(getUserRoles(build, userRolesPaths));
+		build.setTags(getTags(build, tagPaths));
+	}
+
+	private void enrichBuildWithRvfIfRequested(final Build build, final BuildRequestParameter requestParameter) {
+		if (Boolean.TRUE.equals(requestParameter.includeRvfURL)) {
+			populateRvfUrlIfPresent(build);
+		}
+	}
+
+	private void enrichBuildWithConfigurationsIfRequested(final Build build, final BuildRequestParameter requestParameter) {
+		if (Boolean.TRUE.equals(requestParameter.includeBuildConfiguration)) {
+			try {
+				this.loadBuildConfiguration(build);
+			} catch (IOException e) {
+				LOGGER.error("Error retrieving Build Configuration for build {}", build.getId());
+			}
+		}
+		if (Boolean.TRUE.equals(requestParameter.includeQAConfiguration)) {
+			try {
+				this.loadQaTestConfig(build);
+			} catch (IOException e) {
+				LOGGER.error("Error retrieving QA Configuration for build {}", build.getId());
+			}
+		}
+	}
+
+	private boolean isRvfRelevantStatus(final Build.Status status) {
+		return Build.Status.BUILT.equals(status)
+				|| Build.Status.RVF_QUEUED.equals(status)
+				|| Build.Status.RVF_RUNNING.equals(status)
+				|| Build.Status.RELEASE_COMPLETE.equals(status)
+				|| Build.Status.RELEASE_COMPLETE_WITH_WARNINGS.equals(status);
+	}
+
+	private void populateRvfUrlIfPresent(final Build build) {
+		if (!isRvfRelevantStatus(build.getStatus())) {
+			return;
+		}
+
+		InputStream buildReportStream = getBuildReportFileStream(build);
+		if (buildReportStream == null) {
+			return;
+		}
+
+		JSONParser jsonParser = new JSONParser();
+		try {
+			JSONObject jsonObject = (org.json.simple.JSONObject) jsonParser.parse(new InputStreamReader(buildReportStream, StandardCharsets.UTF_8));
+			if (jsonObject.containsKey(RVF_RESPONSE_KEY)) {
+				build.setRvfURL(jsonObject.get(RVF_RESPONSE_KEY).toString());
+			}
+		} catch (IOException e) {
+			LOGGER.error("Error reading rvf_url from build_report file. Error: {}", e.getMessage());
+		} catch (ParseException e) {
+			LOGGER.error("Error parsing build_report file. Error: {}", e.getMessage());
 		}
 	}
 
@@ -973,7 +1074,7 @@ public class BuildDAOImpl implements BuildDAO {
 				return Arrays.asList(roleArr);
 			}
 		}
-		return null;
+		return Collections.emptyList();
 	}
 
 	private List<Tag> getTags(Build build, final List<String> tagPaths) {
@@ -990,7 +1091,7 @@ public class BuildDAOImpl implements BuildDAO {
 				return tags;
 			}
 		}
-		return null;
+		return Collections.emptyList();
 	}
 
 	private String getBuildUser(Build build, final List<String> userPaths) {
@@ -1019,16 +1120,26 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	private AsyncPipedStreamBean getFileAsOutputStream(final String buildOutputFilePath) throws IOException {
-		// Stream file to buildFileHelper as it's written to the OutputStream
-		final PipedInputStream pipedInputStream = new PipedInputStream();
-		final PipedOutputStream outputStream = new PipedOutputStream(pipedInputStream);
+        // Stream file to buildFileHelper as it's written to the OutputStream
+        // try with resource here won't work
+        final PipedInputStream pipedInputStream = new PipedInputStream();
+        final PipedOutputStream outputStream = new PipedOutputStream(pipedInputStream);
 
-		final Future<String> future = executorService.submit(() -> {
-			srsFileHelper.putFile(pipedInputStream, buildOutputFilePath);
-			LOGGER.debug("Build outputfile stream ended: {}", buildOutputFilePath);
-			return buildOutputFilePath;
+        final Future<String> future = executorService.submit(() -> {
+            try {
+                srsFileHelper.putFile(pipedInputStream, buildOutputFilePath);
+                LOGGER.debug("Build output file stream ended: {}", buildOutputFilePath);
+                return buildOutputFilePath;
+            } finally {
+                try {
+                    pipedInputStream.close();
+                } catch (IOException e) {
+                    LOGGER.warn("Error closing pipedInputStream for {}", buildOutputFilePath, e);
+                }
+            }
         });
-		return new AsyncPipedStreamBean(outputStream, future, buildOutputFilePath);
+
+        return new AsyncPipedStreamBean(outputStream, future, buildOutputFilePath);
 	}
 
 	private PutObjectResponse putFile(final String filePath, final String contents) {
@@ -1091,7 +1202,8 @@ public class BuildDAOImpl implements BuildDAO {
 				LOGGER.warn("Build status is {}. Build will be cancelled when possible", build.getStatus().name());
 				return true;
 			}
-		} catch (Exception e) {
+		} catch (IOException | S3Exception e) {
+			LOGGER.warn("Error while checking cancel requested status for build {}: {}", build.getId(), e.getMessage(), e);
 			return false;
 		}
 		return false;
@@ -1142,11 +1254,12 @@ public class BuildDAOImpl implements BuildDAO {
 		File preConditionChecksReport = null;
 		try {
 			preConditionChecksReport = toJson(build.getPreConditionCheckReports());
-			InputStream reportInputStream = new FileInputStream(preConditionChecksReport);
-			s3Client.putObject(buildBucketName, pathHelper.getBuildPreConditionCheckReportPath(build), reportInputStream, ObjectMetadata.builder().build(), preConditionChecksReport.length());
+			try (InputStream reportInputStream = new FileInputStream(preConditionChecksReport)) {
+                s3Client.putObject(buildBucketName, pathHelper.getBuildPreConditionCheckReportPath(build), reportInputStream, ObjectMetadata.builder().build(), preConditionChecksReport.length());
+            }
 		} finally {
 			if (preConditionChecksReport != null) {
-				preConditionChecksReport.delete();
+                Files.deleteIfExists(preConditionChecksReport.toPath());
 			}
 		}
 	}
@@ -1156,11 +1269,12 @@ public class BuildDAOImpl implements BuildDAO {
 		File postConditionChecksReport = null;
 		try {
 			postConditionChecksReport = toJson(object);
-			InputStream reportInputStream = new FileInputStream(postConditionChecksReport);
-			s3Client.putObject(buildBucketName, pathHelper.getPostConditionCheckReportPath(build), reportInputStream, ObjectMetadata.builder().build(), postConditionChecksReport.length());
+			try (InputStream reportInputStream = new FileInputStream(postConditionChecksReport)) {
+                s3Client.putObject(buildBucketName, pathHelper.getPostConditionCheckReportPath(build), reportInputStream, ObjectMetadata.builder().build(), postConditionChecksReport.length());
+            }
 		} finally {
 			if (postConditionChecksReport != null) {
-				postConditionChecksReport.delete();
+                Files.deleteIfExists(postConditionChecksReport.toPath());
 			}
 		}
 	}
@@ -1179,18 +1293,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public List<PreConditionCheckReport> getPreConditionCheckReport(String reportPath) throws IOException {
-		List<PreConditionCheckReport> reports = new ArrayList<>();
-		try (final InputStream s3Object = s3Client.getObject(buildBucketName, reportPath)) {
-			if (s3Object != null) {
-				final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
-				try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
-					reports = jsonParser.readValueAs(new TypeReference <List <PreConditionCheckReport>>() {
-					});
-				}
-			}
-		}
-
-		return reports;
+        return getPreConditionCheckReport(buildBucketName, reportPath);
 	}
 
 	@Override
@@ -1223,18 +1326,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public List<PostConditionCheckReport> getPostConditionCheckReport(String reportPath) throws IOException {
-		List<PostConditionCheckReport> reports = new ArrayList<>();
-		try (final InputStream s3Object = s3Client.getObject(buildBucketName, reportPath)) {
-			if (s3Object != null) {
-				final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
-				try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
-					reports = jsonParser.readValueAs(new TypeReference <List <PostConditionCheckReport>>() {
-					});
-				}
-			}
-		}
-
-		return reports;
+        return getPostConditionCheckReport(buildBucketName, reportPath);
 	}
 
 	@Override
@@ -1302,7 +1394,8 @@ public class BuildDAOImpl implements BuildDAO {
 			s3Client.putObject(buildBucketName, pathHelper.getBuildComparisonReportPath(releaseCenterKey, productKey, compareId), reportInputStream, ObjectMetadata.builder().build(), reportFile.length());
 		} finally {
 			if (reportFile != null) {
-				reportFile.delete();
+                // remove local file
+                Files.deleteIfExists(reportFile.toPath());
 			}
 		}
 	}
@@ -1343,8 +1436,7 @@ public class BuildDAOImpl implements BuildDAO {
 			s3Client.putObject(buildBucketName, pathHelper.getFileComparisonReportPath(releaseCenterKey, productKey, compareId, reportFileName), reportInputStream, ObjectMetadata.builder().build(), reportFile.length());
 		} finally {
 			if (reportFile != null) {
-				reportFile.delete();
-
+                Files.deleteIfExists(reportFile.toPath());
 			}
 		}
 	}

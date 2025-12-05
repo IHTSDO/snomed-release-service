@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
 @WebAppConfiguration
-public class HypermediaGeneratorTest extends AbstractTest {
+class HypermediaGeneratorTest extends AbstractTest {
 
 	@Autowired
 	private HypermediaGenerator hypermediaGenerator;
@@ -50,7 +50,8 @@ public class HypermediaGeneratorTest extends AbstractTest {
 	private HttpServletRequest mockServletRequest;
 
 	@BeforeEach
-	public void setup() {
+    @Override
+    public void setup() {
 		final TestEntityFactory entityFactory = new TestEntityFactory();
 		product = entityFactory.createProduct();
 		final BuildConfiguration buildConfig = new BuildConfiguration();
@@ -65,7 +66,7 @@ public class HypermediaGeneratorTest extends AbstractTest {
 	}
 
 	@Test
-	public void testGetEntityCollectionHypermedia() throws Exception {
+    void testGetEntityCollectionHypermedia() throws Exception {
 		final List<Product> products = new ArrayList<>();
 		products.add(product);
 
@@ -84,7 +85,7 @@ public class HypermediaGeneratorTest extends AbstractTest {
 	}
 
 	@Test
-	public void testLinkNameAndUrl() throws IOException {
+    void testLinkNameAndUrl() throws IOException {
 		EasyMock.expect(mockServletRequest.getRequestURL()).andReturn(new StringBuffer("http://localhost/api/v1/products/something/exec/something")).anyTimes();
 		mocksControl.replay();
 
@@ -98,7 +99,7 @@ public class HypermediaGeneratorTest extends AbstractTest {
 	}
 
 	@Test
-	public void testActionResponseUrl() throws IOException {
+    void testActionResponseUrl() throws IOException {
 		EasyMock.expect(mockServletRequest.getRequestURL()).andReturn(new StringBuffer("http://localhost/api/v1/products/something/exec/something/trigger")).anyTimes();
 		mocksControl.replay();
 

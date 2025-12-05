@@ -9,7 +9,9 @@ import java.util.List;
 @Repository
 public class BuildStatusTrackerDaoImpl extends EntityDAOImpl<BuildStatusTracker> implements BuildStatusTrackerDao {
 
-	protected BuildStatusTrackerDaoImpl() {
+    public static final String PRODUCT_KEY = "productKey";
+
+    protected BuildStatusTrackerDaoImpl() {
 		super(BuildStatusTracker.class);
 	}
 
@@ -21,7 +23,7 @@ public class BuildStatusTrackerDaoImpl extends EntityDAOImpl<BuildStatusTracker>
 						"where statusTracker.productKey = :productKey " +
 						" and statusTracker.status in (:status)",
 				BuildStatusTracker.class);
-		query.setParameter("productKey", productKey);
+		query.setParameter(PRODUCT_KEY, productKey);
 		query.setParameterList("status", status);
 		return query.list();
 	}
@@ -46,7 +48,7 @@ public class BuildStatusTrackerDaoImpl extends EntityDAOImpl<BuildStatusTracker>
 						"where statusTracker.productKey = :productKey " +
 						" and statusTracker.buildId = :buildId",
 				BuildStatusTracker.class);
-		query.setParameter("productKey", productKey);
+		query.setParameter(PRODUCT_KEY, productKey);
 		query.setParameter("buildId", buildId);
 		return query.uniqueResult();
 	}
@@ -72,7 +74,7 @@ public class BuildStatusTrackerDaoImpl extends EntityDAOImpl<BuildStatusTracker>
 						"order by statusTracker.startTime desc",
 				BuildStatusTracker.class);
 		query.setParameter("releaseCenterKey", releaseCenterKey);
-		query.setParameter("productKey", productKey);
+		query.setParameter(PRODUCT_KEY, productKey);
 		query.setMaxResults(1);
 		return query.uniqueResult();
 	}
