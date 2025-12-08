@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
@@ -39,15 +40,20 @@ public class BuildDAOImplTest extends AbstractTest {
 
 	private String buildId;
 
+	// Deterministic timestamp for additional builds to avoid flakiness due to Thread.sleep/new Date()
+	private long nextBuildMillis;
+
 	@BeforeEach
     @Override
 	public void setup() throws Exception {
 		super.setup();
 		product = productDAO.find(1L);
-		final Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 1).getTime();
+		final Date creationTime = new GregorianCalendar(2014, Calendar.FEBRUARY, 4, 10, 30, 1).getTime();
 		build = new Build(creationTime, product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), product.getBuildConfiguration(), product.getQaTestConfig());
 		buildDAO.save(build);
 		buildId = build.getId();
+		// Start subsequent builds one second after the initial build, then increment deterministically
+		nextBuildMillis = creationTime.getTime() + 1000;
 	}
 
 	@Test
@@ -87,7 +93,7 @@ public class BuildDAOImplTest extends AbstractTest {
 	}
 
 	@Test
-    void findAllDescPage_ShouldReturnExpectedPage_WhenRequestingAll() throws IOException, InterruptedException {
+    void findAllDescPage_ShouldReturnExpectedPage_WhenRequestingAll() throws IOException {
 		// given
 		createBuild();
 		createBuild();
@@ -117,7 +123,7 @@ public class BuildDAOImplTest extends AbstractTest {
 	}
 
 	@Test
-    void findAllDescPage_ShouldReturnExpectedPage_WhenRequestingSubPage() throws IOException, InterruptedException {
+    void findAllDescPage_ShouldReturnExpectedPage_WhenRequestingSubPage() throws IOException {
 		// given
 		Date build1 = createBuild();
 		createBuild();
@@ -134,9 +140,9 @@ public class BuildDAOImplTest extends AbstractTest {
 		assertEquals(lhs, rhs);
 	}
 
-	private Date createBuild() throws InterruptedException, IOException {
-		Thread.sleep(1000); // Sleep for different time
-		Date date = new Date();
+	private Date createBuild() throws IOException {
+		Date date = new Date(nextBuildMillis);
+		nextBuildMillis += 1000; // ensure unique, ordered creation times
 		Build build4 = new Build(date, product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), product.getBuildConfiguration(), product.getQaTestConfig());
 		buildDAO.save(build4);
 
