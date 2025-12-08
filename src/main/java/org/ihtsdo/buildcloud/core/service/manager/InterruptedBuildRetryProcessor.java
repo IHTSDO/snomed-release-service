@@ -121,7 +121,6 @@ public class InterruptedBuildRetryProcessor {
 		}
 	}
 
-	@Transactional
 	public void failIfStillQueued(BuildStatusTracker tracker) throws IOException {
 		long cutoffMillis = System.currentTimeMillis() - queuedTimeoutMillis;
 
