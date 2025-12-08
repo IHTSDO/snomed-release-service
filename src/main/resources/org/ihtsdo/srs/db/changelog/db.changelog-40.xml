@@ -82,11 +82,11 @@
             </not>
         </preConditions>
 
-        <!-- For findByRvfRunIdAndBuildId(rvfRunId, buildId); rvf_run_id is unique in the entity -->
+        <!-- Index (rvf_run_id, build_id) to speed up lookups -->
         <createIndex tableName="build_status_tracker"
-                     indexName="uk_bst_rvf_run_id"
-                     unique="true">
+                     indexName="uk_bst_rvf_run_id">
             <column name="rvf_run_id"/>
+            <column name="build_id"/>
         </createIndex>
 
         <rollback>
