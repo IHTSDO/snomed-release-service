@@ -10,6 +10,7 @@ import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -18,7 +19,8 @@ import static org.ihtsdo.buildcloud.core.entity.Build.Status.FAILED;
 import static org.ihtsdo.buildcloud.core.entity.Build.Status.QUEUED;
 
 @Service
-public class InterruptedBuildRetryProcessor {
+@ConditionalOnProperty(name = "srs.manager", havingValue = "true")
+public class InterruptedBuildRetryProcessor  {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(InterruptedBuildRetryProcessor.class);
 
