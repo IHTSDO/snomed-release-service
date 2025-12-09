@@ -828,7 +828,12 @@ public class BuildServiceImpl implements BuildService {
 		try {
 			RF2Service rf2Service = new RF2Service();
 			Set<RF2Row> mdrsRows = rf2Service.getMDRS(rf2DeltaZipFile, true);
-			Set<ModuleMetadata> dependencies = moduleStorageCoordinator.getDependencies(mdrsRows,  true);
+
+			Set<String> expectedModules =  new HashSet<>();
+			if (build.getConfiguration().getExtensionConfig() != null) {
+				expectedModules = build.getConfiguration().getExtensionConfig().getModuleIdsSet();
+			}
+			Set<ModuleMetadata> dependencies = moduleStorageCoordinator.getDependencies(mdrsRows, expectedModules, true);
 			File extractedDirectory = null;
 			if (dependencies.isEmpty()) {
 				LOGGER.info("No dependency found from Module Storage Coordinator");
