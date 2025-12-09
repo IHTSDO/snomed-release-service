@@ -180,10 +180,9 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			request.addProperty("password", this.password);
 
 			// Send POST request, get response as JsonObject
-			HttpEntity<String> httpRequest = new HttpEntity<>(gson.toJson(request), headers);
-			String responseBody = restTemplate.postForObject(urlHelper.getLoginUrl(), httpRequest, String.class);
+			HttpEntity<JsonObject> httpRequest = new HttpEntity<>(request, headers);
+			JsonObject jsonResponse = restTemplate.postForObject(urlHelper.getLoginUrl(), httpRequest, JsonObject.class);
 
-			JsonObject jsonResponse = gson.fromJson(responseBody, JsonObject.class);
 			if (!jsonResponse.has(TOKEN_STR)) {
 				throw new RestClientException("Login response did not contain token");
 			}
