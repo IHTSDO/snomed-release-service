@@ -22,7 +22,9 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.EnumSet;
+import java.util.concurrent.TimeUnit;
 
 import static org.ihtsdo.buildcloud.core.entity.Build.Status.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -162,6 +164,41 @@ class InterruptedBuildRetrySchedulerTest extends AbstractTest {
 		Build reloadedBuild = buildService.find(releaseCenterKey, productKey, interruptedBuild.getId(),
 				true, true, null, null);
 		assertEquals(FAILED, reloadedBuild.getStatus());
+	}
+
+	/**
+	 * Interrupted builds older than one day should not be retried.
+	 */
+	@Test
+	void retryInterruptedBuilds_whenOlderThanOneDay_doesNotRetry() throws Exception {
+		configureScheduler(3, 60_000L);
+
+		String releaseCenterKey = EntityHelper.formatAsBusinessKey(TestEntityGenerator.releaseCenterShortNames[0]);
+		Product product = loadFirstProduct(releaseCenterKey);
+		String productKey = product.getBusinessKey();
+
+		// Create an interrupted build with a tracker startTime more than one day old
+		Build interruptedBuild = createBuild(releaseCenterKey, productKey, "old-interrupted-build");
+		BuildStatusTracker tracker = trackerDao.findByProductKeyAndBuildId(productKey, interruptedBuild.getId());
+		assertNotNull(tracker);
+		tracker.setStatus(INTERRUPTED.name());
+
+		// Set startTime to 2 days ago so it should be considered too old to retry
+		long twoDaysAgoMillis = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(2);
+		Timestamp twoDaysAgo = new Timestamp(twoDaysAgoMillis);
+		var startTimeField = BuildStatusTracker.class.getDeclaredField("startTime");
+		startTimeField.setAccessible(true);
+		startTimeField.set(tracker, twoDaysAgo);
+		trackerDao.update(tracker);
+
+		// Act
+		scheduler.retryInterruptedBuilds();
+
+		// Assert: tracker is still INTERRUPTED and has not been linked to a retry build
+		BuildStatusTracker reloaded = trackerDao.findByProductKeyAndBuildId(productKey, interruptedBuild.getId());
+		assertNotNull(reloaded);
+		assertEquals(INTERRUPTED.name(), reloaded.getStatus());
+		assertNull(reloaded.getRetryBuildId());
 	}
 
 	private void configureScheduler(InterruptedBuildRetryScheduler scheduler, int maxRetries, long queueTimeoutMillis) {
