@@ -31,11 +31,11 @@ public class RF2ClassificationService {
 	@Autowired
 	private BuildDAO buildDAO;
 
-	private static final String OWL_REFSET_FILE_PATTERN = ".*_sRefset_OWL.*";
+	private static final String OWL_REFSET_FILE_PATTERN = ".*_sRefset_.*OWL.*";
 
-	private static final String MDOULE_DEPENDENCY_FILE_PATTERN = ".*_ModuleDependency.*Delta.*";
+	private static final String MDOULE_DEPENDENCY_FILE_PATTERN = ".*_ssRefset_.*ModuleDependency.*Delta.*";
 
-	private static final String MRCM_ATTRIBUTE_DOMAIN_DELTA = ".*_cissccRefset_MRCMAttributeDomainDelta";
+		private static final String MRCM_ATTRIBUTE_DOMAIN_DELTA = ".*_cissccRefset_.*MRCMAttributeDomainDelta";
 
 	private static final String CONCEPT_PATTERN = ".*_Concept_.*Delta.*";
 
