@@ -763,11 +763,11 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	}
 
 	private JsonElement makeHttpCall(String url, HttpMethod method, HttpEntity<?> requestEntity) throws RestClientException {
-		ResponseEntity<String> response = restTemplate.exchange(
+		ResponseEntity<JsonElement> response = restTemplate.exchange(
 				url,
 				method,
 				requestEntity,
-				String.class
+				JsonElement.class
 		);
 
 		if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
@@ -778,7 +778,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			throw new RestClientException(errorMsg);
 		}
 
-		return JsonParser.parseString(response.getBody());
+		return response.getBody();
 	}
 
 
