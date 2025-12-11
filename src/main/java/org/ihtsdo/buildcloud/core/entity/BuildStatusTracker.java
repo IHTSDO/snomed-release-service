@@ -40,8 +40,8 @@ public class BuildStatusTracker {
 	@Column(name = "retry_count")
 	private int retryCount;
 
-	@Column(name = "retry_build_id")
-	private String retryBuildId;
+	@Column(name = "next_retry_build_id")
+	private String nextRetryBuildId;
 
 	public BuildStatusTracker() {
 		this.startTime = new Timestamp(System.currentTimeMillis());
@@ -113,12 +113,12 @@ public class BuildStatusTracker {
 		this.retryCount = retryCount;
 	}
 
-	public String getRetryBuildId() {
-		return retryBuildId;
+	public String getNextRetryBuildId() {
+		return nextRetryBuildId;
 	}
 
-	public void setRetryBuildId(String retryBuildId) {
-		this.retryBuildId = retryBuildId;
+	public void setNextRetryBuildId(String nextRetryBuildId) {
+		this.nextRetryBuildId = nextRetryBuildId;
 	}
 
 	@Override
@@ -132,7 +132,7 @@ public class BuildStatusTracker {
 				.add("startTime='" + startTime + "'")
 				.add("lastUpdatedTime='" + lastUpdatedTime + "'")
 				.add("retryCount=" + retryCount)
-				.add("retryBuildId='" + retryBuildId + "'")
+				.add("nextRetryBuildId='" + nextRetryBuildId + "'")
 				.toString();
 	}
 }

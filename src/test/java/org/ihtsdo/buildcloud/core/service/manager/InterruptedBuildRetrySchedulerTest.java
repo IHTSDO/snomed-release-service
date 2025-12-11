@@ -98,7 +98,7 @@ class InterruptedBuildRetrySchedulerTest extends AbstractTest {
 		assertNotEquals(interruptedBuild.getId(), latestTracker.getBuildId());
 		assertEquals(1, latestTracker.getRetryCount());
 		// And original tracker points at the new retry build
-		assertEquals(latestTracker.getBuildId(), originalAfter.getRetryBuildId());
+		assertEquals(latestTracker.getBuildId(), originalAfter.getNextRetryBuildId());
 	}
 
 	/**
@@ -132,7 +132,7 @@ class InterruptedBuildRetrySchedulerTest extends AbstractTest {
 		assertEquals(INTERRUPTED.name(), reloadedOld.getStatus());
 
 		// And the old tracker has not been linked to any retry build
-		assertNull(reloadedOld.getRetryBuildId());
+		assertNull(reloadedOld.getNextRetryBuildId());
 	}
 
 	/**
@@ -198,7 +198,7 @@ class InterruptedBuildRetrySchedulerTest extends AbstractTest {
 		BuildStatusTracker reloaded = trackerDao.findByProductKeyAndBuildId(productKey, interruptedBuild.getId());
 		assertNotNull(reloaded);
 		assertEquals(INTERRUPTED.name(), reloaded.getStatus());
-		assertNull(reloaded.getRetryBuildId());
+		assertNull(reloaded.getNextRetryBuildId());
 	}
 
 	private void configureScheduler(InterruptedBuildRetryScheduler scheduler, int maxRetries, long queueTimeoutMillis) {

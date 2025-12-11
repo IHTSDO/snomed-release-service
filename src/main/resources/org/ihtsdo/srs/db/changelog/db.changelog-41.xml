@@ -17,7 +17,24 @@
         </rollback>
     </changeSet>
 
+    <changeSet id="2025121101-rename-retry-build-id-column" author="cursor-ai">
+        <renameColumn
+                tableName="build_status_tracker"
+                oldColumnName="retry_build_id"
+                newColumnName="next_retry_build_id"
+                columnDataType="VARCHAR(50)"/>
+
+        <rollback>
+            <renameColumn
+                    tableName="build_status_tracker"
+                    oldColumnName="next_retry_build_id"
+                    newColumnName="retry_build_id"
+                    columnDataType="VARCHAR(50)"/>
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>
+
 
 
 

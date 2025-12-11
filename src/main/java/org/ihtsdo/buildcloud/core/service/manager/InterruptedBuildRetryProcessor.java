@@ -78,9 +78,9 @@ public class InterruptedBuildRetryProcessor  {
 		}
 
 		// If we've already scheduled a retry for this tracker, do not do it again
-		if (tracker.getRetryBuildId() != null) {
+		if (tracker.getNextRetryBuildId() != null) {
 			LOGGER.info("Skipping retry of interrupted build [{}:{}:{}] because a retry build {} is already recorded.",
-					releaseCenterKey, productKey, buildId, tracker.getRetryBuildId());
+					releaseCenterKey, productKey, buildId, tracker.getNextRetryBuildId());
 			return;
 		}
 
@@ -112,7 +112,7 @@ public class InterruptedBuildRetryProcessor  {
 
 		// Mark this tracker so we don't attempt to auto-retry it again:
 		// keep status as INTERRUPTED but record which build is the retry.
-		tracker.setRetryBuildId(retryBuild.getId());
+		tracker.setNextRetryBuildId(retryBuild.getId());
 		trackerService.update(tracker);
 
 		// Increment retry count on the new build's tracker so we can enforce max retries
@@ -140,7 +140,7 @@ public class InterruptedBuildRetryProcessor  {
 			build = buildService.find(releaseCenterKey, productKey, buildId,
 					true, true, null, null);
 		} catch (ResourceNotFoundException e) {
-			LOGGER.warn("Stuck queued build not found for [{}:{}:{}]. Skipping.",
+			LOGGER.warn("Stuck queued build not found in S3 for [{}:{}:{}]. Skipping.",
 					releaseCenterKey, productKey, buildId);
 			return;
 		}
