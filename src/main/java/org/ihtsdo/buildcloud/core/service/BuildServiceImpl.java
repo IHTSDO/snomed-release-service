@@ -91,7 +91,6 @@ public class BuildServiceImpl implements BuildService {
 	public static final String UNABLE_TO_FIND_PRODUCT = "Unable to find product: ";
 	public static final String PROGRESS_STATUS = "Progress Status";
 	public static final String MESSAGE = "Message";
-	private Gson gson;
 
 	@Autowired
 	private BuildDAO dao;
@@ -169,7 +168,6 @@ public class BuildServiceImpl implements BuildService {
 
 	@PostConstruct
 	public void init() {
-		gson = new GsonBuilder().setPrettyPrinting().create();
 		dailyBuildResourceManager = new ResourceManager(dailyBuildResourceConfig, cloudResourceLoader);
 	}
 
@@ -929,42 +927,75 @@ public class BuildServiceImpl implements BuildService {
 			return null;
 		}
 		if (element.isJsonObject()) {
-			Map<String, Object> map = new LinkedHashMap<>();
-			JsonObject jsonObject = element.getAsJsonObject();
-			for (java.util.Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
-				map.put(entry.getKey(), convertJsonElementToOrderedObject(entry.getValue()));
-			}
-			return map;
+			return convertJsonObjectToOrderedMap(element.getAsJsonObject());
 		}
 		if (element.isJsonArray()) {
-			java.util.List<Object> list = new java.util.ArrayList<>();
-			JsonArray jsonArray = element.getAsJsonArray();
-			for (JsonElement item : jsonArray) {
-				list.add(convertJsonElementToOrderedObject(item));
-			}
-			return list;
+			return convertJsonArrayToOrderedList(element.getAsJsonArray());
 		}
 		if (element.isJsonPrimitive()) {
-			com.google.gson.JsonPrimitive primitive = element.getAsJsonPrimitive();
-			if (primitive.isString()) {
-				return primitive.getAsString();
-			}
-			if (primitive.isNumber()) {
-				String numberStr = primitive.getAsString();
-				if (numberStr.contains(".") || numberStr.contains("e") || numberStr.contains("E")) {
-					return primitive.getAsDouble();
-				}
-				try {
-					return primitive.getAsLong();
-				} catch (NumberFormatException e) {
-					return primitive.getAsDouble();
-				}
-			}
-			if (primitive.isBoolean()) {
-				return primitive.getAsBoolean();
-			}
+			return convertJsonPrimitiveToObject(element.getAsJsonPrimitive());
 		}
 		return null;
+	}
+
+	/**
+	 * Converts JsonObject to LinkedHashMap while preserving property order.
+	 */
+	private Map<String, Object> convertJsonObjectToOrderedMap(JsonObject jsonObject) {
+		Map<String, Object> map = new LinkedHashMap<>();
+		for (java.util.Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
+			map.put(entry.getKey(), convertJsonElementToOrderedObject(entry.getValue()));
+		}
+		return map;
+	}
+
+	/**
+	 * Converts JsonArray to List while preserving element order.
+	 */
+	private java.util.List<Object> convertJsonArrayToOrderedList(JsonArray jsonArray) {
+		java.util.List<Object> list = new java.util.ArrayList<>();
+		for (JsonElement item : jsonArray) {
+			list.add(convertJsonElementToOrderedObject(item));
+		}
+		return list;
+	}
+
+	/**
+	 * Converts JsonPrimitive to appropriate Java object type.
+	 */
+	private Object convertJsonPrimitiveToObject(com.google.gson.JsonPrimitive primitive) {
+		if (primitive.isString()) {
+			return primitive.getAsString();
+		}
+		if (primitive.isNumber()) {
+			return convertJsonNumberToObject(primitive);
+		}
+		if (primitive.isBoolean()) {
+			return primitive.getAsBoolean();
+		}
+		return null;
+	}
+
+	/**
+	 * Converts JsonPrimitive number to appropriate numeric type (Long or Double).
+	 */
+	private Object convertJsonNumberToObject(com.google.gson.JsonPrimitive primitive) {
+		String numberStr = primitive.getAsString();
+		if (isFloatingPointNumber(numberStr)) {
+			return primitive.getAsDouble();
+		}
+		try {
+			return primitive.getAsLong();
+		} catch (NumberFormatException e) {
+			return primitive.getAsDouble();
+		}
+	}
+
+	/**
+	 * Checks if a number string represents a floating point number.
+	 */
+	private boolean isFloatingPointNumber(String numberStr) {
+		return numberStr.contains(".") || numberStr.contains("e") || numberStr.contains("E");
 	}
 
 	private String getReleaseFilename(Build build) {
