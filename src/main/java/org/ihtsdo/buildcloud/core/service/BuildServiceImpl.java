@@ -8,7 +8,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.jms.JMSException;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTextMessage;
-import org.apache.commons.text.StringEscapeUtils;
 import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
@@ -74,7 +73,6 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -896,25 +894,24 @@ public class BuildServiceImpl implements BuildService {
 		try {
 			LOGGER.info("Generating release package information file for build {}", build.getUniqueId());
 			Map<String, Object> releasePackageInformationMap = getReleasePackageInformationMap(build);
-			FileWriter fileWriter = null;
-			File releasePackageInfoFile;
-			try {
-				releasePackageInfoFile = new File(releaseFilename);
-				fileWriter = new FileWriter(releasePackageInfoFile, StandardCharsets.UTF_8);
-
-				Gson gsonWithNulls = new GsonBuilder().serializeNulls().disableHtmlEscaping().setPrettyPrinting().create();
-				JsonElement je = JsonParser.parseString(mapToString(releasePackageInformationMap));
-				fileWriter.write(gsonWithNulls.toJson(je));
-			} finally {
-				fileWriter.flush();
-				fileWriter.close();
+			File releasePackageInfoFile = new File(releaseFilename);
+			
+			try (FileWriter fileWriter = new FileWriter(releasePackageInfoFile, StandardCharsets.UTF_8)) {
+				Gson gsonWithNulls = new GsonBuilder()
+						.serializeNulls()
+						.disableHtmlEscaping()
+						.setPrettyPrinting()
+						.create();
+				// Directly convert Map to JSON - Gson handles all nested structures, arrays, and complex types properly
+				// LinkedHashMap preserves insertion order, which Gson will maintain during serialization
+				String json = gsonWithNulls.toJson(releasePackageInformationMap);
+				fileWriter.write(json);
 			}
+			
 			try {
-				if (releasePackageInfoFile != null) {
-					dao.putOutputFile(build, releasePackageInfoFile);
-				}
+				dao.putOutputFile(build, releasePackageInfoFile);
 			} finally {
-				if (releasePackageInfoFile != null) {
+				if (releasePackageInfoFile.exists()) {
 					releasePackageInfoFile.delete();
 				}
 			}
@@ -923,11 +920,51 @@ public class BuildServiceImpl implements BuildService {
 		}
     }
 
-	private <K, V> String mapToString(Map<K, V> map) {
-		return map.entrySet()
-				.stream()
-				.map(entry -> entry.getKey() + ":" + (entry.getValue() instanceof String ? "\"" + StringEscapeUtils.escapeJson(entry.getValue().toString()) + "\"" : entry.getValue()))
-				.collect(Collectors.joining(", ", "{", "}"));
+	/**
+	 * Converts JsonElement to Object while preserving order using LinkedHashMap for Maps.
+	 * This ensures that nested objects maintain their property order.
+	 */
+	private Object convertJsonElementToOrderedObject(JsonElement element) {
+		if (element == null || element.isJsonNull()) {
+			return null;
+		}
+		if (element.isJsonObject()) {
+			Map<String, Object> map = new LinkedHashMap<>();
+			JsonObject jsonObject = element.getAsJsonObject();
+			for (java.util.Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
+				map.put(entry.getKey(), convertJsonElementToOrderedObject(entry.getValue()));
+			}
+			return map;
+		}
+		if (element.isJsonArray()) {
+			java.util.List<Object> list = new java.util.ArrayList<>();
+			JsonArray jsonArray = element.getAsJsonArray();
+			for (JsonElement item : jsonArray) {
+				list.add(convertJsonElementToOrderedObject(item));
+			}
+			return list;
+		}
+		if (element.isJsonPrimitive()) {
+			com.google.gson.JsonPrimitive primitive = element.getAsJsonPrimitive();
+			if (primitive.isString()) {
+				return primitive.getAsString();
+			}
+			if (primitive.isNumber()) {
+				String numberStr = primitive.getAsString();
+				if (numberStr.contains(".") || numberStr.contains("e") || numberStr.contains("E")) {
+					return primitive.getAsDouble();
+				}
+				try {
+					return primitive.getAsLong();
+				} catch (NumberFormatException e) {
+					return primitive.getAsDouble();
+				}
+			}
+			if (primitive.isBoolean()) {
+				return primitive.getAsBoolean();
+			}
+		}
+		return null;
 	}
 
 	private String getReleaseFilename(Build build) {
@@ -1002,10 +1039,11 @@ public class BuildServiceImpl implements BuildService {
 		JsonObject jsonObject = parseAdditionalReleaseInformationJSON(buildConfig.getAdditionalReleaseInformationFields());
 
 		// copy entries from JsonObject into result map, converting JsonNull -> null and primitives/objects to Java types
+		// Preserve order by converting JsonElement to Object while maintaining LinkedHashMap structure
 		for (java.util.Map.Entry<String, com.google.gson.JsonElement> entry : jsonObject.entrySet()) {
 			String key = entry.getKey();
 			JsonElement el = entry.getValue();
-			Object value = (el == null || el.isJsonNull()) ? null : gson.fromJson(el, Object.class);
+			Object value = (el == null || el.isJsonNull()) ? null : convertJsonElementToOrderedObject(el);
 			result.put(key, value);
 		}
 
