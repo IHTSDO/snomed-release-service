@@ -706,11 +706,10 @@ public class BuildDAOImpl implements BuildDAO {
 		LOGGER.trace("Finding all Builds in {}, {}.", buildBucketName, directoryPathPrefix);
 		BuildResponse response = getAllBuildsFromS3(directoryPathPrefix, requestParameter.releaseCenterKey, requestParameter.productKey, requestParameter.forYears);
 		List<Build> builds = response.builds();
+		Collections.reverse(builds);
 		builds = removeInvisibleBuilds(requestParameter.visibility, response.visibilityPaths, builds);
 		builds = removeBuildsMarkAsDeleted(response.buildsMarkAsDeleted, builds);
 		addDataToBuilds(builds, response.userPaths, response.userRolesPaths, response.tagPaths, requestParameter);
-		Collections.reverse(builds);
-
 		LOGGER.trace("{} Builds being returned to client.", builds.size());
 		return builds;
 	}
