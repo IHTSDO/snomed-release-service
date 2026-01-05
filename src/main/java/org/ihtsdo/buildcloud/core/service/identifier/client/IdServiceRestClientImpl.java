@@ -206,7 +206,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			JsonObject request = new JsonObject();
 			request.addProperty(TOKEN_STR, token);
 
-			HttpEntity<String> httpRequest = new HttpEntity<>(gson.toJson(request), headers);
+			HttpEntity<JsonObject> httpRequest = new HttpEntity<>(request, headers);
 			ResponseEntity<JsonObject> response = restTemplate.exchange(
 					urlHelper.getTokenAuthenticationUrl(),
 					HttpMethod.POST,
@@ -262,7 +262,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			JsonObject requestData = new JsonObject();
 			requestData.addProperty(SCTIDS, scdStrList);
 
-			HttpEntity<String> request = new HttpEntity<>(gson.toJson(requestData), headers);
+			HttpEntity<JsonObject> request = new HttpEntity<>(requestData, headers);
 			ResponseEntity<JsonObject> response = restTemplate.postForEntity(urlHelper.getSctIdBulkUrl(token), request, JsonObject.class);
 
 			if (!response.getStatusCode().is2xxSuccessful()) {
@@ -323,13 +323,13 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			requestJson.addProperty(GENERATE_LEGACY_IDS, FALSE);
 			requestJson.addProperty(COMMENT, comment);
 
-			HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestJson), headers);
+			HttpEntity<JsonObject> requestEntity = new HttpEntity<>(requestJson, headers);
 
 			// Call the ID service
-			ResponseEntity<String> response = restTemplate.postForEntity(
+			ResponseEntity<JsonObject> response = restTemplate.postForEntity(
 					urlHelper.getSctIdGenerateUrl(token),
 					requestEntity,
-					String.class
+					JsonObject.class
 			);
 
 			if (!response.getStatusCode().is2xxSuccessful()) {
@@ -337,8 +337,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 				);
 			}
 
-			// Parse JSON response
-			JsonObject body = JsonParser.parseString(response.getBody()).getAsJsonObject();
+			JsonObject body = response.getBody();
 			if (!body.has(SCTID)) {
 				throw new RestClientException("ID service response missing SCTID field");
 			}
@@ -406,7 +405,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			requestJson.addProperty(COMMENT, comment);
 
 			// Send request
-			HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestJson), headers);
+			HttpEntity<JsonObject> requestEntity = new HttpEntity<>(requestJson, headers);
 			String url = urlHelper.getSctIdBulkGenerateUrl(token);
 
 			JsonElement jsonElement = makeHttpCall(url, HttpMethod.POST, requestEntity);
@@ -466,7 +465,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			requestJson.addProperty(SOFTWARE, SRS);
 			requestJson.addProperty(COMMENT, comment);
 
-			HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestJson), headers);
+			HttpEntity<JsonObject> requestEntity = new HttpEntity<>(requestJson, headers);
 			String url = urlHelper.getSchemeIdBulkGenerateUrl(token, schemeType);
 			JsonElement jsonElement = makeHttpCall(url, HttpMethod.POST, requestEntity);
 			String jobId = jsonElement.getAsJsonObject().get("id").getAsString();
@@ -485,19 +484,16 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		}
 
 		// Retrieve bulk job results
-		ResponseEntity<String> resultResponse = restTemplate.getForEntity(
+		ResponseEntity<JsonArray> resultResponse = restTemplate.getForEntity(
 				urlHelper.getBulkJobResultUrl(jobId, token),
-				String.class
+				JsonArray.class
 		);
 
 		if (!resultResponse.getStatusCode().is2xxSuccessful()) {
 			throw new RestClientException("Failed to retrieve bulk job results for job: " + jobId);
 		}
 
-		JsonArray items = JsonParser.parseString(resultResponse.getBody())
-				.getAsJsonObject()
-				.getAsJsonArray(ITEMS);
-
+		JsonArray items = resultResponse.getBody();
 		for (JsonElement element : items) {
 			JsonObject item = element.getAsJsonObject();
 			UUID systemId = UUID.fromString(item.get(SYSTEM_ID).getAsString());
@@ -568,12 +564,12 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	 */
 	private StatusLog fetchBulkJobStatus(String url) throws RestClientException {
 		try {
-			ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+			ResponseEntity<JsonObject> response = restTemplate.getForEntity(url, JsonObject.class);
 			if (!response.getStatusCode().is2xxSuccessful()) {
 				throw new RestClientException("Failed to get bulk job status: " + response.getStatusCode());
 			}
 
-			JsonObject body = JsonParser.parseString(response.getBody()).getAsJsonObject();
+			JsonObject body = response.getBody();
 			int status = body.get(STATUS).getAsInt();
 			String log = null;
 
@@ -598,7 +594,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 						// Build request JSON using Gson
 						JsonObject requestJson = new JsonObject();
 						requestJson.addProperty(TOKEN_STR, token);
-						HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestJson), headers);
+						HttpEntity<JsonObject> requestEntity = new HttpEntity<>(requestJson, headers);
 						makeHttpCall(urlHelper.getLogoutUrl(), HttpMethod.POST, requestEntity);
 						LOGGER.info("Id service rest client logs out successfully.");
 						token = null;
@@ -648,7 +644,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			requestJson.add(SCTIDS, gson.toJsonTree(batchJob));
 			requestJson.addProperty(SOFTWARE, SRS);
 			requestJson.addProperty(COMMENT, comment);
-			HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestJson), headers);
+			HttpEntity<JsonObject> requestEntity = new HttpEntity<>(requestJson, headers);
 			String url = urlHelper.getSctIdBulkPublishingUrl(token);
 
 			JsonElement jsonElement = makeHttpCall(url, HttpMethod.PUT, requestEntity);
@@ -701,7 +697,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			requestJson.addProperty(SOFTWARE, SRS);
 			requestJson.addProperty(COMMENT, comment);
 
-			HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestJson), headers);
+			HttpEntity<JsonObject> requestEntity = new HttpEntity<>(requestJson, headers);
 			String url = urlHelper.getSchemeIdBulkPublishingUrl(schemeType, token);
 			JsonElement jsonElement = makeHttpCall(url, HttpMethod.PUT, requestEntity);
 
@@ -899,7 +895,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			requestData.add("records", records);
 			requestData.addProperty(SOFTWARE, SRS);
 			requestData.addProperty(COMMENT, comment);
-			HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestData), headers);
+			HttpEntity<JsonObject> requestEntity = new HttpEntity<>(requestData, headers);
 			String url = urlHelper.getSctIdBulkRegisterUrl(token);
 			JsonElement responseElement = makeHttpCall(url, HttpMethod.POST, requestEntity);
 
@@ -909,8 +905,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			LOGGER.info(LOG_JOB_WITH_SIZE, jobId, sctIdsToRegister.size());
 
 			if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
-				String resultJson = restTemplate.getForObject(urlHelper.getBulkJobResultUrl(jobId, token), String.class);
-				JsonArray items = JsonParser.parseString(resultJson).getAsJsonArray();
+				JsonArray items = restTemplate.getForObject(urlHelper.getBulkJobResultUrl(jobId, token), JsonArray.class);
 				for (JsonElement itemEl : items) {
 					JsonObject item = itemEl.getAsJsonObject();
 					result.add(item.get(SCTID).getAsLong());
@@ -954,7 +949,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			requestData.addProperty(QUANTITY, totalToReserve);
 			requestData.addProperty(PARTITION_ID, partitionId);
 			requestData.addProperty(COMMENT, comment);
-			HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestData), headers);
+			HttpEntity<JsonObject> requestEntity = new HttpEntity<>(requestData, headers);
 			String url = urlHelper.getSctIdBulkReserveUrl(token);
 			JsonElement responseElement = makeHttpCall(url, HttpMethod.POST, requestEntity);
 
@@ -964,8 +959,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 
 			// Wait for job completion
 			if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
-				String resultJson = restTemplate.getForObject(urlHelper.getBulkJobResultUrl(jobId, token), String.class);
-				JsonArray items = JsonParser.parseString(resultJson).getAsJsonArray();
+				JsonArray items = restTemplate.getForObject(urlHelper.getBulkJobResultUrl(jobId, token), JsonArray.class);
 				for (JsonElement itemEl : items) {
 					JsonObject item = itemEl.getAsJsonObject();
 					result.add(item.get(SCTID).getAsLong());
@@ -995,7 +989,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			requestData.addProperty(PARTITION_ID, partitionId);
 			requestData.addProperty(GENERATE_LEGACY_IDS, FALSE);
 			requestData.addProperty(COMMENT, comment);
-			HttpEntity<String> requestEntity = new HttpEntity<>(gson.toJson(requestData), headers);
+			HttpEntity<JsonObject> requestEntity = new HttpEntity<>(requestData, headers);
 			String url = urlHelper.getSctIdBulkGenerateUrl(token);
 			JsonElement responseElement = makeHttpCall(url, HttpMethod.POST, requestEntity);
 
@@ -1004,8 +998,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 
 			// Wait for job completion
 			if (BULK_JOB_STATUS.COMPLETED_WITH_SUCCESS.getCode() == waitForCompleteStatus(jobId, getTimeOutInSeconds())) {
-				String resultJson = restTemplate.getForObject(urlHelper.getBulkJobResultUrl(jobId, token), String.class);
-				JsonArray items = JsonParser.parseString(resultJson).getAsJsonArray();
+				JsonArray items = restTemplate.getForObject(urlHelper.getBulkJobResultUrl(jobId, token), JsonArray.class);
 				for (JsonElement itemEl : items) {
 					JsonObject item = itemEl.getAsJsonObject();
 					result.add(item.get(SCTID).getAsLong());
