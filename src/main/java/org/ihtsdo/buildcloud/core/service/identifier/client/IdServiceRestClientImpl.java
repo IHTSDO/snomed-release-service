@@ -579,8 +579,45 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 
 			return new StatusLog(status, log);
 		} catch (Exception e) {
-			throw new RestClientException("Rest client error while checking bulk job status: " + url, e);
+			throw new RestClientException("Rest client error while checking bulk job status: " + maskTokenInUrl(url), e);
 		}
+	}
+
+	/**
+	 * Masks the token value in a URL to prevent exposing sensitive information in logs or error messages.
+	 * Shows first 4 characters of the token, masks the rest, and limits total display to 20 characters.
+	 */
+	private String maskTokenInUrl(String url) {
+		if (url == null || token == null) {
+			return url;
+		}
+		
+		// Extract token value from URL and create masked version
+		String maskedToken = createMaskedToken(token);
+		
+		// Replace token parameter value with masked value
+		// Handles both ?token=value and &token=value patterns, including at end of URL
+		return url.replaceAll("([?&]token=)[^&?#]*", "$1" + maskedToken);
+	}
+
+	/**
+	 * Creates a masked version of the token showing first 4 characters followed by asterisks,
+	 * limited to a maximum of 20 characters total.
+	 */
+	private String createMaskedToken(String tokenValue) {
+		if (tokenValue == null || tokenValue.isEmpty()) {
+			return "***";
+		}
+		
+		int visibleChars = Math.min(4, tokenValue.length());
+		String visiblePart = tokenValue.substring(0, visibleChars);
+		
+		// Calculate how many asterisks to add (up to 20 total characters)
+		int maxTotalLength = 20;
+		int asteriskCount = Math.min(maxTotalLength - visibleChars, Math.max(0, tokenValue.length() - visibleChars));
+		
+		String maskedPart = "*".repeat(asteriskCount);
+		return visiblePart + maskedPart;
 	}
 
 	@Override
@@ -767,7 +804,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		);
 
 		if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-			String errorMsg = "HTTP status code: " + response.getStatusCode() + " for URL: " + url;
+			String errorMsg = "HTTP status code: " + response.getStatusCode() + " for URL: " + maskTokenInUrl(url);
 			if (response.getBody() == null) {
 				errorMsg += ", but response body is null";
 			}
