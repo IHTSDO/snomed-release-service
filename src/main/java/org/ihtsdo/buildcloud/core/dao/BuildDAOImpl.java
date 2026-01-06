@@ -406,7 +406,7 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	private void validateStatusTransition(final Build.Status currentStatus, final Build.Status newStatus) {
-		// Allow a single controlled transition from INTERRUPTED -> FAILED (used by InterruptedBuildRetryProcessor)
+		// Allow a controlled transition from INTERRUPTED -> FAILED (used by interruption retry handling)
 		if (currentStatus == Build.Status.INTERRUPTED && newStatus != Build.Status.FAILED) {
 			throw new IllegalStateException("Could not update build status as it has been already " + currentStatus.name());
 		}
@@ -1198,15 +1198,15 @@ public class BuildDAOImpl implements BuildDAO {
 		try (final InputStream inputStream = s3Client.getObject(buildBucketName, cancelledRequestedPath)){
 			if (inputStream != null) {
 				build.setStatus(Build.Status.CANCEL_REQUESTED);
-				LOGGER.warn("Build status is {}. Build will be cancelled when possible", build.getStatus().name());
+				LOGGER.info("Build status is {}. Build will be cancelled when possible", build.getStatus().name());
 				return true;
 			}
-		} catch (IOException | S3Exception e) {
-			LOGGER.warn("Error while checking cancel requested status for build {}: {}", build.getId(), e.getMessage(), e);
-			return false;
-		}
+		} catch (IOException e) {
+            LOGGER.error("Error when reading build status for {}", build.getId(), e);
+        } catch (NoSuchKeyException e) {
+            // Not cancelled if it doesn't exist
+        }
 		return false;
-
 	}
 
 	@Override
