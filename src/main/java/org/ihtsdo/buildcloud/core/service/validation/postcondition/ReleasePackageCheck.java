@@ -42,7 +42,7 @@ public class ReleasePackageCheck extends PostconditionCheck implements NetworkRe
         }
 
         // Validate presence and correctness of release_package_information.json
-        if (!build.getConfiguration().isDailyBuild()) {
+        if (!build.getConfiguration().isDailyBuild() && !build.getConfiguration().isBetaRelease()) {
             errorMsg = validateReleasePackageInformationJson(build);
             if (errorMsg != null) {
                 fatalError(errorMsg);
@@ -129,6 +129,10 @@ public class ReleasePackageCheck extends PostconditionCheck implements NetworkRe
             JsonElement jsonElement = JsonParser.parseString(jsonContent);
             if (jsonElement == null || jsonElement.isJsonNull()) {
                 return "release_package_information.json does not contain valid JSON.";
+            }
+            if (jsonElement.isJsonObject() &&
+                    jsonElement.getAsJsonObject().isEmpty()) {
+                return "release_package_information.json is empty.";
             }
         } catch (JsonSyntaxException e) {
             return "release_package_information.json is not valid JSON: " + e.getMessage();
