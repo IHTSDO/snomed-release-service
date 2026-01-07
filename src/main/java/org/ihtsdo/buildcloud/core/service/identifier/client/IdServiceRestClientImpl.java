@@ -32,7 +32,6 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	private static final String COMMENT = "comment";
 	private static final String FALSE = "false";
 	private static final String GENERATE_LEGACY_IDS = "generateLegacyIds";
-	private static final String ITEMS = "items";
 	private static final String LOG_JOB_WITH_SIZE = "Bulk job id: {} with batch size: {}";
 	private static final String LOG_TIME_TAKEN = "Time taken in seconds: {}";
 	private static final String MESSAGE = "message";
@@ -494,20 +493,6 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			T value = valueMapper.apply(item.get(itemToRecover));
 			result.put(systemId, value);
 		}
-	}
-
-
-	private String getFailureMessage(ResponseEntity<JsonObject> response) {
-		String msg = "Message Unknown";
-		try {
-			JsonObject json =  response.getBody();
-			if (json != null) {
-				msg = json.get(MESSAGE).toString();
-			}
-		} catch (Exception e) {
-			//Welp, we tried
-		}
-		return "Received Http status from id service:" + response.getStatusCode() + " message:" + msg;
 	}
 
 
