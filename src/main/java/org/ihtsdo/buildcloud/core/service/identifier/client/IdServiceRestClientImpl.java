@@ -263,23 +263,17 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			requestData.addProperty(SCTIDS, scdStrList);
 
 			HttpEntity<JsonObject> request = new HttpEntity<>(requestData, headers);
-			ResponseEntity<JsonObject> response = restTemplate.postForEntity(urlHelper.getSctIdBulkUrl(token), request, JsonObject.class);
+			String url = urlHelper.getSctIdBulkUrl(token);
+			JsonElement responseElement = makeHttpCall(url, HttpMethod.POST, request);
+			JsonArray body = responseElement.getAsJsonArray();
+            for (var element : body) {
+                JsonObject item = element.getAsJsonObject();
+                long sctId = Long.parseLong(item.get(SCTID).getAsString());
+                String status = item.get(STATUS).getAsString();
+                result.put(sctId, status);
+            }
 
-			if (!response.getStatusCode().is2xxSuccessful()) {
-				throw new RestClientException(getFailureMessage(response));
-			}
-
-			JsonObject body = response.getBody();
-			if (body != null && body.has(ITEMS)) {
-				for (var element : body.getAsJsonArray(ITEMS)) {
-					JsonObject item = element.getAsJsonObject();
-					long sctId = Long.parseLong(item.get(SCTID).getAsString());
-					String status = item.get(STATUS).getAsString();
-					result.put(sctId, status);
-				}
-			}
-
-		} catch (Exception e) {
+        } catch (Exception e) {
 			throw new RestClientException("Error fetching SCT ID status batch", e);
 		}
 	}
