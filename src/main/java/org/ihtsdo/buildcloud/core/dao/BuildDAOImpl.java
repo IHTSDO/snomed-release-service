@@ -127,6 +127,8 @@ public class BuildDAOImpl implements BuildDAO {
 
 	private static final String SORT_PROPERTY_BUILD_USER = "buildUser";
 
+    private static final String MANIFEST_DIR_PREFIX = "manifest" + S3PathHelper.SEPARATOR;
+
 	private static final Set<Build.Status> TERMINAL_STATUSES = EnumSet.of(
 			Build.Status.FAILED_INPUT_GATHER_REPORT_VALIDATION,
 			Build.Status.FAILED_INPUT_PREPARE_REPORT_VALIDATION,
@@ -356,7 +358,7 @@ public class BuildDAOImpl implements BuildDAO {
 	public void updateStatus(final Build build, final Build.Status newStatus) throws IOException {
 		Build.Status origStatus = resolveOriginalStatus(build);
 		if (origStatus != null) {
-			validateStatusTransition(origStatus, newStatus);
+			validateStatusTransition(origStatus);
 		}
 
 		build.setStatus(newStatus);
@@ -405,20 +407,11 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 	}
 
-	private void validateStatusTransition(final Build.Status currentStatus, final Build.Status newStatus) {
-		// Allow a controlled transition from INTERRUPTED -> FAILED (used by interruption retry handling)
-		if (currentStatus == Build.Status.INTERRUPTED && newStatus != Build.Status.FAILED) {
-			throw new IllegalStateException("Could not update build status as it has been already " + currentStatus.name());
-		}
-
+	private void validateStatusTransition(final Build.Status currentStatus) {
 		// All other terminal states remain immutable
-		if (isTerminalStatus(currentStatus)) {
+		if (TERMINAL_STATUSES.contains(currentStatus)) {
 			throw new IllegalStateException("Could not update build status as it has been already " + currentStatus.name());
 		}
-	}
-
-	private boolean isTerminalStatus(final Build.Status status) {
-		return TERMINAL_STATUSES.contains(status);
 	}
 
 	private void sendStatusUpdateResponseMessage(final Build build) {
@@ -1203,8 +1196,8 @@ public class BuildDAOImpl implements BuildDAO {
 			}
 		} catch (IOException e) {
             LOGGER.error("Error when reading build status for {}", build.getId(), e);
-        } catch (NoSuchKeyException e) {
-            // Not cancelled if it doesn't exist
+        } catch (S3Exception e) {
+            // Doesn't exist if not cancelled
         }
 		return false;
 	}
@@ -1214,9 +1207,8 @@ public class BuildDAOImpl implements BuildDAO {
 		List<String> outputFiles = listOutputFilePaths(build);
 		final String outputFilesPath = pathHelper.getOutputFilesPath(build);
 		for (String outputFile : outputFiles) {
-			if (srsFileHelper.exists(outputFilesPath + outputFile)) {
-				srsFileHelper.deleteFile(outputFilesPath + outputFile);
-			}
+			// S3 deletes are idempotent; avoid an extra existence check per object.
+			srsFileHelper.deleteFile(outputFilesPath + outputFile);
 		}
 	}
 
@@ -1225,10 +1217,75 @@ public class BuildDAOImpl implements BuildDAO {
 		List<String> transformedFiles = listTransformedFilePaths(build);
 		final String transformedFilesPath = pathHelper.getBuildTransformedFilesPath(build).toString();
 		for (String transformedFile : transformedFiles) {
-			if (srsFileHelper.exists(transformedFilesPath + transformedFile)) {
-				srsFileHelper.deleteFile(transformedFilesPath + transformedFile);
+			// S3 deletes are idempotent; avoid an extra existence check per object.
+			srsFileHelper.deleteFile(transformedFilesPath + transformedFile);
+		}
+	}
+
+	@Override
+	public void cleanupForRetry(Build build) {
+		/*
+		 * Delete partial artifacts under the build folder so the build can be retried, while preserving:
+		 * - Everything under manifest/
+		 * - Non-JSON files at the build root
+		 * - The two configuration JSONs at the build root
+		 */
+		final String buildPrefix = ensureTrailingSlash(pathHelper.getBuildPath(build).toString());
+		final List<String> files = srsFileHelper.listFiles(buildPrefix);
+		if (files.isEmpty()) {
+			return;
+		}
+
+		int deleted = 0;
+		for (String relativePathRaw : files) {
+			final String relativePath = normalizeRelativeKey(relativePathRaw);
+			final boolean shouldDelete = relativePath != null && shouldDeleteForRetry(relativePath);
+			if (shouldDelete) {
+				// S3 deletes are idempotent; avoid an extra existence check per object.
+				srsFileHelper.deleteFile(buildPrefix + relativePath);
+				deleted++;
 			}
 		}
+		LOGGER.debug("Cleaned up {} objects under build {} for retry.", deleted, build.getId());
+	}
+
+
+	private static String ensureTrailingSlash(String prefix) {
+		if (prefix == null || prefix.isEmpty()) {
+			return S3PathHelper.SEPARATOR;
+		}
+		return prefix.endsWith(S3PathHelper.SEPARATOR) ? prefix : prefix + S3PathHelper.SEPARATOR;
+	}
+
+	private static String normalizeRelativeKey(String relativePath) {
+		if (relativePath == null) {
+			return null;
+		}
+		final String trimmed = relativePath.trim();
+		if (trimmed.isEmpty()) {
+			return null;
+		}
+		// Defensive: some callers may include a leading separator; FileHelper.listFiles normally does not.
+		return trimmed.startsWith(S3PathHelper.SEPARATOR) ? trimmed.substring(1) : trimmed;
+	}
+
+	private static boolean shouldDeleteForRetry(String relativePath) {
+		// Preserve manifest directory contents (and potential directory marker key)
+		if (relativePath.equals("manifest") || relativePath.startsWith(MANIFEST_DIR_PREFIX)) {
+			return false;
+		}
+
+		final boolean isInSubfolder = relativePath.contains(S3PathHelper.SEPARATOR);
+		if (isInSubfolder) {
+			// Delete all files within subfolders (except manifest/* handled above)
+			return true;
+		}
+
+		// Root-level file: delete only JSON files except config jsons
+		if (!relativePath.endsWith(".json")) {
+			return false;
+		}
+		return !(S3PathHelper.CONFIG_JSON.equals(relativePath) || S3PathHelper.QA_CONFIG_JSON.equals(relativePath));
 	}
 
 	@Override

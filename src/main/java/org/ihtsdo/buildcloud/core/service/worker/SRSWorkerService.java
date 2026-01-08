@@ -12,6 +12,7 @@ import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,8 +26,7 @@ import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
 
-import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.PROGRESS_STATUS;
-import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.MESSAGE;
+import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.*;
 
 @Service
 @ConditionalOnProperty(name = "srs.worker", havingValue = "true", matchIfMissing = true)
@@ -34,17 +34,25 @@ public class SRSWorkerService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SRSWorkerService.class);
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
+
+    private final ReleaseService releaseService;
+
+    private final BuildService buildService;
+
+    private final BuildDAO buildDAO;
+
+	@Value("${srs.build.interrupted.max-retries:3}")
+	private int interruptedMaxRetries;
 
     @Autowired
-    private ReleaseService releaseService;
+    public SRSWorkerService(ObjectMapper objectMapper, ReleaseService releaseService, BuildService buildService, BuildDAO buildDAO) {
+        this.objectMapper = objectMapper;
+        this.releaseService = releaseService;
+        this.buildService = buildService;
+        this.buildDAO = buildDAO;
 
-    @Autowired
-    private BuildService buildService;
-
-    @Autowired
-    private BuildDAO buildDAO;
+    }
 
     @JmsListener(destination = "${srs.jms.queue.prefix}.build-jobs", concurrency = "${srs.jms.queue.concurrency}")
     public void consumeSRSJob(final TextMessage srsMessage) throws IOException {
@@ -79,13 +87,7 @@ public class SRSWorkerService {
 		}
 
 		final Build.Status status = build.getStatus();
-
-		// If already finished or in any non-worker-relevant state, just ignore
-		if (!isWorkerRelevantStatus(status)) {
-			LOGGER.info("Ignoring build {} for product {} because current status is {}",
-					build.getId(), build.getProductKey(), status);
-			return;
-		}
+        final int deliveryCount = getDeliveryCount(srsMessage);
 
 		SecurityContextHolder.getContext().setAuthentication(getPreAuthenticatedAuthenticationToken(buildRequest));
 		try {
@@ -103,11 +105,9 @@ public class SRSWorkerService {
 				final Instant finish = Instant.now();
 				LOGGER.info("Release build {} completed in {} minute(s) for product: {}",
 						build.getId(), Duration.between(start, finish).toMinutes(), build.getProductKey());
-			} else if (Build.Status.BEFORE_TRIGGER == status || Build.Status.BUILDING == status) {
-				// Likely interrupted previous attempt (e.g. Spot termination)
-				LOGGER.warn("Build {} for product {} is in status {} on redelivery; marking as INTERRUPTED.",
-						build.getId(), build.getProductKey(), status);
-				markBuildAsInterrupted(build);
+			} else if (deliveryCount > 1 && (Build.Status.BEFORE_TRIGGER == status || Build.Status.BUILDING == status)) {
+				// If we're seeing a build mid-flight, only retry if this is a redelivery (i.e. prior attempt likely died before ack due to spot instances)
+                retryInterruptedBuild(build, start, deliveryCount - 1);
 			}
 		} finally {
 			if (buildDAO.isBuildCancelRequested(build)) {
@@ -126,30 +126,78 @@ public class SRSWorkerService {
 		}
     }
 
-	private boolean isWorkerRelevantStatus(Build.Status status) {
-		// Only these are considered “not yet fully processed” for the worker
-		return Build.Status.PENDING == status
-				|| Build.Status.QUEUED == status
-				|| Build.Status.BEFORE_TRIGGER == status
-				|| Build.Status.BUILDING == status;
-	}
 
-	private void markBuildAsInterrupted(Build build) {
+	private void retryInterruptedBuild(Build build, Instant start, int retryAttempt) {
 		try {
-			BuildReport report = getBuildReportFile(build);
-			if (report == null) {
-				report = BuildReport.getDummyReport();
+			if (buildDAO.isBuildCancelRequested(build)) {
+				return;
 			}
-			report.add(PROGRESS_STATUS, "interrupted");
-			report.add(MESSAGE, "Build was interrupted, likely due to worker shutdown (e.g. Spot instance termination).");
+
+			// retryAttempt is 1 for first redelivery, 2 for second redelivery, etc.
+			if (retryAttempt > interruptedMaxRetries) {
+				LOGGER.warn("Max retries ({}) exceeded for interrupted build {} (attempt={}); marking FAILED.",
+						interruptedMaxRetries, build.getUniqueId(), retryAttempt);
+				final BuildReport report = buildReportWithRetryCount(build, retryAttempt,
+						"failed",
+						"Build was interrupted and max retries were reached. Marking as FAILED.");
+				build.setBuildReport(report);
+				buildDAO.persistReport(build);
+				buildDAO.updateStatus(build, Build.Status.FAILED);
+				return;
+			}
+
+			// Remove partial artifacts from the prior attempt; keep only manifest + config files
+			buildDAO.cleanupForRetry(build);
+
+			final BuildReport report = buildReportWithRetryCount(build, retryAttempt,
+					"retrying",
+					"Retrying after interruption. Partial build artifacts were deleted before retry.");
 			build.setBuildReport(report);
 			buildDAO.persistReport(build);
 
-			buildDAO.updateStatus(build, Build.Status.INTERRUPTED);
-		} catch (IOException e) {
+			// Reset status back to QUEUED then run again as a clean attempt
+			buildDAO.updateStatus(build, Build.Status.QUEUED);
+
+			if (buildDAO.isBuildCancelRequested(build)) {
+				return;
+			}
+			LOGGER.info("Starting (retry) release build: {} for product: {}", build.getId(), build.getProductKey());
+			buildDAO.updateStatus(build, Build.Status.BEFORE_TRIGGER);
+			releaseService.runReleaseBuild(build);
+
+			final Instant finish = Instant.now();
+			LOGGER.info("Release build {} (retry) completed in {} minute(s) for product: {}",
+					build.getId(), Duration.between(start, finish).toMinutes(), build.getProductKey());
+		} catch (Exception e) {
 			// Log but do not rethrow, to avoid endless redelivery loops
-			LOGGER.error("Failed to mark build {} as INTERRUPTED.", build.getId(), e);
+			LOGGER.error("Failed to retry interrupted build {}.", build.getUniqueId(), e);
 		}
+	}
+
+
+    private int getDeliveryCount(TextMessage message) {
+        try {
+            if (message.propertyExists("JMSXDeliveryCount")) {
+				// ActiveMQ commonly sets JMSXDeliveryCount (1 on first delivery, 2 on first redelivery, etc.)
+				// Not guaranteed across all brokers/configurations; keep a safe fallback.
+                return Math.max(1, message.getIntProperty("JMSXDeliveryCount"));
+            }
+            LOGGER.info("JMSXDeliveryCount is not set and use getJMSRedelivered() as fallback");
+            return message.getJMSRedelivered() ? 2 : 1; // best-effort fallback
+        } catch (JMSException e) {
+            return 1;
+        }
+    }
+
+	private BuildReport buildReportWithRetryCount(Build build, int retryCount, String progressStatus, String message) {
+		BuildReport report = getBuildReportFile(build);
+		if (report == null) {
+			report = BuildReport.getDummyReport();
+		}
+		report.add(PROGRESS_STATUS, progressStatus);
+		report.add(MESSAGE, message);
+		report.setReport(RETRY_COUNT, retryCount);
+		return report;
 	}
 
     private PreAuthenticatedAuthenticationToken getPreAuthenticatedAuthenticationToken(CreateReleasePackageBuildRequest buildRequest) {

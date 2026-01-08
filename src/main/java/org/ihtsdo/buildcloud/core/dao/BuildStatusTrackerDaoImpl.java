@@ -46,11 +46,27 @@ public class BuildStatusTrackerDaoImpl extends EntityDAOImpl<BuildStatusTracker>
 				"select statusTracker " +
 						"from BuildStatusTracker statusTracker " +
 						"where statusTracker.productKey = :productKey " +
-						" and statusTracker.buildId = :buildId",
+						" and statusTracker.buildId = :buildId " +
+						"order by statusTracker.startTime desc",
 				BuildStatusTracker.class);
 		query.setParameter(PRODUCT_KEY, productKey);
 		query.setParameter("buildId", buildId);
+		query.setMaxResults(1);
 		return query.uniqueResult();
+	}
+
+	@Override
+	public List<BuildStatusTracker> findAllByProductKeyAndBuildId(String productKey, String buildId) {
+		Query<BuildStatusTracker> query = getCurrentSession().createQuery(
+				"select statusTracker " +
+						"from BuildStatusTracker statusTracker " +
+						"where statusTracker.productKey = :productKey " +
+						" and statusTracker.buildId = :buildId " +
+						"order by statusTracker.startTime desc",
+				BuildStatusTracker.class);
+		query.setParameter(PRODUCT_KEY, productKey);
+		query.setParameter("buildId", buildId);
+		return query.list();
 	}
 
 	@Override

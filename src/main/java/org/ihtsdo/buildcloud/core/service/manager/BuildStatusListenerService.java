@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.BuildServiceImpl;
-import org.ihtsdo.buildcloud.core.service.CacheService;
 import org.ihtsdo.buildcloud.core.service.ProductService;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.slf4j.Logger;
@@ -30,6 +29,7 @@ import java.util.Map;
 
 import static org.ihtsdo.buildcloud.core.entity.Build.Status.RELEASE_COMPLETE;
 import static org.ihtsdo.buildcloud.core.entity.Build.Status.RELEASE_COMPLETE_WITH_WARNINGS;
+import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.RETRY_COUNT;
 import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.*;
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
@@ -59,9 +59,6 @@ public class BuildStatusListenerService {
 
 	@Autowired
 	private BuildStatusTrackerService trackerService;
-
-	@Autowired
-	private CacheService cacheService;
 
 	@SuppressWarnings("unchecked")
 	@JmsListener(destination = "${srs.jms.queue.prefix}.build-job-status")
@@ -182,6 +179,7 @@ public class BuildStatusListenerService {
 	 */
 	private void updateStatus(final Map<String, Object> message) throws JsonProcessingException {
 		LOGGER.info("Build status tracker update {}", message);
+		final String releaseCenterKey = (String) message.get(RELEASE_CENTER_KEY);
 		final String productBusinessKey = (String) message.get(PRODUCT_KEY);
 		final String buildId = (String) message.get(BUILD_ID_KEY);
 		final String status = (String) message.get(BUILD_STATUS_KEY);
@@ -192,19 +190,65 @@ public class BuildStatusListenerService {
 					productBusinessKey, buildId, message);
 			return;
 		}
+
 		String previousStatus = tracker.getStatus();
 		Timestamp previousUpdatedTime = tracker.getLastUpdatedTime();
-		trackerService.updateStatus(tracker, status);
-		long timeTakenInMinutes = (tracker.getLastUpdatedTime().getTime() - previousUpdatedTime.getTime())/(1000*60);
-		if (previousStatus != null && !previousStatus.equals(status)) {
-			LOGGER.info("Status tracking stats for build id {}: It took {} minutes from {} to {}", buildId, timeTakenInMinutes, previousStatus, status);
+
+		// Detect a retry re-queue: worker resets status back to QUEUED when a mid-flight build is re-run.
+		// Normal flow should not transition from BEFORE_TRIGGER/BUILDING back to QUEUED.
+		if (Build.Status.QUEUED.name().equals(status)
+				&& (Build.Status.BEFORE_TRIGGER.name().equals(previousStatus) || Build.Status.BUILDING.name().equals(previousStatus))) {
+			Integer workerRetryCount = getRetryCountFromBuildReport(releaseCenterKey, productBusinessKey, buildId);
+			int nextRetryCount;
+			if (workerRetryCount != null) {
+				// Prefer the worker's view of retry count; avoid decreasing in case of stale/missing data.
+				nextRetryCount = Math.max(tracker.getRetryCount() + 1, workerRetryCount);
+			} else {
+				// Fall back to increment if report is missing/unreadable
+				nextRetryCount = tracker.getRetryCount() + 1;
+			}
+
+			// Keep a tracker row per attempt (preserve history)
+			tracker = trackerService.createRetryAttempt(tracker, nextRetryCount, status);
+			previousStatus = status;
+			previousUpdatedTime = tracker.getLastUpdatedTime();
 		}
-		if (RELEASE_COMPLETE.name().equals(status) || RELEASE_COMPLETE_WITH_WARNINGS.name().equals(status)) {
-			long totalTimeTaken = (tracker.getLastUpdatedTime().getTime() - tracker.getStartTime().getTime())/(1000*60);
-			LOGGER.info("Status tracking stats for build id {}: It took {} minutes in total from start to {}", buildId, totalTimeTaken, status);
+
+		// Avoid updating lastUpdatedTime if status is unchanged.
+		if (previousStatus == null || !previousStatus.equals(status)) {
+			trackerService.updateStatus(tracker, status);
+			long timeTakenInMinutes = (tracker.getLastUpdatedTime().getTime() - previousUpdatedTime.getTime()) / (1000 * 60);
+			LOGGER.info("Status tracking stats for build id {}: It took {} minutes from {} to {}",
+					buildId, timeTakenInMinutes, previousStatus, status);
+			if (RELEASE_COMPLETE.name().equals(status) || RELEASE_COMPLETE_WITH_WARNINGS.name().equals(status)) {
+				long totalTimeTaken = (tracker.getLastUpdatedTime().getTime() - tracker.getStartTime().getTime()) / (1000 * 60);
+				LOGGER.info("Status tracking stats for build id {}: It took {} minutes in total from start to {}",
+						buildId, totalTimeTaken, status);
+			}
 		}
 		LOGGER.info("Web socket status update {}", message);
 		simpMessagingTemplate.convertAndSend("/topic/build-status-change", objectMapper.writeValueAsString(message));
+	}
+
+	private Integer getRetryCountFromBuildReport(String releaseCenterKey, String productKey, String buildId) {
+		try {
+			Build build = buildService.find(releaseCenterKey, productKey, buildId, false, false, false, null);
+			BuildReport buildReport = getBuildReportFile(build);
+			if (buildReport == null || buildReport.getReport() == null) {
+				return null;
+			}
+			Object value = buildReport.getReport().get(RETRY_COUNT);
+			if (value instanceof Number number) {
+				return number.intValue();
+			}
+			if (value != null) {
+				return Integer.parseInt(String.valueOf(value));
+			}
+		} catch (Exception e) {
+			LOGGER.warn("Failed to read worker retry count from build report for [{}/{}/{}].",
+					releaseCenterKey, productKey, buildId, e);
+		}
+		return null;
 	}
 
 

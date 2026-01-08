@@ -60,7 +60,6 @@ Key points:
 * **Release-Build Processing Pipeline**
   * Worker – [`SRSWorkerService`](https://github.com/IHTSDO/snomed-release-service/blob/master/src/main/java/org/ihtsdo/buildcloud/core/service/worker/SRSWorkerService.java)
   * Status listener – [`BuildStatusListenerService`](https://github.com/IHTSDO/snomed-release-service/blob/master/src/main/java/org/ihtsdo/buildcloud/core/service/manager/BuildStatusListenerService.java)
-  * **Build status tracking & auto-retry** – `BuildStatusTracker`, `BuildStatusTrackerService`, `InterruptedBuildRetryScheduler` and `InterruptedBuildRetryProcessor` persist per-build status transitions, automatically retry `INTERRUPTED` builds up to a configurable limit, and fail builds stuck in `QUEUED` beyond a timeout.
   * Snowstorm event listeners – [`CodeSystemNewAuthoringCycleHandler`](https://github.com/IHTSDO/snomed-release-service/blob/master/src/main/java/org/ihtsdo/buildcloud/core/service/jms/listener/CodeSystemNewAuthoringCycleHandler.java)
 * **JMS Messaging (ActiveMQ)** – configurable queue prefixes (`srs.jms.queue.prefix`) enable multi-tenant deployments
 * **Module Storage & Resource Manager** – S3-backed storage for release packages
@@ -146,31 +145,6 @@ Swagger UI will be available at <http://localhost:8081/api/swagger-ui/index.html
 * JMS queues are prefixed using `srs.jms.queue.prefix` for safe multi-tenant deployments.
 * Payload sizes can be tuned via `activemq.max.message.concept-activities`.
 * **Consumers must be idempotent** – messages may be redelivered when using ActiveMQ in fail-over mode.
-
-### 5.1  Interrupted Build Retry & Queue Timeouts
-
-SRS tracks build state transitions in the relational database using the `build_status_tracker` table and the `BuildStatusTracker` JPA entity. This enables:
-
-* **Automatic retries for interrupted builds** – when the worker detects that a build was likely interrupted (for example, due to Spot-instance shutdown) it marks the build as `INTERRUPTED`. The manager-side `InterruptedBuildRetryScheduler` periodically scans for the latest `INTERRUPTED` build per product and, if it is still the newest build and under the retry limit, clones the build and re-queues it through `ReleaseBuildManager`. The original tracker remains `INTERRUPTED` but records the retry build id so it is not retried again.
-* **Failing builds stuck in `QUEUED`** – the same scheduler also checks `QUEUED` builds whose tracker `last_updated_time` is older than a configurable threshold and marks both the build (in S3) and its tracker as `FAILED`. This protects the system from builds that are never picked up by a worker.
-
-Key configuration properties:
-
-```properties
-# Enable/disable the scheduler on manager nodes (defaults to true)
-srs.build.retry.enabled=true
-
-# How often the scheduler runs (defaults to 5 minutes)
-srs.build.retry.fixed-delay-millis=300000
-
-# How long a build may remain QUEUED before being marked FAILED (defaults to 1 hour)
-srs.build.queue.timeout.millis=3600000
-
-# Maximum number of automatic retries for an INTERRUPTED build chain (default 3)
-srs.build.interrupted.max-retries=3
-```
-
-All of this logic is transparent to API clients: they continue to see build status transitions through the REST and WebSocket APIs, while the retry and timeout behaviour is driven by the configuration above.
 
 ---
 

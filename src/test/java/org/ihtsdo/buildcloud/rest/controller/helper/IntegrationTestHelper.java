@@ -278,7 +278,7 @@ public class IntegrationTestHelper {
 
 
 	public void scheduleBuild(final String buildUrl) throws Exception {
-		final MvcResult result = mockMvc.perform(post(buildUrl + "/schedule")
+		mockMvc.perform(post(buildUrl + "/schedule")
 				.header("Authorization", getBasicDigestHeaderValue())
 				.contentType(MediaType.APPLICATION_JSON))
 				.andDo(print())
@@ -289,27 +289,38 @@ public class IntegrationTestHelper {
 
 
 	public void waitUntilCompleted(String buildUrl) throws Exception {
+		final java.time.Instant deadline = java.time.Instant.now().plus(java.time.Duration.ofMinutes(10));
 		boolean isDone = false;
-		MvcResult buildResult;
+		MvcResult buildResult = null;
 		Build.Status buildStatus = null;
+		Build.Status lastStatus = null;
 
-		while (!isDone) {
+		while (!isDone && java.time.Instant.now().isBefore(deadline)) {
 			Thread.sleep(1000);
 			buildResult = mockMvc.perform(
 					get(buildUrl)
 							.header("Authorization", getBasicDigestHeaderValue())
 							.contentType(MediaType.APPLICATION_JSON))
-					.andDo(print())
 					.andExpect(status().isOk())
 					.andExpect(content().contentTypeCompatibleWith(AbstractControllerTest.APPLICATION_JSON))
 					.andReturn();
 
 			final String statusString = JsonPath.read(buildResult.getResponse().getContentAsString(), "$.status");
 			buildStatus = Build.Status.valueOf(statusString);
-			System.out.println("Build status = " + buildStatus);
+			if (buildStatus != lastStatus) {
+				System.out.println("Build status = " + buildStatus);
+				lastStatus = buildStatus;
+			}
 			if (PENDING != buildStatus && QUEUED != buildStatus && BUILDING != buildStatus && BEFORE_TRIGGER != buildStatus) {
 				isDone = true;
 			}
+		}
+
+		if (!isDone) {
+			System.out.println("Timed out waiting for build to complete. Last status=" + buildStatus + " buildUrl=" + buildUrl);
+			printReport(buildUrl + "/buildLogs");
+			printReport(buildUrl + "/buildReport");
+			fail("Timed out waiting for build to complete. Last status=" + buildStatus);
 		}
 
 		if (FAILED_INPUT_PREPARE_REPORT_VALIDATION == buildStatus) {
@@ -540,7 +551,7 @@ public class IntegrationTestHelper {
 	}
 
 	public void printBuildConfig(String buildURL) throws Exception {
-		final MvcResult getBuildConfig = mockMvc.perform(
+		mockMvc.perform(
 				get(buildURL + "/configuration")
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
@@ -561,26 +572,35 @@ public class IntegrationTestHelper {
 	}
 
 	void waitUntilPublishingCompleted(String buildUrl) throws Exception {
+		final java.time.Instant deadline = java.time.Instant.now().plus(java.time.Duration.ofMinutes(10));
 		boolean isDone = false;
 		MvcResult publishResult;
-		PublishServiceImpl.Status status;
+		PublishServiceImpl.Status status = null;
+		PublishServiceImpl.Status lastStatus = null;
 
-		while (!isDone) {
+		while (!isDone && java.time.Instant.now().isBefore(deadline)) {
 			Thread.sleep(1000);
 			publishResult = mockMvc.perform(get(buildUrl + "/publish/status").contentType(MediaType.APPLICATION_JSON))
-					.andDo(print())
 					.andExpect(status().isOk())
 					.andExpect(content().contentTypeCompatibleWith(AbstractControllerTest.APPLICATION_JSON))
 					.andReturn();
 
 			final String statusString = JsonPath.read(publishResult.getResponse().getContentAsString(), "$.status");
 			status = PublishServiceImpl.Status.valueOf(statusString);
+			if (status != lastStatus) {
+				System.out.println("Publish status = " + status);
+				lastStatus = status;
+			}
 			if (PublishServiceImpl.Status.RUNNING != status) {
 				isDone = true;
 			}
 			if (PublishServiceImpl.Status.FAILED == status) {
 				fail("Failed to publish build " + buildUrl);
 			}
+		}
+
+		if (!isDone) {
+			fail("Timed out waiting for publish to complete. Last status=" + status + " buildUrl=" + buildUrl);
 		}
 	}
 }

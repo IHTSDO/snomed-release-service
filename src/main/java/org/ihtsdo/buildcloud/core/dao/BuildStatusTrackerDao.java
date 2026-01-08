@@ -12,6 +12,8 @@ public interface BuildStatusTrackerDao extends EntityDAO<BuildStatusTracker> {
 
 	BuildStatusTracker findByProductKeyAndBuildId(String productKey, String buildId);
 
+	List<BuildStatusTracker> findAllByProductKeyAndBuildId(String productKey, String buildId);
+
 	/**
 	 * Find the most recently started build for a given release center and product.
 	 */

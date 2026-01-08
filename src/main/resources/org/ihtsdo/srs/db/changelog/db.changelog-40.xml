@@ -104,7 +104,7 @@
             </not>
         </preConditions>
 
-        <!-- For findByStatus(status...) scans (INTERRUPTED, QUEUED, etc.) -->
+        <!-- For findByStatus(status...) scans (QUEUED, etc.) -->
         <createIndex tableName="build_status_tracker"
                      indexName="idx_bst_status">
             <column name="status"/>

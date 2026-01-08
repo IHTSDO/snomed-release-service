@@ -114,6 +114,12 @@ public interface BuildDAO {
 
 	void deleteTransformedFiles(Build build);
 
+	/**
+	 * Cleanup partial build artifacts before retrying the same buildId.
+	 * Preserves only manifest and configuration files.
+	 */
+	void cleanupForRetry(Build build);
+
 	InputStream getBuildInputGatherReportStream(Build build);
 
 	boolean isDerivativeProduct(Build build);

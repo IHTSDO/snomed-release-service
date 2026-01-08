@@ -91,6 +91,7 @@ public class BuildServiceImpl implements BuildService {
 	public static final String UNABLE_TO_FIND_PRODUCT = "Unable to find product: ";
 	public static final String PROGRESS_STATUS = "Progress Status";
 	public static final String MESSAGE = "Message";
+    public static final String RETRY_COUNT = "RetryCount";
 
 	@Autowired
 	private BuildDAO dao;
@@ -893,7 +894,7 @@ public class BuildServiceImpl implements BuildService {
 			LOGGER.info("Generating release package information file for build {}", build.getUniqueId());
 			Map<String, Object> releasePackageInformationMap = getReleasePackageInformationMap(build);
 			File releasePackageInfoFile = new File(releaseFilename);
-			
+
 			try (FileWriter fileWriter = new FileWriter(releasePackageInfoFile, StandardCharsets.UTF_8)) {
 				Gson gsonWithNulls = new GsonBuilder()
 						.serializeNulls()
@@ -905,7 +906,7 @@ public class BuildServiceImpl implements BuildService {
 				String json = gsonWithNulls.toJson(releasePackageInformationMap);
 				fileWriter.write(json);
 			}
-			
+
 			try {
 				dao.putOutputFile(build, releasePackageInfoFile);
 			} finally {

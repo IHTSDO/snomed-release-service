@@ -67,9 +67,19 @@ public class BuildStatusTrackerService {
 		}
 	}
 
-	public void updateRetryCount(BuildStatusTracker tracker, int retryCount) {
-		tracker.setRetryCount(retryCount);
-		trackerDao.update(tracker);
+	/**
+	 * Create a new tracker row representing a retry attempt of the same buildId (preserves history).
+	 * The latest attempt should be resolved by ordering by startTime desc.
+	 */
+	public BuildStatusTracker createRetryAttempt(BuildStatusTracker previousAttempt, int retryCount, String status) {
+		BuildStatusTracker retryAttempt = new BuildStatusTracker();
+		retryAttempt.setProductKey(previousAttempt.getProductKey());
+		retryAttempt.setReleaseCenterKey(previousAttempt.getReleaseCenterKey());
+		retryAttempt.setBuildId(previousAttempt.getBuildId());
+		retryAttempt.setRetryCount(retryCount);
+		retryAttempt.setStatus(status);
+		trackerDao.save(retryAttempt);
+		return retryAttempt;
 	}
 }
 
