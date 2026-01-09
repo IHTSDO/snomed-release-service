@@ -65,7 +65,6 @@ import java.util.HashMap;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -233,7 +232,10 @@ public class BuildDAOImpl implements BuildDAO {
 		// Put new status before deleting old to avoid there being none.
 		putFile(newStatusFilePath, BLANK);
 
-		this.buildIdsToProductMap.computeIfAbsent(build.getReleaseCenterKey() + org.ihtsdo.otf.RF2Constants.DASH + build.getProductKey(), k -> new HashSet<>()).add(build.getId());
+		// Use a concurrent Set because saves and reads can happen concurrently.
+		this.buildIdsToProductMap
+				.computeIfAbsent(build.getReleaseCenterKey() + org.ihtsdo.otf.RF2Constants.DASH + build.getProductKey(), k -> ConcurrentHashMap.newKeySet())
+				.add(build.getId());
 		LOGGER.debug("Saved build {}", build.getId());
 	}
 
@@ -1659,16 +1661,16 @@ public class BuildDAOImpl implements BuildDAO {
 			if (!CollectionUtils.isEmpty(forYears)) {
 				buildIds = buildIds.stream() .filter(item -> forYears.stream().anyMatch(year -> item.startsWith(String.valueOf(year)))).collect(Collectors.toSet());
 			}
-			s3Objects = new ArrayList<>();
-			buildIds.stream().parallel().forEach(buildId ->
-				s3Objects.addAll(doGetS3ObjectsByBuildId(buildBucketName, prefix, buildId))
-			);
+			// NOTE: Do not mutate a shared list from a parallel stream (data race, dropped elements).
+			s3Objects = buildIds
+					.parallelStream()
+					.flatMap(buildId -> doGetS3ObjectsByBuildId(buildBucketName, prefix, buildId).stream())
+					.toList();
 		} else {
 			if (isGetBuildsForProduct && !CollectionUtils.isEmpty(forYears)) {
-				s3Objects = new ArrayList<>();
-				forYears.stream().parallel().forEach(year ->
-					s3Objects.addAll(doGetS3Objects(buildBucketName, prefix + year))
-				);
+                s3Objects = forYears.parallelStream()
+                    .flatMap(year -> doGetS3Objects(buildBucketName, prefix + year).stream())
+                    .toList();
 			} else {
 				if (isGetBuildsForProduct) isGetAllBuilds = true;
 				s3Objects = doGetS3Objects(buildBucketName, prefix);
