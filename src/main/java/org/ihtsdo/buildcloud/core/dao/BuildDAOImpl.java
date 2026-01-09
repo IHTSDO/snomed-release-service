@@ -75,6 +75,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static org.ihtsdo.buildcloud.core.entity.Build.Tag;
+import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.*;
 
 @Service
 public class BuildDAOImpl implements BuildDAO {
@@ -115,7 +116,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	private final Map<String, Set<String>> buildIdsToProductMap = new ConcurrentHashMap<>();
 
-	private static final List<String> requiredFileExtensions = Arrays.asList("status:", "tag:", "user:", "user-roles:", "visibility:", S3PathHelper.MARK_AS_DELETED);
+	private static final List<String> requiredFileExtensions = Arrays.asList("status:", "tag:", "user:", "user-roles:", "visibility:", "retry-count:", S3PathHelper.MARK_AS_DELETED);
 
 	private static final String RVF_RESPONSE_KEY = "rvf_response";
 
@@ -154,6 +155,7 @@ public class BuildDAOImpl implements BuildDAO {
 			List<String> userRolesPaths,
 			List<String> tagPaths,
 			List<String> visibilityPaths,
+			List<String> retryCountPaths,
 			List<String> buildsMarkAsDeleted
 	) {}
 
@@ -415,11 +417,13 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	private void sendStatusUpdateResponseMessage(final Build build) {
+		final int retryCount = build.getRetryCount() == null ? 0 : build.getRetryCount();
 		messagingHelper.sendResponse(buildStatusTextMessage,
-				ImmutableMap.of("releaseCenterKey", build.getReleaseCenterKey(),
-						"productKey", build.getProductKey(),
-						"buildId", build.getId(),
-						"buildStatus", build.getStatus().name()));
+				ImmutableMap.of(RELEASE_CENTER_KEY, build.getReleaseCenterKey(),
+						PRODUCT_KEY, build.getProductKey(),
+						BUILD_ID_KEY, build.getId(),
+						BUILD_STATUS_KEY, build.getStatus().name(),
+						RETRY_COUNT, retryCount));
 	}
 
 	@Override
@@ -702,7 +706,7 @@ public class BuildDAOImpl implements BuildDAO {
 		Collections.reverse(builds);
 		builds = removeInvisibleBuilds(requestParameter.visibility, response.visibilityPaths, builds);
 		builds = removeBuildsMarkAsDeleted(response.buildsMarkAsDeleted, builds);
-		addDataToBuilds(builds, response.userPaths, response.userRolesPaths, response.tagPaths, requestParameter);
+		addDataToBuilds(builds, response.userPaths, response.userRolesPaths, response.tagPaths, response.retryCountPaths, requestParameter);
 		LOGGER.trace("{} Builds being returned to client.", builds.size());
 		return builds;
 	}
@@ -786,7 +790,7 @@ public class BuildDAOImpl implements BuildDAO {
 		List<Build> reversedBuilds = new ArrayList<>(allBuilds);
 		Collections.reverse(reversedBuilds);
 		List<Build> pagedBuilds = pageBuilds(reversedBuilds, pageNumber, pageSize);
-		addDataToBuilds(pagedBuilds, response.userPaths, response.userRolesPaths, response.tagPaths, requestParameter);
+		addDataToBuilds(pagedBuilds, response.userPaths, response.userRolesPaths, response.tagPaths, response.retryCountPaths, requestParameter);
 		return pagedBuilds;
 	}
 
@@ -948,14 +952,40 @@ public class BuildDAOImpl implements BuildDAO {
 		builds.forEach(this::populateRvfUrlIfPresent);
 	}
 
-	private void addDataToBuilds(List<Build> builds, List<String> userPaths, List<String> userRolesPaths, List<String> tagPaths, BuildRequestParameter requestParameter) {
+	private void addDataToBuilds(List<Build> builds, List<String> userPaths, List<String> userRolesPaths, List<String> tagPaths, List<String> retryCountPaths, BuildRequestParameter requestParameter) {
 		LOGGER.trace("Adding users, tags & build reports to builds.");
 		if (!builds.isEmpty()) {
 			builds.forEach(build -> {
 				enrichBuildWithUserAndTags(build, userPaths, userRolesPaths, tagPaths);
+				enrichBuildWithRetryCount(build, retryCountPaths);
 				enrichBuildWithRvfIfRequested(build, requestParameter);
 				enrichBuildWithConfigurationsIfRequested(build, requestParameter);
 			});
+		}
+	}
+
+	private void enrichBuildWithRetryCount(final Build build, final List<String> retryCountPaths) {
+		if (retryCountPaths == null || retryCountPaths.isEmpty()) {
+			return;
+		}
+		for (final String key : retryCountPaths) {
+			final String[] keyParts = key.split("/");
+			final String dateString = keyParts[keyParts.length - 2];
+			if (build.getCreationTime().equals(dateString)) {
+				final String lastPart = keyParts[keyParts.length - 1];
+				final String[] parts = lastPart.split(":");
+				if (parts.length == 2) {
+					try {
+						final int parsed = Integer.parseInt(parts[1]);
+						if (parsed >= 1) {
+							build.setRetryCount(parsed);
+						}
+					} catch (NumberFormatException ignored) {
+						// ignore malformed retry count marker
+					}
+				}
+				return;
+			}
 		}
 	}
 
@@ -1028,6 +1058,7 @@ public class BuildDAOImpl implements BuildDAO {
 		List<String> userRolesPaths = new ArrayList<>();
 		List<String> tagPaths = new ArrayList<>();
 		List<String> visibilityPaths = new ArrayList<>();
+		List<String> retryCountPaths = new ArrayList<>();
 		List<String> buildsMarkAsDeleted = new ArrayList<>();
 		for (final S3Object s3Object : s3Objects) {
 			final String key = s3Object.key();
@@ -1045,6 +1076,8 @@ public class BuildDAOImpl implements BuildDAO {
 				userRolesPaths.add(key);
 			} else if (key.contains("/visibility:")) {
 				visibilityPaths.add(key);
+			} else if (key.contains("/retry-count:")) {
+				retryCountPaths.add(key);
 			} else if (key.contains("/" + S3PathHelper.MARK_AS_DELETED)) {
 				final String[] keyParts = key.split("/");
 				final String dateString = keyParts[keyParts.length - 2];
@@ -1053,7 +1086,7 @@ public class BuildDAOImpl implements BuildDAO {
 		}
 
 		builds.sort((Comparator.comparing(Build::getId)));
-		return new BuildResponse(builds, userPaths, userRolesPaths, tagPaths, visibilityPaths, buildsMarkAsDeleted);
+		return new BuildResponse(builds, userPaths, userRolesPaths, tagPaths, visibilityPaths, retryCountPaths, buildsMarkAsDeleted);
 	}
 
 	private List<String> getUserRoles(Build build, final List<String> userRolesPaths) {
@@ -1247,6 +1280,24 @@ public class BuildDAOImpl implements BuildDAO {
 			}
 		}
 		LOGGER.debug("Cleaned up {} objects under build {} for retry.", deleted, build.getId());
+	}
+
+	@Override
+	public void updateRetryCountMarker(Build build, int retryCount) throws IOException {
+		final String buildPrefix = ensureTrailingSlash(pathHelper.getBuildPath(build).toString());
+		final String markerPrefix = buildPrefix + "retry-count:";
+
+		// Delete any existing marker(s) so there is only one authoritative retry-count:{n}.
+		final List<String> existing = srsFileHelper.listFiles(markerPrefix);
+		for (String suffix : existing) {
+			if (suffix == null || suffix.isBlank()) {
+				continue;
+			}
+			srsFileHelper.deleteFile(markerPrefix + suffix);
+		}
+
+		// Write new marker
+		putFile(markerPrefix + retryCount, BLANK);
 	}
 
 

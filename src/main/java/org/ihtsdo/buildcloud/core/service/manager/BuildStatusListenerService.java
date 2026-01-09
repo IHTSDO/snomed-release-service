@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.BuildServiceImpl;
+import org.ihtsdo.buildcloud.core.service.NotificationService;
 import org.ihtsdo.buildcloud.core.service.ProductService;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.slf4j.Logger;
@@ -22,6 +23,7 @@ import jakarta.jms.TextMessage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -29,7 +31,6 @@ import java.util.Map;
 
 import static org.ihtsdo.buildcloud.core.entity.Build.Status.RELEASE_COMPLETE;
 import static org.ihtsdo.buildcloud.core.entity.Build.Status.RELEASE_COMPLETE_WITH_WARNINGS;
-import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.RETRY_COUNT;
 import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.*;
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
@@ -40,7 +41,7 @@ public class BuildStatusListenerService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildStatusListenerService.class);
 	private static final List<String> RVF_STATUS_MAP_KEYS = Arrays.asList(RUN_ID_KEY, STATE_KEY);
 	private static final List<String> RVF_VALIDATION_REQUEST_MAP_KEYS = Arrays.asList(RUN_ID_KEY, BUILD_ID_KEY, RELEASE_CENTER_KEY, PRODUCT_KEY);
-	private static final List<String> UPDATE_STATUS_MAP_KEYS = Arrays.asList(RELEASE_CENTER_KEY, PRODUCT_KEY, BUILD_ID_KEY, BUILD_STATUS_KEY);
+	private static final List<String> UPDATE_STATUS_MAP_KEYS = Arrays.asList(RELEASE_CENTER_KEY, PRODUCT_KEY, BUILD_ID_KEY, BUILD_STATUS_KEY, RETRY_COUNT);
 
 	@Autowired
 	private BuildService buildService;
@@ -59,6 +60,9 @@ public class BuildStatusListenerService {
 
 	@Autowired
 	private BuildStatusTrackerService trackerService;
+
+	@Autowired
+	private NotificationService notificationService;
 
 	@SuppressWarnings("unchecked")
 	@JmsListener(destination = "${srs.jms.queue.prefix}.build-job-status")
@@ -179,10 +183,17 @@ public class BuildStatusListenerService {
 	 */
 	private void updateStatus(final Map<String, Object> message) throws JsonProcessingException {
 		LOGGER.info("Build status tracker update {}", message);
-		final String releaseCenterKey = (String) message.get(RELEASE_CENTER_KEY);
 		final String productBusinessKey = (String) message.get(PRODUCT_KEY);
 		final String buildId = (String) message.get(BUILD_ID_KEY);
 		final String status = (String) message.get(BUILD_STATUS_KEY);
+		final int incomingRetryCount = parseRetryCount(message);
+		Map<String, Object> messageToSend = message;
+
+		// Ensure websocket payload always includes retryCount for clients (default 0).
+		if (!message.containsKey(RETRY_COUNT)) {
+			messageToSend = new HashMap<>(message);
+			messageToSend.put(RETRY_COUNT, incomingRetryCount);
+		}
 
 		BuildStatusTracker tracker = trackerService.findByProductKeyAndBuildId(productBusinessKey, buildId);
 		if (tracker == null) {
@@ -194,22 +205,12 @@ public class BuildStatusListenerService {
 		String previousStatus = tracker.getStatus();
 		Timestamp previousUpdatedTime = tracker.getLastUpdatedTime();
 
-		// Detect a retry re-queue: worker resets status back to QUEUED when a mid-flight build is re-run.
-		// Normal flow should not transition from BEFORE_TRIGGER/BUILDING back to QUEUED.
-		if (Build.Status.QUEUED.name().equals(status)
-				&& (Build.Status.BEFORE_TRIGGER.name().equals(previousStatus) || Build.Status.BUILDING.name().equals(previousStatus))) {
-			Integer workerRetryCount = getRetryCountFromBuildReport(releaseCenterKey, productBusinessKey, buildId);
-			int nextRetryCount;
-			if (workerRetryCount != null) {
-				// Prefer the worker's view of retry count; avoid decreasing in case of stale/missing data.
-				nextRetryCount = Math.max(tracker.getRetryCount() + 1, workerRetryCount);
-			} else {
-				// Fall back to increment if report is missing/unreadable
-				nextRetryCount = tracker.getRetryCount() + 1;
-			}
-
-			// Keep a tracker row per attempt (preserve history)
-			tracker = trackerService.createRetryAttempt(tracker, nextRetryCount, status);
+		// If worker indicates a new attempt (retryCount increased), create a new tracker row to preserve history.
+		// This avoids having to infer retries from specific status transitions.
+		if (incomingRetryCount > tracker.getRetryCount()) {
+			// Send notification (best-effort) when we detect a new retry attempt.
+			sendBuildRetriedNotification(message, buildId, incomingRetryCount);
+			tracker = trackerService.createRetryAttempt(tracker, incomingRetryCount, status);
 			previousStatus = status;
 			previousUpdatedTime = tracker.getLastUpdatedTime();
 		}
@@ -226,31 +227,64 @@ public class BuildStatusListenerService {
 						buildId, totalTimeTaken, status);
 			}
 		}
-		LOGGER.info("Web socket status update {}", message);
-		simpMessagingTemplate.convertAndSend("/topic/build-status-change", objectMapper.writeValueAsString(message));
+		LOGGER.info("Web socket status update {}", messageToSend);
+		simpMessagingTemplate.convertAndSend("/topic/build-status-change", objectMapper.writeValueAsString(messageToSend));
 	}
 
-	private Integer getRetryCountFromBuildReport(String releaseCenterKey, String productKey, String buildId) {
+	private void sendBuildRetriedNotification(final Map<String, Object> message, final String buildId, final int retryCount) {
 		try {
-			Build build = buildService.find(releaseCenterKey, productKey, buildId, false, false, false, null);
-			BuildReport buildReport = getBuildReportFile(build);
-			if (buildReport == null || buildReport.getReport() == null) {
-				return null;
+			final String releaseCenterKey = (String) message.get(RELEASE_CENTER_KEY);
+			final String productKey = (String) message.get(PRODUCT_KEY);
+			if (releaseCenterKey == null || productKey == null) {
+				return;
 			}
-			Object value = buildReport.getReport().get(RETRY_COUNT);
-			if (value instanceof Number number) {
-				return number.intValue();
+
+			// Fetch the build to resolve the recipient (trigger user).
+			final Build build = buildService.find(releaseCenterKey, productKey, buildId, false, false, false, null);
+			final String recipient = build != null ? build.getBuildUser() : null;
+			if (recipient == null || recipient.isBlank()) {
+				return;
 			}
-			if (value != null) {
-				return Integer.parseInt(String.valueOf(value));
-			}
+
+			final Notification notification = new Notification();
+			notification.setRead(false);
+			notification.setRecipient(recipient);
+			notification.setNotificationType(Notification.NotificationType.BUILD_RETRIED.name());
+
+			final Map<String, Object> details = new HashMap<>();
+			details.put(RELEASE_CENTER_KEY, releaseCenterKey);
+			details.put(PRODUCT_KEY, productKey);
+			details.put(BUILD_ID_KEY, buildId);
+			details.put(RETRY_COUNT, retryCount);
+			details.put("message", String.format("Build %s has been retried (attempt %d).", buildId, retryCount));
+			notification.setDetails(objectMapper.writeValueAsString(details));
+
+			notificationService.create(notification);
+
+			// Notify client (matches MonitorServiceImpl pattern)
+			final Map<String, Object> ws = new HashMap<>();
+			ws.put("event", "NEW_NOTIFICATION");
+			simpMessagingTemplate.convertAndSend("/topic/user/" + recipient + "/notification", objectMapper.writeValueAsString(ws));
 		} catch (Exception e) {
-			LOGGER.warn("Failed to read worker retry count from build report for [{}/{}/{}].",
-					releaseCenterKey, productKey, buildId, e);
+			LOGGER.warn("Failed to create BUILD_RETRIED notification for build {} (retryCount={}).", buildId, retryCount, e);
 		}
-		return null;
 	}
 
+	private int parseRetryCount(final Map<String, Object> message) {
+		final Object retryCountObj = message.get(RETRY_COUNT);
+		if (retryCountObj == null) {
+			return 0;
+		}
+		if (retryCountObj instanceof Number n) {
+			return n.intValue();
+		}
+		try {
+			return Integer.parseInt(String.valueOf(retryCountObj));
+		} catch (NumberFormatException e) {
+			LOGGER.warn("Invalid retryCount value '{}' in build status message; defaulting to 0. Message={}", retryCountObj, message);
+			return 0;
+		}
+	}
 
 	private void processSrsWorkerRvfRequest(final Map<String, Object> message) {
 		LOGGER.info("Message from SRS worker for RVF validation request map: {}", message);

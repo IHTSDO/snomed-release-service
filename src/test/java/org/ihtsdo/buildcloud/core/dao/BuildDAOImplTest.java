@@ -131,7 +131,9 @@ public class BuildDAOImplTest extends AbstractTest {
 		createBuild();
 
 		// when
-		BuildPage<Build> result = buildDAO.findAll(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), null, null, null, null, BuildService.View.ALL_RELEASES, null, PageRequest.of(3, 1));
+		// Explicit sort to avoid relying on underlying listing order when unsorted.
+		Sort.Order order = new Sort.Order(Sort.Direction.DESC, "creationTime");
+		BuildPage<Build> result = buildDAO.findAll(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), null, null, null, null, BuildService.View.ALL_RELEASES, null, PageRequest.of(3, 1, Sort.by(order)));
 
 		// then
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");

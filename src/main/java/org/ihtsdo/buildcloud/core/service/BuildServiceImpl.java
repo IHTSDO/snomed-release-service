@@ -91,7 +91,6 @@ public class BuildServiceImpl implements BuildService {
 	public static final String UNABLE_TO_FIND_PRODUCT = "Unable to find product: ";
 	public static final String PROGRESS_STATUS = "Progress Status";
 	public static final String MESSAGE = "Message";
-    public static final String RETRY_COUNT = "RetryCount";
 
 	@Autowired
 	private BuildDAO dao;

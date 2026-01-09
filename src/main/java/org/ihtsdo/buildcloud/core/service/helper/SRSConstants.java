@@ -11,4 +11,5 @@ public class SRSConstants {
 	public static final String RUN_ID_KEY = "runId";
 	public static final String STATE_KEY = "state";
 	public static final String STORAGE_LOCATION = "storageLocation";
+    public static final String RETRY_COUNT = "retryCount";
 }

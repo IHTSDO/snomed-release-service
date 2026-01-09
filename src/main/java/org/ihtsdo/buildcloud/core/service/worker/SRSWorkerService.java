@@ -27,6 +27,7 @@ import java.time.Duration;
 import java.time.Instant;
 
 import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.*;
+import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.RETRY_COUNT;
 
 @Service
 @ConditionalOnProperty(name = "srs.worker", havingValue = "true", matchIfMissing = true)
@@ -127,7 +128,7 @@ public class SRSWorkerService {
     }
 
 
-	private void retryInterruptedBuild(Build build, Instant start, int retryAttempt) {
+	private void retryInterruptedBuild(Build build, Instant start, int retryAttempt) throws IOException {
 		try {
 			if (buildDAO.isBuildCancelRequested(build)) {
 				return;
@@ -142,6 +143,9 @@ public class SRSWorkerService {
 						"Build was interrupted and max retries were reached. Marking as FAILED.");
 				build.setBuildReport(report);
 				buildDAO.persistReport(build);
+				buildDAO.updateRetryCountMarker(build, retryAttempt);
+				// Ensure status update messages include retryCount without requiring a reload from storage.
+				build.setRetryCount(retryAttempt);
 				buildDAO.updateStatus(build, Build.Status.FAILED);
 				return;
 			}
@@ -154,6 +158,9 @@ public class SRSWorkerService {
 					"Retrying after interruption. Partial build artifacts were deleted before retry.");
 			build.setBuildReport(report);
 			buildDAO.persistReport(build);
+			buildDAO.updateRetryCountMarker(build, retryAttempt);
+			// Ensure subsequent status update messages include retryCount without requiring a reload from storage.
+			build.setRetryCount(retryAttempt);
 
 			// Reset status back to QUEUED then run again as a clean attempt
 			buildDAO.updateStatus(build, Build.Status.QUEUED);
@@ -171,6 +178,7 @@ public class SRSWorkerService {
 		} catch (Exception e) {
 			// Log but do not rethrow, to avoid endless redelivery loops
 			LOGGER.error("Failed to retry interrupted build {}.", build.getUniqueId(), e);
+            buildDAO.updateStatus(build, Build.Status.FAILED);
 		}
 	}
 
