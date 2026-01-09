@@ -61,6 +61,7 @@ import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -419,11 +420,12 @@ public class BuildDAOImpl implements BuildDAO {
 	private void sendStatusUpdateResponseMessage(final Build build) {
 		final int retryCount = build.getRetryCount() == null ? 0 : build.getRetryCount();
 		messagingHelper.sendResponse(buildStatusTextMessage,
-				ImmutableMap.of(RELEASE_CENTER_KEY, build.getReleaseCenterKey(),
-						PRODUCT_KEY, build.getProductKey(),
-						BUILD_ID_KEY, build.getId(),
-						BUILD_STATUS_KEY, build.getStatus().name(),
-						RETRY_COUNT, retryCount));
+                ImmutableMap.ofEntries(
+                    Map.entry(RELEASE_CENTER_KEY, build.getReleaseCenterKey()),
+                    Map.entry(PRODUCT_KEY, build.getProductKey()),
+                    Map.entry(BUILD_ID_KEY, build.getId()),
+                    Map.entry(BUILD_STATUS_KEY, build.getStatus().name()),
+                    Map.entry(RETRY_COUNT, retryCount)));
 	}
 
 	@Override
@@ -954,38 +956,96 @@ public class BuildDAOImpl implements BuildDAO {
 
 	private void addDataToBuilds(List<Build> builds, List<String> userPaths, List<String> userRolesPaths, List<String> tagPaths, List<String> retryCountPaths, BuildRequestParameter requestParameter) {
 		LOGGER.trace("Adding users, tags & build reports to builds.");
+		final Map<String, Integer> retryCountByBuildId = buildRetryCountByBuildId(retryCountPaths);
 		if (!builds.isEmpty()) {
 			builds.forEach(build -> {
 				enrichBuildWithUserAndTags(build, userPaths, userRolesPaths, tagPaths);
-				enrichBuildWithRetryCount(build, retryCountPaths);
+				enrichBuildWithRetryCount(build, retryCountByBuildId);
 				enrichBuildWithRvfIfRequested(build, requestParameter);
 				enrichBuildWithConfigurationsIfRequested(build, requestParameter);
 			});
 		}
 	}
 
-	private void enrichBuildWithRetryCount(final Build build, final List<String> retryCountPaths) {
-		if (retryCountPaths == null || retryCountPaths.isEmpty()) {
+	private void enrichBuildWithRetryCount(final Build build, final Map<String, Integer> retryCountByBuildId) {
+		if (build == null || retryCountByBuildId == null || retryCountByBuildId.isEmpty()) {
 			return;
 		}
+		final Integer retryCount = retryCountByBuildId.get(build.getCreationTime());
+		if (retryCount != null && retryCount >= 1) {
+			build.setRetryCount(retryCount);
+		}
+	}
+
+	/**
+	 * Parse S3 marker keys of the form .../{buildId}/retry-count:{n} into a lookup map keyed by buildId.
+	 * This avoids scanning the full list of keys for every build.
+	 */
+	private Map<String, Integer> buildRetryCountByBuildId(final List<String> retryCountPaths) {
+		if (retryCountPaths == null || retryCountPaths.isEmpty()) {
+			return Collections.emptyMap();
+		}
+		final Map<String, Integer> retryCountByBuildId = new HashMap<>();
 		for (final String key : retryCountPaths) {
-			final String[] keyParts = key.split("/");
-			final String dateString = keyParts[keyParts.length - 2];
-			if (build.getCreationTime().equals(dateString)) {
-				final String lastPart = keyParts[keyParts.length - 1];
-				final String[] parts = lastPart.split(":");
-				if (parts.length == 2) {
-					try {
-						final int parsed = Integer.parseInt(parts[1]);
-						if (parsed >= 1) {
-							build.setRetryCount(parsed);
-						}
-					} catch (NumberFormatException ignored) {
-						// ignore malformed retry count marker
-					}
-				}
-				return;
+			final ParsedRetryCountMarker marker = parseRetryCountMarkerKey(key);
+			if (marker == null) {
+				continue;
 			}
+			// Defensive: if multiple markers exist, keep the highest retry count.
+			retryCountByBuildId.merge(marker.buildId, marker.retryCount, Math::max);
+		}
+		return retryCountByBuildId.isEmpty() ? Collections.emptyMap() : retryCountByBuildId;
+	}
+
+	private static final String RETRY_COUNT_MARKER_SEGMENT = "/retry-count:";
+
+	private record ParsedRetryCountMarker(String buildId, int retryCount) {}
+
+	/**
+	 * Parses S3 marker keys of the form .../{buildId}/retry-count:{n}.
+	 * Returns null if the key is not a valid retry-count marker.
+	 */
+	private ParsedRetryCountMarker parseRetryCountMarkerKey(final String key) {
+		if (key == null || key.isBlank()) {
+			return null;
+		}
+		final int markerIdx = key.lastIndexOf(RETRY_COUNT_MARKER_SEGMENT);
+		if (markerIdx < 0) {
+			return null;
+		}
+		final String buildId = extractBuildIdBeforeIndex(key, markerIdx);
+		if (buildId == null || buildId.isBlank()) {
+			return null;
+		}
+		final Integer retryCount = parseRetryCountAfterIndex(key, markerIdx);
+		if (retryCount == null || retryCount < 1) {
+			return null;
+		}
+		return new ParsedRetryCountMarker(buildId, retryCount);
+	}
+
+	private String extractBuildIdBeforeIndex(final String key, final int endExclusive) {
+		// buildId is the path segment immediately before "/retry-count:"
+		final int startSlash = key.lastIndexOf('/', endExclusive - 1);
+		if (startSlash < 0 || startSlash + 1 >= endExclusive) {
+			return null;
+		}
+		return key.substring(startSlash + 1, endExclusive);
+	}
+
+	private Integer parseRetryCountAfterIndex(final String key, final int markerIdx) {
+		final int start = markerIdx + RETRY_COUNT_MARKER_SEGMENT.length();
+		if (start >= key.length()) {
+			return null;
+		}
+		final String raw = key.substring(start).trim();
+		if (raw.isEmpty()) {
+			return null;
+		}
+		try {
+			return Integer.parseInt(raw);
+		} catch (NumberFormatException e) {
+			return null;
 		}
 	}
 
@@ -1076,7 +1136,7 @@ public class BuildDAOImpl implements BuildDAO {
 				userRolesPaths.add(key);
 			} else if (key.contains("/visibility:")) {
 				visibilityPaths.add(key);
-			} else if (key.contains("/retry-count:")) {
+			} else if (key.contains(RETRY_COUNT_MARKER_SEGMENT)) {
 				retryCountPaths.add(key);
 			} else if (key.contains("/" + S3PathHelper.MARK_AS_DELETED)) {
 				final String[] keyParts = key.split("/");
