@@ -21,12 +21,21 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.concurrent.CompletableFuture;
 
 import static org.ihtsdo.buildcloud.core.entity.Build.Status.BEFORE_TRIGGER;
 import static org.ihtsdo.buildcloud.core.entity.Build.Status.BUILDING;
 import static org.ihtsdo.buildcloud.core.entity.Build.Status.FAILED;
 import static org.ihtsdo.buildcloud.core.entity.Build.Status.QUEUED;
+import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.MESSAGE;
+import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.PROGRESS_STATUS;
+import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.RETRY_COUNT;
+import static org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper.BUILD_LOG_TXT;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
@@ -118,6 +127,13 @@ class SRSWorkerServiceRetryTest {
 		EasyMock.expect(buildDAO.isBuildCancelRequested(build)).andReturn(false).anyTimes();
 		EasyMock.expect(buildService.getBuildReportFile(build)).andReturn(null);
 
+		// Existing build log content should be preserved and the report summary appended.
+		final ByteArrayOutputStream updatedLog = new ByteArrayOutputStream();
+		EasyMock.expect(buildDAO.getLogFileStream(build, BUILD_LOG_TXT))
+				.andReturn(new ByteArrayInputStream("existing log\n".getBytes(StandardCharsets.UTF_8)));
+		EasyMock.expect(buildDAO.getLogFileOutputStream(build, BUILD_LOG_TXT))
+				.andReturn(new org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean(updatedLog, CompletableFuture.completedFuture("ok"), "log/" + BUILD_LOG_TXT));
+
 		buildDAO.persistReport(build);
 		EasyMock.expectLastCall().once();
 
@@ -133,6 +149,21 @@ class SRSWorkerServiceRetryTest {
 		final SRSWorkerService workerService = new SRSWorkerService(objectMapper, releaseService, buildService, buildDAO);
 		ReflectionTestUtils.setField(workerService, "interruptedMaxRetries", 3);
 		workerService.consumeSRSJob(message);
+
+		// Build report assertions
+		assertNotNull(build.getBuildReport(), "Expected build report to be set when max retries exceeded.");
+		assertEquals("failed", String.valueOf(build.getBuildReport().getReport().get(PROGRESS_STATUS)));
+		assertEquals(4, ((Number) build.getBuildReport().getReport().get(RETRY_COUNT)).intValue());
+		final String reportMessage = String.valueOf(build.getBuildReport().getReport().get(MESSAGE));
+		assertTrue(reportMessage.contains("max retries (3)"), "Expected build report message to include max retries. Message=" + reportMessage);
+		assertNotNull(build.getBuildReport().getReport().get("lastUpdatedTime"), "Expected lastUpdatedTime in build report.");
+
+		// Log append assertions
+		final String updatedLogStr = new String(updatedLog.toByteArray(), StandardCharsets.UTF_8);
+		assertTrue(updatedLogStr.contains("existing log"), "Expected original log content to be preserved.");
+		assertTrue(updatedLogStr.contains("\"" + MESSAGE + "\""), "Expected build report summary appended to log.");
+		assertTrue(updatedLogStr.contains("\"" + RETRY_COUNT + "\""), "Expected retryCount in log summary.");
+		assertTrue(updatedLogStr.contains("\"lastUpdatedTime\""), "Expected lastUpdatedTime in log summary.");
 
 		mocks.verify();
 	}

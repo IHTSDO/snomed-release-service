@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.core.service.worker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildReport;
@@ -23,10 +24,13 @@ import jakarta.jms.JMSException;
 import jakarta.jms.TextMessage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 
 import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.*;
+import static org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper.BUILD_LOG_TXT;
 import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.RETRY_COUNT;
 
 @Service
@@ -34,6 +38,7 @@ import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.RETRY_COUNT
 public class SRSWorkerService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SRSWorkerService.class);
+	private static final String LAST_UPDATED_TIME = "lastUpdatedTime";
 
     private final ObjectMapper objectMapper;
 
@@ -138,11 +143,15 @@ public class SRSWorkerService {
 			if (retryAttempt > interruptedMaxRetries) {
 				LOGGER.warn("Max retries ({}) exceeded for interrupted build {} (attempt={}); marking FAILED.",
 						interruptedMaxRetries, build.getUniqueId(), retryAttempt);
+				final String failMessage = String.format(
+						"Build was interrupted and max retries (%d) were reached. Marking as FAILED.",
+						interruptedMaxRetries);
 				final BuildReport report = buildReportWithRetryCount(build, retryAttempt,
 						"failed",
-						"Build was interrupted and max retries were reached. Marking as FAILED.");
+						failMessage);
 				build.setBuildReport(report);
 				buildDAO.persistReport(build);
+				appendBuildReportSummaryToEndOfBuildLog(build, report);
 				buildDAO.updateRetryCountMarker(build, retryAttempt);
 				// Ensure status update messages include retryCount without requiring a reload from storage.
 				build.setRetryCount(retryAttempt);
@@ -204,8 +213,52 @@ public class SRSWorkerService {
 		}
 		report.add(PROGRESS_STATUS, progressStatus);
 		report.add(MESSAGE, message);
+		report.setReport(LAST_UPDATED_TIME, Instant.now().toString());
 		report.setReport(RETRY_COUNT, retryCount);
 		return report;
+	}
+
+	private void appendBuildReportSummaryToEndOfBuildLog(final Build build, final BuildReport report) {
+		// Best-effort only: do not fail the worker flow if log append fails.
+		final Object message = report.getReport().get(MESSAGE);
+		final Object progressStatus = report.getReport().get(PROGRESS_STATUS);
+		final Object retryCount = report.getReport().get(RETRY_COUNT);
+		final Object lastUpdatedTime = report.getReport().get(LAST_UPDATED_TIME);
+
+		final String summaryJson;
+		try {
+			final java.util.LinkedHashMap<String, Object> summaryMap = new java.util.LinkedHashMap<>();
+			summaryMap.put(MESSAGE, message);
+			summaryMap.put(RETRY_COUNT, retryCount);
+			summaryMap.put(PROGRESS_STATUS, progressStatus);
+			summaryMap.put(LAST_UPDATED_TIME, lastUpdatedTime);
+			summaryJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(summaryMap);
+		} catch (Exception e) {
+			LOGGER.warn("Failed to serialize build report summary to JSON for build {}.", build.getUniqueId(), e);
+			return;
+		}
+
+		final String summary = "\n\n"
+				+ "===== BUILD REPORT UPDATE =====\n"
+				+ summaryJson + "\n"
+				+ "===============================\n";
+
+		try (InputStream existingLog = buildDAO.getLogFileStream(build, BUILD_LOG_TXT)) {
+			final org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean logOutputStreamBean =
+					buildDAO.getLogFileOutputStream(build, BUILD_LOG_TXT);
+			try (OutputStream logOutputStream = logOutputStreamBean.getOutputStream()) {
+				if (existingLog != null) {
+					IOUtils.copy(existingLog, logOutputStream);
+				}
+				logOutputStream.write(summary.getBytes(StandardCharsets.UTF_8));
+				logOutputStreamBean.waitForFinish();
+			}
+		} catch (InterruptedException ie) {
+			Thread.currentThread().interrupt();
+			LOGGER.warn("Interrupted while appending build report summary to build log for build {}.", build.getUniqueId(), ie);
+		} catch (Exception e) {
+			LOGGER.warn("Failed to append build report summary to build log for build {}.", build.getUniqueId(), e);
+		}
 	}
 
     private PreAuthenticatedAuthenticationToken getPreAuthenticatedAuthenticationToken(CreateReleasePackageBuildRequest buildRequest) {
