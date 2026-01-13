@@ -850,11 +850,11 @@ public class BuildDAOImpl implements BuildDAO {
 			if (visibility) {
 				return builds.stream()
 						.filter(build -> !invisibleBuildIds.contains(build.getCreationTime()))
-						.toList();
+						.collect(Collectors.toCollection(ArrayList::new));
 			} else {
 				return builds.stream()
 						.filter(build -> invisibleBuildIds.contains(build.getCreationTime()))
-						.toList();
+						.collect(Collectors.toCollection(ArrayList::new));
 			}
 		}
 
@@ -865,7 +865,7 @@ public class BuildDAOImpl implements BuildDAO {
 	private List<Build> removeBuildsMarkAsDeleted(List<String> buildsMarkAsDeleted, List<Build> builds) {
 		if (!buildsMarkAsDeleted.isEmpty()) {
 			return builds.stream()
-					.filter(build -> !buildsMarkAsDeleted.contains(build.getCreationTime())).toList();
+					.filter(build -> !buildsMarkAsDeleted.contains(build.getCreationTime())).collect(Collectors.toCollection(ArrayList::new));
 		}
 		return builds;
 	}
@@ -883,13 +883,13 @@ public class BuildDAOImpl implements BuildDAO {
 	private List<Build> filterPublishedBuilds(final List<Build> allBuilds, final List<String> tagPaths) {
 		return allBuilds.stream()
 				.filter(build -> getTags(build, tagPaths).contains(Tag.PUBLISHED))
-				.toList();
+				.collect(Collectors.toCollection(ArrayList::new));
 	}
 
 	private List<Build> filterUnpublishedBuilds(final List<Build> allBuilds, final List<String> tagPaths) {
 		return allBuilds.stream()
 				.filter(build -> !getTags(build, tagPaths).contains(Tag.PUBLISHED))
-				.toList();
+				.collect(Collectors.toCollection(ArrayList::new));
 	}
 
 	private List<Build> filterDefaultViewBuilds(final List<Build> allBuilds, final List<String> tagPaths) {
