@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
+import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildReport;
 import org.ihtsdo.buildcloud.core.service.BuildService;
@@ -28,6 +29,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 
 import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.*;
 import static org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper.BUILD_LOG_TXT;
@@ -218,45 +220,60 @@ public class SRSWorkerService {
 	}
 
 	private void appendBuildReportSummaryToEndOfBuildLog(final Build build, final BuildReport report) {
-		// Best-effort only: do not fail the worker flow if log append fails.
-		final Object message = report.getReport().get(MESSAGE);
-		final Object progressStatus = report.getReport().get(PROGRESS_STATUS);
-		final Object retryCount = report.getReport().get(RETRY_COUNT);
-		final Object lastUpdatedTime = report.getReport().get(LAST_UPDATED_TIME);
+		// Best-effort only: this must never block or break the worker flow.
+		if (build == null) {
+			LOGGER.warn("Cannot append build report summary to build log: build is null.");
+			return;
+		}
+		if (report == null || report.getReport() == null) {
+			LOGGER.warn("Cannot append build report summary to build log for build {}: report is null.",
+					build.getUniqueId());
+			return;
+		}
 
-		final String summaryJson;
+		final Map<String, Object> reportMap = report.getReport();
+		final Map<String, Object> summaryMap = new java.util.LinkedHashMap<>();
+		summaryMap.put(MESSAGE, reportMap.get(MESSAGE));
+		summaryMap.put(RETRY_COUNT, reportMap.get(RETRY_COUNT));
+		summaryMap.put(PROGRESS_STATUS, reportMap.get(PROGRESS_STATUS));
+		summaryMap.put(LAST_UPDATED_TIME, reportMap.get(LAST_UPDATED_TIME));
+
+		final byte[] summaryBytes;
 		try {
-			final java.util.LinkedHashMap<String, Object> summaryMap = new java.util.LinkedHashMap<>();
-			summaryMap.put(MESSAGE, message);
-			summaryMap.put(RETRY_COUNT, retryCount);
-			summaryMap.put(PROGRESS_STATUS, progressStatus);
-			summaryMap.put(LAST_UPDATED_TIME, lastUpdatedTime);
-			summaryJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(summaryMap);
+			final String summaryJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(summaryMap);
+			final String summary = "\n\n"
+					+ "===== BUILD REPORT UPDATE =====\n"
+					+ summaryJson + "\n"
+					+ "===============================\n";
+			summaryBytes = summary.getBytes(StandardCharsets.UTF_8);
 		} catch (Exception e) {
 			LOGGER.warn("Failed to serialize build report summary to JSON for build {}.", build.getUniqueId(), e);
 			return;
 		}
 
-		final String summary = "\n\n"
-				+ "===== BUILD REPORT UPDATE =====\n"
-				+ summaryJson + "\n"
-				+ "===============================\n";
-
+		AsyncPipedStreamBean logOutputStreamBean = null;
 		try (InputStream existingLog = buildDAO.getLogFileStream(build, BUILD_LOG_TXT)) {
-			final org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean logOutputStreamBean =
-					buildDAO.getLogFileOutputStream(build, BUILD_LOG_TXT);
+			logOutputStreamBean = buildDAO.getLogFileOutputStream(build, BUILD_LOG_TXT);
 			try (OutputStream logOutputStream = logOutputStreamBean.getOutputStream()) {
 				if (existingLog != null) {
 					IOUtils.copy(existingLog, logOutputStream);
 				}
-				logOutputStream.write(summary.getBytes(StandardCharsets.UTF_8));
-				logOutputStreamBean.waitForFinish();
+				logOutputStream.write(summaryBytes);
 			}
-		} catch (InterruptedException ie) {
-			Thread.currentThread().interrupt();
-			LOGGER.warn("Interrupted while appending build report summary to build log for build {}.", build.getUniqueId(), ie);
 		} catch (Exception e) {
-			LOGGER.warn("Failed to append build report summary to build log for build {}.", build.getUniqueId(), e);
+			LOGGER.error("Failed to append build report summary to build log for build {}.", build.getUniqueId(), e);
+		} finally {
+			// Important: wait only after the stream is closed, otherwise the async upload may block waiting for EOF.
+			if (logOutputStreamBean != null) {
+				try {
+					logOutputStreamBean.waitForFinish();
+				} catch (InterruptedException ie) {
+					Thread.currentThread().interrupt();
+					LOGGER.error("Interrupted while waiting for build log append upload to finish for build {}.", build.getUniqueId(), ie);
+				} catch (Exception e) {
+					LOGGER.error("Failed while waiting for build log append upload to finish for build {}.", build.getUniqueId(), e);
+				}
+			}
 		}
 	}
 
