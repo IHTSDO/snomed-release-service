@@ -137,9 +137,6 @@ class SRSWorkerServiceRetryTest {
 		buildDAO.persistReport(build);
 		EasyMock.expectLastCall().once();
 
-		buildDAO.updateRetryCountMarker(build, 4);
-		EasyMock.expectLastCall().once();
-
 		buildDAO.updateStatus(build, FAILED);
 		EasyMock.expectLastCall().once();
 

@@ -152,9 +152,8 @@ public class SRSWorkerService {
 				build.setBuildReport(report);
 				buildDAO.persistReport(build);
 				appendBuildReportSummaryToEndOfBuildLog(build, report);
-				buildDAO.updateRetryCountMarker(build, retryAttempt);
-				// Ensure status update messages include retryCount without requiring a reload from storage.
-				build.setRetryCount(retryAttempt);
+				// Do not persist/send retryCount when max retries is exceeded.
+				// This prevents downstream "retried" notifications and avoids reporting a new attempt when we're not retrying.
 				buildDAO.updateStatus(build, Build.Status.FAILED);
 				return;
 			}
