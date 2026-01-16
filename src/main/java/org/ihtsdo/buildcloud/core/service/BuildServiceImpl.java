@@ -163,9 +163,6 @@ public class BuildServiceImpl implements BuildService {
 	@Autowired
 	private ModuleStorageCoordinator moduleStorageCoordinator;
 
-	@Autowired
-	private ModuleStorageCoordinatorCache moduleStorageCoordinatorCache;
-
 	@PostConstruct
 	public void init() {
 		dailyBuildResourceManager = new ResourceManager(dailyBuildResourceConfig, cloudResourceLoader);
@@ -787,7 +784,7 @@ public class BuildServiceImpl implements BuildService {
 	private File getReleaseFileFromMscOrNull(String releasePackageFilename) {
 		if (org.springframework.util.StringUtils.hasLength(releasePackageFilename)) {
 			try {
-				Map<String, List<ModuleMetadata>> allReleasesMap = moduleStorageCoordinatorCache.getAllReleases();
+				Map<String, List<ModuleMetadata>> allReleasesMap = moduleStorageCoordinator.getAllReleases();
 				List<ModuleMetadata> allModuleMetadata = new ArrayList<>();
 				allReleasesMap.values().forEach(allModuleMetadata::addAll);
 				ModuleMetadata moduleMetadata = allModuleMetadata.stream().filter(item -> item.getFilename().equals(releasePackageFilename)).findFirst().orElse(null);

@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +33,7 @@ public class ReleasePackageController {
     }
 
     private Map<String, List<ModuleMetadata>> getAllReleases(int page, int size) throws ModuleStorageCoordinatorException.OperationFailedException, ModuleStorageCoordinatorException.ResourceNotFoundException, ModuleStorageCoordinatorException.InvalidArgumentsException {
-        Map<String, List<ModuleMetadata>> releases = moduleStorageCoordinatorCache.getAllReleases();
+        Map<String, List<ModuleMetadata>> releases = new HashMap<>( moduleStorageCoordinatorCache.getAllReleases());
         boolean paging = page >= 1 && size >= 1;
         if (paging) {
 

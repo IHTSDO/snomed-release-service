@@ -35,7 +35,7 @@ public class RF2ClassificationService {
 
 	private static final String MDOULE_DEPENDENCY_FILE_PATTERN = ".*_ssRefset_.*ModuleDependency.*Delta.*";
 
-		private static final String MRCM_ATTRIBUTE_DOMAIN_DELTA = ".*_cissccRefset_.*MRCMAttributeDomainDelta";
+	private static final String MRCM_ATTRIBUTE_DOMAIN_DELTA = ".*_cissccRefset_.*MRCMAttributeDomainDelta";
 
 	private static final String CONCEPT_PATTERN = ".*_Concept_.*Delta.*";
 
