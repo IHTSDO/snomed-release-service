@@ -66,6 +66,7 @@ public class IntegrationTestHelper {
 		setAssertionTestConfigProperty(ProductService.ASSERTION_GROUP_NAMES, "Test Assertion Group");
 		setReadmeHeader("This is the readme.");
 		setReadmeEndDate("2014");
+		setReleaseAdditionalInformationFields("{\\n  \\\"effectiveTime\\\": null,\\n  \\\"licenceStatement\\\": null,\\n  \\\"languageRefsets\\\": null,\\n  \\\"packageComposition\\\": {\\n    \\\"essentialComponents\\\": {},\\n    \\\"optionalComponents\\\": {}\\n  }\\n}");
 	}
 	
 	private String findOrCreateProduct() throws Exception {
@@ -232,6 +233,10 @@ public class IntegrationTestHelper {
 
 	public void setCustomRefsetCompositeKeys(final String customRefsetCompositeKeys) throws Exception {
 		setProductProperty("{ \"" + ProductService.CUSTOM_REFSET_COMPOSITE_KEYS + "\" : \"" + customRefsetCompositeKeys + "\" }");
+	}
+
+	public void setReleaseAdditionalInformationFields(final String releaseAdditionalInformationFields) throws Exception {
+		setProductProperty("{ \"" + ProductService.ADDITIONAL_RELEASE_INFORMATION_FIELDS + "\" : \"" + releaseAdditionalInformationFields + "\" }");
 	}
 
 	public void setNewRF2InputFiles(final String newRF2InputFiles) throws Exception {

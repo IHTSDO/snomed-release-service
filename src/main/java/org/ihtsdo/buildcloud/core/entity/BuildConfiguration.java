@@ -97,9 +97,6 @@ public class BuildConfiguration {
 	@Column(name="licence_statement")
 	private String licenceStatement;
 
-	@Column(name="release_information_fields")
-	private String releaseInformationFields;
-
 	@Column(name="additional_release_information_fields")
 	private String additionalReleaseInformationFields;
 
@@ -371,14 +368,6 @@ public class BuildConfiguration {
 		this.licenceStatement = licenceStatement;
 	}
 
-	public String getReleaseInformationFields() {
-		return releaseInformationFields;
-	}
-
-	public void setReleaseInformationFields(String releaseInformationFields) {
-		this.releaseInformationFields = releaseInformationFields;
-	}
-
 	public String getAdditionalReleaseInformationFields() {
 		return additionalReleaseInformationFields;
 	}
@@ -487,7 +476,7 @@ public class BuildConfiguration {
 				", dailyBuild=" + dailyBuild +
 				", classifyOutputFiles=" + classifyOutputFiles +
 				", licenceStatement='" + licenceStatement + '\'' +
-				", releaseInformationFields='" + releaseInformationFields + '\'' +
+				", additionalReleaseInformationFields='" + additionalReleaseInformationFields + '\'' +
 				", useClassifierPreConditionChecks=" + useClassifierPreConditionChecks +
 				", conceptPreferredTerms='" + conceptPreferredTerms + '\'' +
 				", defaultBranchPath='" + defaultBranchPath + '\'' +

@@ -2,6 +2,9 @@ package org.ihtsdo.buildcloud.core.service.manager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.dao.BuildStatusTrackerDao;
 import org.ihtsdo.buildcloud.core.entity.*;
@@ -42,6 +45,10 @@ public class ReleaseBuildManager {
 	public static final String EPOCH_TIME = "1970-01-01T00:00:00";
 
 	private static final String ENV_LOCAL = "local";
+
+	public static final String RELEASE_ADDITIONAL_INFORMATION_FIELDS_EMPTY_ERROR = "Release Information Fields must not be empty.";
+
+	public static final String RELEASE_ADDITIONAL_INFORMATION_FIELDS_INVALID_ERROR = "Release Information Fields is not valid JSON";
 
 	@Autowired
 	private BuildDAO buildDAO;
@@ -210,6 +217,10 @@ public class ReleaseBuildManager {
 					}
 				}
 			}
+
+			if (!configuration.isDailyBuild() && !configuration.isBetaRelease()) {
+				validateReleaseAdditionalInformationFields(configuration.getAdditionalReleaseInformationFields());
+			}
 		} else {
 			throw new BadRequestException("Build configurations must not be null.");
 		}
@@ -217,6 +228,24 @@ public class ReleaseBuildManager {
 		if (qaTestConfig != null && (qaTestConfig.isEnableDrools() && !StringUtils.hasLength(qaTestConfig.getDroolsRulesGroupNames()))) {
 				throw new BadRequestException("Drool rule assertion group Name must not be empty.");
 
+		}
+	}
+
+	private void validateReleaseAdditionalInformationFields(String additionalReleaseInformationFields) throws BadRequestException {
+		if (!StringUtils.hasLength(additionalReleaseInformationFields)) {
+			throw new BadRequestException(RELEASE_ADDITIONAL_INFORMATION_FIELDS_EMPTY_ERROR);
+		}
+		try {
+			JsonElement jsonElement = JsonParser.parseString(additionalReleaseInformationFields);
+			if (jsonElement == null || jsonElement.isJsonNull()) {
+				throw new BadRequestException(RELEASE_ADDITIONAL_INFORMATION_FIELDS_EMPTY_ERROR);
+			}
+			if (jsonElement.isJsonObject() &&
+					jsonElement.getAsJsonObject().isEmpty()) {
+				throw new BadRequestException(RELEASE_ADDITIONAL_INFORMATION_FIELDS_EMPTY_ERROR);
+			}
+		} catch (JsonSyntaxException e) {
+			throw new BadRequestException(RELEASE_ADDITIONAL_INFORMATION_FIELDS_INVALID_ERROR +": " + e.getMessage());
 		}
 	}
 

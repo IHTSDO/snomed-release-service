@@ -43,7 +43,7 @@ public class ReleasePackageCheck extends PostconditionCheck implements NetworkRe
 
         // Validate presence and correctness of release_package_information.json
         if (!build.getConfiguration().isDailyBuild() && !build.getConfiguration().isBetaRelease()) {
-            errorMsg = validateReleasePackageInformationJson(build);
+            errorMsg = validateReleaseAdditionalInformationFile(build);
             if (errorMsg != null) {
                 fatalError(errorMsg);
                 return;
@@ -89,7 +89,7 @@ public class ReleasePackageCheck extends PostconditionCheck implements NetworkRe
      * - must be non-zero in size
      * - must contain valid JSON.
      */
-    private String validateReleasePackageInformationJson(Build build) {
+    private String validateReleaseAdditionalInformationFile(Build build) {
         List<String> filePaths = buildDAO.listOutputFilePaths(build);
         
         // Check if release_package_information.json exists in output files
@@ -124,7 +124,7 @@ public class ReleasePackageCheck extends PostconditionCheck implements NetworkRe
         return null;
     }
 
-    private static String validateJsonStructure(String jsonContent) {
+    private String validateJsonStructure(String jsonContent) {
         try {
             JsonElement jsonElement = JsonParser.parseString(jsonContent);
             if (jsonElement == null || jsonElement.isJsonNull()) {

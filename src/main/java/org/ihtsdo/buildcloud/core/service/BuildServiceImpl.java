@@ -714,10 +714,9 @@ public class BuildServiceImpl implements BuildService {
 		if (dao.isBuildCancelRequested(build)) return;
 
 		// Generate release package information
-		String releaseFilename = getReleaseFilename(build);
-		if (StringUtils.hasLength(releaseFilename) && (StringUtils.hasLength(configuration.getReleaseInformationFields())
-													|| StringUtils.hasLength(configuration.getAdditionalReleaseInformationFields()))) {
-			generateReleasePackageFile(build, releaseFilename);
+		String releaseInformationFilename = getReleaseInformationFilename(build);
+		if (StringUtils.hasLength(releaseInformationFilename) && StringUtils.hasLength(configuration.getAdditionalReleaseInformationFields())) {
+			generateReleasePackageFile(build, releaseInformationFilename);
 		}
 		// Generate readme file
 		generateReadmeFile(build);
@@ -995,8 +994,8 @@ public class BuildServiceImpl implements BuildService {
 		return numberStr.contains(".") || numberStr.contains("e") || numberStr.contains("E");
 	}
 
-	private String getReleaseFilename(Build build) {
-		String releaseFilename = null;
+	private String getReleaseInformationFilename(Build build) {
+		String releaseInformationFilename = null;
 		try {
 			final Unmarshaller unmarshaller = JAXBContext.newInstance(RF2Constants.MANIFEST_CONTEXT_PATH).createUnmarshaller();
 			final InputStream manifestStream = dao.getManifestStream(build);
@@ -1009,7 +1008,7 @@ public class BuildServiceImpl implements BuildService {
 					for (final FileType file : files) {
 						final String filename = file.getName();
 						if (filename != null && filename.toLowerCase().startsWith(RF2Constants.RELEASE_INFORMATION_FILENAME_PREFIX) && filename.endsWith(RF2Constants.RELEASE_INFORMATION_FILENAME_EXTENSION)) {
-							releaseFilename = filename;
+							releaseInformationFilename = filename;
 							break;
 						}
 					}
@@ -1021,7 +1020,7 @@ public class BuildServiceImpl implements BuildService {
 			throw new BusinessServiceRuntimeException("Failed to get filenames from the manifest.xml.", e);
 		}
 
-		return releaseFilename;
+		return releaseInformationFilename;
 	}
 
 	private Map<String, String> getPreferredTermMap(Build build) {
@@ -1113,7 +1112,7 @@ public class BuildServiceImpl implements BuildService {
 
 			case "includedModules": {
 				List<ConceptMini> list = buildIncludedModules(buildConfig, preferredTermMap);
-				if (list.isEmpty()) {
+				if (!list.isEmpty()) {
 					result.put("includedModules", list);
 				}
 				break;
@@ -1121,7 +1120,7 @@ public class BuildServiceImpl implements BuildService {
 
 			case "languageRefsets": {
 				List<ConceptMini> list = buildLanguageRefsets(languagesRefsets, preferredTermMap);
-				if (list.isEmpty()) {
+				if (!list.isEmpty()) {
 					result.put("languageRefsets", list);
 				}
 				break;
