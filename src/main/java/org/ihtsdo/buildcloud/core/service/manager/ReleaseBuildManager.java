@@ -46,9 +46,7 @@ public class ReleaseBuildManager {
 
 	private static final String ENV_LOCAL = "local";
 
-	public static final String RELEASE_ADDITIONAL_INFORMATION_FIELDS_EMPTY_ERROR = "Release Information Fields must not be empty.";
-
-	public static final String RELEASE_ADDITIONAL_INFORMATION_FIELDS_INVALID_ERROR = "Release Information Fields is not valid JSON";
+	public static final String RELEASE_ADDITIONAL_INFORMATION_FIELDS_EMPTY_ERROR = "The Release Information Fields must not be empty.";
 
 	@Autowired
 	private BuildDAO buildDAO;
@@ -231,7 +229,7 @@ public class ReleaseBuildManager {
 		}
 	}
 
-	private void validateReleaseAdditionalInformationFields(String additionalReleaseInformationFields) throws BadRequestException {
+	private void validateReleaseAdditionalInformationFields(String additionalReleaseInformationFields) throws BusinessServiceException {
 		if (!StringUtils.hasLength(additionalReleaseInformationFields)) {
 			throw new BadRequestException(RELEASE_ADDITIONAL_INFORMATION_FIELDS_EMPTY_ERROR);
 		}
@@ -245,7 +243,7 @@ public class ReleaseBuildManager {
 				throw new BadRequestException(RELEASE_ADDITIONAL_INFORMATION_FIELDS_EMPTY_ERROR);
 			}
 		} catch (JsonSyntaxException e) {
-			throw new BadRequestException(RELEASE_ADDITIONAL_INFORMATION_FIELDS_INVALID_ERROR +": " + e.getMessage());
+			throw new BusinessServiceException("The Release Information Fields is not valid JSON String");
 		}
 	}
 

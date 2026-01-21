@@ -389,7 +389,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (newPropertyValues.containsKey(ADDITIONAL_RELEASE_INFORMATION_FIELDS)) {
 			String additionalFields = newPropertyValues.get(ADDITIONAL_RELEASE_INFORMATION_FIELDS);
 			if (StringUtils.hasLength(additionalFields) && !isJSONValid((additionalFields))) {
-				throw new BusinessServiceException("The additional release information is not valid JSON String");
+				throw new BusinessServiceException("The Release Information Fields is not valid JSON String");
 			}
 			configuration.setAdditionalReleaseInformationFields(newPropertyValues.get(ADDITIONAL_RELEASE_INFORMATION_FIELDS));
 		}
