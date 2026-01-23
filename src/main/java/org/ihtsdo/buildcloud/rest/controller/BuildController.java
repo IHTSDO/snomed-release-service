@@ -12,7 +12,7 @@ import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.CreateReleasePackageBuildRequest;
 import org.ihtsdo.buildcloud.core.service.PublishService;
 import org.ihtsdo.buildcloud.core.service.RVFFailureJiraAssociationService;
-import org.ihtsdo.buildcloud.core.service.helper.ProcessingStatus;
+import org.ihtsdo.buildcloud.core.service.helper.PublishStepTracker;
 import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;
 import org.ihtsdo.buildcloud.core.service.monitor.MonitorService;
 import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
@@ -474,15 +474,15 @@ public class BuildController {
 	@GetMapping(value = "/builds/{buildId}/publish/status")
 	@IsAuthenticatedAsAdminOrReleaseManager
 	@ResponseBody
-	@Operation(summary = "Get publishing release status",
+	@Operation(summary = "Get publish step tracker",
 			description = "Get publishing release status for given build id")
-	public ResponseEntity<ProcessingStatus> getPublishingBuildStatus(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-																	 @PathVariable final String buildId) {
+	public ResponseEntity<PublishStepTracker> getPublishingBuildStatus(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+																	   @PathVariable final String buildId) {
 		final Build build = buildService.find(releaseCenterKey, productKey, buildId, null, null, null, null);
 		ifBuildIsNullThrow(productKey, buildId, build);
-		ProcessingStatus status = publishService.getPublishingBuildStatus(build);
-		if (status != null) {
-			return new ResponseEntity<>(status, HttpStatus.OK);
+		PublishStepTracker tracker = publishService.getPublishStepTracker(build);
+		if (tracker != null) {
+			return new ResponseEntity<>(tracker, HttpStatus.OK);
 		} else {
 			return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
 		}

@@ -6,9 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.codec.DecoderException;
-import org.ihtsdo.buildcloud.core.service.helper.ProcessingStatus;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.core.service.helper.PublishStepTracker;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 
@@ -28,7 +28,7 @@ public interface PublishService {
 
 	void publishBuildAsync(Build build, boolean publishComponentIds, String env);
 
-	ProcessingStatus getPublishingBuildStatus(Build build);
+	PublishStepTracker getPublishStepTracker(Build build);
 
 	void publishAdHocFile(ReleaseCenter releaseCenter, InputStream inputStream, String originalFilename, long size, boolean publishComponentIds) throws BusinessServiceException;
 

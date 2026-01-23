@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.jayway.jsonpath.JsonPath;
 import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.buildcloud.core.service.PublishServiceImpl;
-import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.service.ProductService;
+import org.ihtsdo.buildcloud.core.service.helper.PublishStep;
+import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.json.JSONArray;
@@ -34,11 +34,11 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static org.ihtsdo.buildcloud.core.entity.Build.Status.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class IntegrationTestHelper {
 
@@ -580,8 +580,8 @@ public class IntegrationTestHelper {
 		final java.time.Instant deadline = java.time.Instant.now().plus(java.time.Duration.ofMinutes(10));
 		boolean isDone = false;
 		MvcResult publishResult;
-		PublishServiceImpl.Status status = null;
-		PublishServiceImpl.Status lastStatus = null;
+		String status = null;
+		String lastStatus = null;
 
 		while (!isDone && java.time.Instant.now().isBefore(deadline)) {
 			Thread.sleep(1000);
@@ -590,16 +590,15 @@ public class IntegrationTestHelper {
 					.andExpect(content().contentTypeCompatibleWith(AbstractControllerTest.APPLICATION_JSON))
 					.andReturn();
 
-			final String statusString = JsonPath.read(publishResult.getResponse().getContentAsString(), "$.status");
-			status = PublishServiceImpl.Status.valueOf(statusString);
-			if (status != lastStatus) {
+			status = JsonPath.read(publishResult.getResponse().getContentAsString(), "$.overallStatus");
+			if (!status.equals(lastStatus)) {
 				System.out.println("Publish status = " + status);
 				lastStatus = status;
 			}
-			if (PublishServiceImpl.Status.RUNNING != status) {
+			if (!PublishStep.StepStatus.RUNNING.name().equals(status)) {
 				isDone = true;
 			}
-			if (PublishServiceImpl.Status.FAILED == status) {
+			if (PublishStep.StepStatus.FAILED.name().equals(status)) {
 				fail("Failed to publish build " + buildUrl);
 			}
 		}
