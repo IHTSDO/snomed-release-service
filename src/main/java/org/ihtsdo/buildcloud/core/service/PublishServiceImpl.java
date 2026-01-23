@@ -243,7 +243,7 @@ public class PublishServiceImpl implements PublishService {
 
 	private void validateReleaseFileWithTracking(Build build, String publishFilePath, 
 			PublishStepTracker stepTracker) throws EntityAlreadyExistsException {
-		PublishStep step = stepTracker.startStep("Validate release file against the published folder");
+		PublishStep step = stepTracker.startStep("Validate release file against the published directory");
 		try {
 			validateReleaseFile(build, publishFilePath);
 			stepTracker.markStepSuccess(step);
