@@ -223,7 +223,7 @@ public class PublishServiceImpl implements PublishService {
 		synchronized (fileLock) {
 			String publishFilePath = s3PathHelper.getPublishJobFilePath(build.getReleaseCenterKey(), releaseFiles.releaseFileName());
 			validateReleaseFileWithTracking(build, publishFilePath, stepTracker);
-			publishComponentIdsIfNeeded(build, releaseFiles.releaseFileName(), publishComponentIds, stepTracker);
+			publishComponentIdsIfNeededWithTracking(build, releaseFiles.releaseFileName(), publishComponentIds, stepTracker);
 			copyReleaseFileWithTracking(build, releaseFiles.releaseFileName(), publishFilePath, stepTracker);
 			copyMd5FileIfPresentWithTracking(build, releaseFiles.md5FileName(), stepTracker);
 			copyExtractedVersionWithTracking(stepTracker, publishFilePath);
@@ -253,8 +253,8 @@ public class PublishServiceImpl implements PublishService {
 		}
 	}
 
-	private void publishComponentIdsIfNeeded(Build build, String releaseFileName, boolean publishComponentIds,
-			PublishStepTracker stepTracker) throws BusinessServiceException {
+	private void publishComponentIdsIfNeededWithTracking(Build build, String releaseFileName, boolean publishComponentIds,
+														 PublishStepTracker stepTracker) throws BusinessServiceException {
 		PublishStep step = stepTracker.startStep("Publish component IDs");
 		if (publishComponentIds) {
 			try {
@@ -270,14 +270,12 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	private void copyReleaseFileWithTracking(Build build, String releaseFileName,
-			String publishFilePath, PublishStepTracker stepTracker)
-			throws IOException {
+			String publishFilePath, PublishStepTracker stepTracker) {
 		PublishStep step1 = stepTracker.startStep("Copy release file to the published directory");
 		try {
 			String outputFileFullPath = s3PathHelper.getBuildOutputFilePath(build, releaseFileName);
 			srsFileHelper.copyFile(outputFileFullPath, publishFilePath);
 			LOGGER.info("Release file: {} is copied to the published path: {}", releaseFileName, publishFilePath);
-			buildDao.addTag(build, Build.Tag.PUBLISHED);
 			stepTracker.markStepSuccess(step1);
 		} catch (Exception e) {
 			stepTracker.markStepFailed(step1, e.getMessage());
@@ -286,10 +284,11 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	private void performPostPublishingSteps(Build build, ReleaseFile releaseFiles,
-											String env, PublishStepTracker stepTracker) throws BusinessServiceException {
+											String env, PublishStepTracker stepTracker) throws BusinessServiceException, IOException {
 		uploadToOldVersionedContentDirectory(s3PathHelper.getBuildOutputFilePath(build, releaseFiles.releaseFileName()), releaseFiles.releaseFileName(), env, stepTracker);
 		uploadToNewVersionedContentDirectory(build, releaseFiles, stepTracker);
 		updateCodeSystemVersionIfNeeded(build, releaseFiles.releaseFileName(), stepTracker);
+		addPublishedTagToBuild(build, stepTracker);
 	}
 
 	private void copyMd5FileIfPresentWithTracking(Build build, String md5FileName,
@@ -341,6 +340,16 @@ public class PublishServiceImpl implements PublishService {
 		}
 	}
 
+	private void addPublishedTagToBuild(Build build, PublishStepTracker stepTracker) throws IOException {
+		PublishStep step = stepTracker.startStep("Add PUBLISHED tag to build");
+		try {
+			buildDao.addTag(build, Build.Tag.PUBLISHED);
+			stepTracker.markStepSuccess(step);
+		} catch (Exception e) {
+			stepTracker.markStepFailed(step, e.getMessage());
+			throw e;
+		}
+	}
 	private void uploadReleaseFileToNewVersionedContentBucket(Build build, ReleaseFile releaseFiles, String md5Filename) throws BusinessServiceException {
 		String branchPath = build.getConfiguration().getBranchPath();
 		String shortName = null;
