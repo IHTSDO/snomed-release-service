@@ -636,14 +636,14 @@ public class PublishServiceImpl implements PublishService {
 									publishSctIds(fileHelper.getFileStream(fileRootPath + fileName), fileName, releaseFileName, stepTracker, step);
 								}
 							} catch (IOException | RestClientException | FileRecognitionException e) {
-								throw new BusinessServiceException("Failed to publish SctIDs for file:" + fileName, e);
+								throw new BusinessServiceException("Failed to publish SctIDs for file:" + fileName + ". Error: " + e.getMessage() , e);
 							}
 						}
 						if (filenameToCheck.startsWith(RF2Constants.DER2) && filenameToCheck.contains(RF2Constants.SIMPLE_MAP_FILE_IDENTIFIER)) {
 							try {
 								publishLegacyIds(fileHelper.getFileStream(fileRootPath + fileName), fileName, releaseFileName);
 							} catch (IOException | RestClientException e) {
-								throw new BusinessServiceException("Failed to publish LegacyIds for file:" + fileName, e);
+								throw new BusinessServiceException("Failed to publish LegacyIds for file:" + fileName + ". Error: " + e.getMessage(), e);
 							}
 						}
 					}

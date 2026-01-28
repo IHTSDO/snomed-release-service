@@ -14,7 +14,7 @@ public class IdServiceRestUrlHelper {
 	}
 	
 	public String getLogoutUrl() {
-		return  rootApiUrl + "/logout";
+		return  rootApiUrl + "/users/logout";
 	}
 
 	public String getSctIdGenerateUrl(String token) {
