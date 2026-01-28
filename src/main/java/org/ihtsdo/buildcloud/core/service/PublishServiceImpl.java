@@ -485,7 +485,7 @@ public class PublishServiceImpl implements PublishService {
 				termServerService.updateCodeSystemVersionPackage(codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
 			}
 		} catch (Exception e) {
-			throw new BusinessServiceException("The build has been published successfully but failed to update Code System Version Package.", e);
+			throw new BusinessServiceException("Failed to update Code System Version Package.", e);
 		}
 	}
 
