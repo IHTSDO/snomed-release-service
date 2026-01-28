@@ -611,7 +611,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 						JsonObject requestJson = new JsonObject();
 						requestJson.addProperty(TOKEN_STR, token);
 						HttpEntity<JsonObject> requestEntity = new HttpEntity<>(requestJson, headers);
-						makeHttpCall(urlHelper.getLogoutUrl(), HttpMethod.POST, requestEntity);
+						makeHttpCall(urlHelper.getLogoutUrl(token), HttpMethod.POST, requestEntity);
 						LOGGER.info("Id service rest client logs out successfully.");
 						token = null;
 					} catch (Exception e) {

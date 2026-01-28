@@ -15,6 +15,7 @@ public class PublishStep {
 	private final int stepNumber;
 	private StepStatus status;
 	private String errorMessage;
+	private List<String> errorDetails;
 	private final List<String> warnings;
 
 	public PublishStep(String stepName, int stepNumber) {
@@ -47,6 +48,14 @@ public class PublishStep {
 
 	public void setErrorMessage(String errorMessage) {
 		this.errorMessage = errorMessage;
+	}
+
+	public List<String> getErrorDetails() {
+		return errorDetails;
+	}
+
+	public void setErrorDetails(List<String> errorDetails) {
+		this.errorDetails = errorDetails;
 	}
 
 	public List<String> getWarnings() {

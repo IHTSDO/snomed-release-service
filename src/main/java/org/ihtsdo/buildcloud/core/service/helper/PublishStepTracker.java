@@ -51,10 +51,11 @@ public class PublishStepTracker {
 	 * @param step        the step to mark as failed
 	 * @param errorMessage the error message
 	 */
-	public void markStepFailed(PublishStep step, String errorMessage) {
+	public void markStepFailed(PublishStep step, String errorMessage, List<String> errorDetails) {
 		if (step != null) {
 			step.setStatus(PublishStep.StepStatus.FAILED);
 			step.setErrorMessage(errorMessage);
+			step.setErrorDetails(errorDetails);
 		}
 	}
 

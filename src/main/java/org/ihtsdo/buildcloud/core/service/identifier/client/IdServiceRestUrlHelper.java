@@ -13,8 +13,8 @@ public class IdServiceRestUrlHelper {
 		return  rootApiUrl + "/login";
 	}
 	
-	public String getLogoutUrl() {
-		return  rootApiUrl + "/users/logout";
+	public String getLogoutUrl(String token) {
+		return  rootApiUrl + "/users/logout" + TOKEN_PARAMETER + token;
 	}
 
 	public String getSctIdGenerateUrl(String token) {
