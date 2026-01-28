@@ -1,5 +1,7 @@
 package org.ihtsdo.buildcloud.core.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
@@ -107,6 +109,8 @@ public class PublishServiceImpl implements PublishService {
 
 	@Autowired
 	private ModuleStorageCoordinatorCache moduleStorageCoordinatorCache;
+
+	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
 	private static final int MAX_FAILURE = 100;
 
@@ -923,12 +927,44 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	private List<String> getErrorDetails(Throwable t) {
-		Throwable result = t;
 		List<String> errorDetails = new ArrayList<>();
-		while (result.getCause() != null && result.getCause() != result) {
-			result = result.getCause();
-			errorDetails.add(result.getMessage());
+		Throwable current = t;
+
+		while (current.getCause() != null && current.getCause() != current) {
+			current = current.getCause();
+			String extracted = extractMessageFromJson(current.getMessage());
+			if (extracted != null) {
+				errorDetails.add(extracted);
+			}
 		}
 		return errorDetails;
+	}
+
+	/**
+	 * If the given string is a JSON object and contains a "message" field,
+	 * return the value of that field; otherwise return null.
+	 */
+	private String extractMessageFromJson(String rawMessage) {
+		if (rawMessage == null) {
+			return null;
+		}
+
+		String trimmed = rawMessage.trim();
+		// Only attempt JSON parsing for simple object-looking strings
+		if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
+			return rawMessage;
+		}
+
+		try {
+			JsonNode root = OBJECT_MAPPER.readTree(trimmed);
+			JsonNode messageNode = root.get("message");
+			if (messageNode != null && !messageNode.isNull()) {
+				return messageNode.asText();
+			}
+		} catch (Exception e) {
+			return rawMessage;
+		}
+
+		return rawMessage;
 	}
 }
