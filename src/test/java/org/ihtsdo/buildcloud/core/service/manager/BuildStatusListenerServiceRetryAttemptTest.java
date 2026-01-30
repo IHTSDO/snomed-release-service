@@ -7,8 +7,11 @@ import org.ihtsdo.buildcloud.core.dao.BuildStatusTrackerDao;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildStatusTracker;
 import org.ihtsdo.buildcloud.core.entity.Notification;
+import org.ihtsdo.buildcloud.core.entity.Product;
+import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.NotificationService;
+import org.ihtsdo.buildcloud.core.service.ProductService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -30,6 +33,7 @@ import java.util.Map;
 import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.BUILD_ID_KEY;
 import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.BUILD_STATUS_KEY;
 import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.PRODUCT_KEY;
+import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.PRODUCT_NAME_KEY;
 import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.RELEASE_CENTER_KEY;
 import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.RETRY_COUNT;
 import static org.junit.jupiter.api.Assertions.*;
@@ -91,6 +95,14 @@ class BuildStatusListenerServiceRetryAttemptTest {
 		buildForRecipient.setBuildUser(recipient);
 		when(buildService.find(releaseCenterKey, productKey, buildId, false, false, false, null)).thenReturn(buildForRecipient);
 
+		final ProductService productService = mock(ProductService.class);
+		final ReleaseCenter rc = new ReleaseCenter();
+		rc.setName("International");
+		rc.setShortName("International");
+		final Product product = new Product("Retry Product");
+		rc.addProduct(product);
+		when(productService.find(releaseCenterKey, productKey, false)).thenReturn(product);
+
 		final NotificationService notificationService = mock(NotificationService.class);
 		when(notificationService.create(any(Notification.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -99,6 +111,7 @@ class BuildStatusListenerServiceRetryAttemptTest {
 		ReflectionTestUtils.setField(listener, "trackerService", trackerService);
 		ReflectionTestUtils.setField(listener, "simpMessagingTemplate", simpMessagingTemplate);
 		ReflectionTestUtils.setField(listener, "buildService", buildService);
+		ReflectionTestUtils.setField(listener, "productService", productService);
 		ReflectionTestUtils.setField(listener, "notificationService", notificationService);
 
 		ActiveMQTextMessage msg = new ActiveMQTextMessage();
@@ -122,6 +135,11 @@ class BuildStatusListenerServiceRetryAttemptTest {
 		verify(notificationService, times(1)).create(notifCaptor.capture());
 		assertEquals(recipient, notifCaptor.getValue().getRecipient());
 		assertEquals(Notification.NotificationType.BUILD_RETRIED.name(), notifCaptor.getValue().getNotificationType());
+		@SuppressWarnings("unchecked")
+		Map<String, Object> notifDetails = objectMapper.readValue(notifCaptor.getValue().getDetails(), Map.class);
+		assertEquals("Retry Product", notifDetails.get(PRODUCT_NAME_KEY));
+		assertTrue(String.valueOf(notifDetails.get("message")).contains("Retry Product"),
+				"Expected retry notification message to include product name.");
 		Message<?> statusChange = sentMessages.stream()
 				.filter(m -> "/topic/build-status-change".equals(getDestination(m.getHeaders())))
 				.findFirst()

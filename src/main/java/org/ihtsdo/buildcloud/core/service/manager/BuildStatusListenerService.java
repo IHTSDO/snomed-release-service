@@ -246,6 +246,11 @@ public class BuildStatusListenerService {
 				return;
 			}
 
+			// Resolve product metadata for a more informative message (matches BUILD_RUN_OUT_OF_TIME notification style).
+			final Product product = productService.find(releaseCenterKey, productKey, false);
+			final String productName = product != null ? product.getName() : null;
+			final String releaseCenterName = (product != null && product.getReleaseCenter() != null) ? product.getReleaseCenter().getName() : null;
+
 			final Notification notification = new Notification();
 			notification.setRead(false);
 			notification.setRecipient(recipient);
@@ -256,7 +261,13 @@ public class BuildStatusListenerService {
 			details.put(PRODUCT_KEY, productKey);
 			details.put(BUILD_ID_KEY, buildId);
 			details.put(RETRY_COUNT, retryCount);
-			details.put("message", String.format("Build %s has been retried (attempt %d).", buildId, retryCount));
+			if (productName != null && !productName.isBlank()) {
+				details.put(PRODUCT_NAME_KEY, productName);
+			}
+			final String notificationMessage = (productName != null && !productName.isBlank() && releaseCenterName != null && !releaseCenterName.isBlank())
+					? String.format("The build %s in %s product in %s has been retried (attempt %d).", buildId, productName, releaseCenterName, retryCount)
+					: String.format("Build %s has been retried (attempt %d).", buildId, retryCount);
+			details.put("message", notificationMessage);
 			notification.setDetails(objectMapper.writeValueAsString(details));
 
 			notificationService.create(notification);
