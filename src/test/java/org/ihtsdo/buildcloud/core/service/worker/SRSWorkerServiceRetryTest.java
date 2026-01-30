@@ -33,6 +33,7 @@ import static org.ihtsdo.buildcloud.core.entity.Build.Status.FAILED;
 import static org.ihtsdo.buildcloud.core.entity.Build.Status.QUEUED;
 import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.MESSAGE;
 import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.PROGRESS_STATUS;
+import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.MESSAGE_DELIVERY_COUNT;
 import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.RETRY_COUNT;
 import static org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper.BUILD_LOG_TXT;
 import static org.junit.jupiter.api.Assertions.*;
@@ -98,6 +99,12 @@ class SRSWorkerServiceRetryTest {
 		ReflectionTestUtils.setField(workerService, "interruptedMaxRetries", 3);
 		workerService.consumeSRSJob(message);
 
+		assertNotNull(build.getBuildReport(), "Expected build report to be set on retry.");
+		assertEquals(2, ((Number) build.getBuildReport().getReport().get(MESSAGE_DELIVERY_COUNT)).intValue(),
+				"Expected messageDeliveryCount to reflect JMSXDeliveryCount.");
+		assertEquals(1, ((Number) build.getBuildReport().getReport().get(RETRY_COUNT)).intValue(),
+				"Expected retryCount to reflect redelivery attempt count (deliveryCount-1).");
+
 		mocks.verify();
 	}
 
@@ -151,6 +158,7 @@ class SRSWorkerServiceRetryTest {
 		assertNotNull(build.getBuildReport(), "Expected build report to be set when max retries exceeded.");
 		assertEquals("failed", String.valueOf(build.getBuildReport().getReport().get(PROGRESS_STATUS)));
 		assertEquals(4, ((Number) build.getBuildReport().getReport().get(RETRY_COUNT)).intValue());
+		assertEquals(5, ((Number) build.getBuildReport().getReport().get(MESSAGE_DELIVERY_COUNT)).intValue());
 		final String reportMessage = String.valueOf(build.getBuildReport().getReport().get(MESSAGE));
 		assertTrue(reportMessage.contains("max retries (3)"), "Expected build report message to include max retries. Message=" + reportMessage);
 		assertNotNull(build.getBuildReport().getReport().get("lastUpdatedTime"), "Expected lastUpdatedTime in build report.");
@@ -160,6 +168,7 @@ class SRSWorkerServiceRetryTest {
 		assertTrue(updatedLogStr.contains("existing log"), "Expected original log content to be preserved.");
 		assertTrue(updatedLogStr.contains("\"" + MESSAGE + "\""), "Expected build report summary appended to log.");
 		assertTrue(updatedLogStr.contains("\"" + RETRY_COUNT + "\""), "Expected retryCount in log summary.");
+		assertTrue(updatedLogStr.contains("\"" + MESSAGE_DELIVERY_COUNT + "\""), "Expected messageDeliveryCount in log summary.");
 		assertTrue(updatedLogStr.contains("\"lastUpdatedTime\""), "Expected lastUpdatedTime in log summary.");
 
 		mocks.verify();

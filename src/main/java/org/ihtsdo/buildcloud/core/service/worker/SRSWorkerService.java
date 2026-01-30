@@ -33,6 +33,7 @@ import java.util.Map;
 
 import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.*;
 import static org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper.BUILD_LOG_TXT;
+import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.MESSAGE_DELIVERY_COUNT;
 import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.RETRY_COUNT;
 
 @Service
@@ -115,7 +116,7 @@ public class SRSWorkerService {
 						build.getId(), Duration.between(start, finish).toMinutes(), build.getProductKey());
 			} else if (deliveryCount > 1 && (Build.Status.BEFORE_TRIGGER == status || Build.Status.BUILDING == status)) {
 				// If we're seeing a build mid-flight, only retry if this is a redelivery (i.e. prior attempt likely died before ack due to spot instances)
-                retryInterruptedBuild(build, start, deliveryCount - 1);
+                retryInterruptedBuild(build, start, deliveryCount, deliveryCount - 1);
 			}
 		} finally {
 			if (buildDAO.isBuildCancelRequested(build)) {
@@ -135,7 +136,7 @@ public class SRSWorkerService {
     }
 
 
-	private void retryInterruptedBuild(Build build, Instant start, int retryAttempt) throws IOException {
+	private void retryInterruptedBuild(Build build, Instant start, int messageDeliveryCount, int retryAttempt) throws IOException {
 		try {
 			if (buildDAO.isBuildCancelRequested(build)) {
 				return;
@@ -148,7 +149,7 @@ public class SRSWorkerService {
 				final String failMessage = String.format(
 						"Build was interrupted and max retries (%d) were reached. Marking as FAILED.",
 						interruptedMaxRetries);
-				final BuildReport report = buildReportWithRetryCount(build, retryAttempt,
+				final BuildReport report = buildReportWithRetryCount(build, messageDeliveryCount, retryAttempt,
 						"failed",
 						failMessage);
 				build.setBuildReport(report);
@@ -163,7 +164,7 @@ public class SRSWorkerService {
 			// Remove partial artifacts from the prior attempt; keep only manifest + config files
 			buildDAO.cleanupForRetry(build);
 
-			final BuildReport report = buildReportWithRetryCount(build, retryAttempt,
+			final BuildReport report = buildReportWithRetryCount(build, messageDeliveryCount, retryAttempt,
 					"retrying",
 					"Retrying after interruption. Partial build artifacts were deleted before retry.");
 			build.setBuildReport(report);
@@ -207,7 +208,7 @@ public class SRSWorkerService {
         }
     }
 
-	private BuildReport buildReportWithRetryCount(Build build, int retryCount, String progressStatus, String message) {
+	private BuildReport buildReportWithRetryCount(Build build, int messageDeliveryCount, int retryCount, String progressStatus, String message) {
 		BuildReport report = getBuildReportFile(build);
 		if (report == null) {
 			report = BuildReport.getDummyReport();
@@ -215,6 +216,7 @@ public class SRSWorkerService {
 		report.add(PROGRESS_STATUS, progressStatus);
 		report.add(MESSAGE, message);
 		report.setReport(LAST_UPDATED_TIME, Instant.now().toString());
+		report.setReport(MESSAGE_DELIVERY_COUNT, messageDeliveryCount);
 		report.setReport(RETRY_COUNT, retryCount);
 		return report;
 	}
@@ -235,6 +237,7 @@ public class SRSWorkerService {
 		final Map<String, Object> summaryMap = new java.util.LinkedHashMap<>();
 		summaryMap.put(MESSAGE, reportMap.get(MESSAGE));
 		summaryMap.put(RETRY_COUNT, reportMap.get(RETRY_COUNT));
+		summaryMap.put(MESSAGE_DELIVERY_COUNT, reportMap.get(MESSAGE_DELIVERY_COUNT));
 		summaryMap.put(PROGRESS_STATUS, reportMap.get(PROGRESS_STATUS));
 		summaryMap.put(LAST_UPDATED_TIME, reportMap.get(LAST_UPDATED_TIME));
 
