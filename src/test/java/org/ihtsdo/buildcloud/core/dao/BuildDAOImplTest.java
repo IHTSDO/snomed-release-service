@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
@@ -24,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @Transactional
 public class BuildDAOImplTest extends AbstractTest {
-	
+
 	public static final String TEST_FILE_NAME = "der2_Refset_SimpleDelta_INT_20140831.txt";
 
 	@Autowired
@@ -39,18 +40,24 @@ public class BuildDAOImplTest extends AbstractTest {
 
 	private String buildId;
 
+	// Deterministic timestamp for additional builds to avoid flakiness due to Thread.sleep/new Date()
+	private long nextBuildMillis;
+
 	@BeforeEach
+    @Override
 	public void setup() throws Exception {
 		super.setup();
 		product = productDAO.find(1L);
-		final Date creationTime = new GregorianCalendar(2014, 1, 4, 10, 30, 1).getTime();
+		final Date creationTime = new GregorianCalendar(2014, Calendar.FEBRUARY, 4, 10, 30, 1).getTime();
 		build = new Build(creationTime, product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), product.getBuildConfiguration(), product.getQaTestConfig());
 		buildDAO.save(build);
 		buildId = build.getId();
+		// Start subsequent builds one second after the initial build, then increment deterministically
+		nextBuildMillis = creationTime.getTime() + 1000;
 	}
 
 	@Test
-	public void testFind() {
+    void testFind() {
 		// saved build
 		Build foundBuild = buildDAO.find(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), buildId, null, null, null, null);
 		assertNotNull(foundBuild);
@@ -61,10 +68,10 @@ public class BuildDAOImplTest extends AbstractTest {
 		foundBuild = buildDAO.find(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), "2014-02-04T10:30:02", null, null, null, null);
 		assertNull(foundBuild);
 	}
-	
-	
+
+
 	@Test
-	public void testPutOutputFile() throws Exception {
+    void testPutOutputFile() throws Exception {
 
 		//Leaving this as offline to remove external dependency, but set to true to check Amazon is happy with our MD5 Encoding.
 		final String testFile = getClass().getResource("/org/ihtsdo/buildcloud/core/service/build/" + TEST_FILE_NAME).getFile();
@@ -79,14 +86,14 @@ public class BuildDAOImplTest extends AbstractTest {
 		final byte[] md5BytesExpected = Base64.decodeBase64("c56243ebe22a12dba48b023daf3e2937");
 		final byte[] md5BytesReceived =  Base64.decodeBase64(md5Received);
 		assertArrayEquals(md5BytesExpected, md5BytesReceived);
-		
+
 		//Now lets see if we can get that file back out again
 		final InputStream is = buildDAO.getOutputFileInputStream(build, TEST_FILE_NAME);
 		assertNotNull(is);
 	}
 
 	@Test
-	public void findAllDescPage_ShouldReturnExpectedPage_WhenRequestingAll() throws IOException, InterruptedException {
+    void findAllDescPage_ShouldReturnExpectedPage_WhenRequestingAll() throws IOException {
 		// given
 		createBuild();
 		createBuild();
@@ -116,15 +123,17 @@ public class BuildDAOImplTest extends AbstractTest {
 	}
 
 	@Test
-	public void findAllDescPage_ShouldReturnExpectedPage_WhenRequestingSubPage() throws IOException, InterruptedException {
+    void findAllDescPage_ShouldReturnExpectedPage_WhenRequestingSubPage() throws IOException {
 		// given
 		Date build1 = createBuild();
-		Date build2 = createBuild();
-		Date build3 = createBuild();
-		Date build4 = createBuild();
+		createBuild();
+		createBuild();
+		createBuild();
 
 		// when
-		BuildPage<Build> result = buildDAO.findAll(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), null, null, null, null, BuildService.View.ALL_RELEASES, null, PageRequest.of(3, 1));
+		// Explicit sort to avoid relying on underlying listing order when unsorted.
+		Sort.Order order = new Sort.Order(Sort.Direction.DESC, "creationTime");
+		BuildPage<Build> result = buildDAO.findAll(product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), null, null, null, null, BuildService.View.ALL_RELEASES, null, PageRequest.of(3, 1, Sort.by(order)));
 
 		// then
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
@@ -133,9 +142,9 @@ public class BuildDAOImplTest extends AbstractTest {
 		assertEquals(lhs, rhs);
 	}
 
-	private Date createBuild() throws InterruptedException, IOException {
-		Thread.sleep(1000); // Sleep for different time
-		Date date = new Date();
+	private Date createBuild() throws IOException {
+		Date date = new Date(nextBuildMillis);
+		nextBuildMillis += 1000; // ensure unique, ordered creation times
 		Build build4 = new Build(date, product.getReleaseCenter().getBusinessKey(), product.getBusinessKey(), product.getBuildConfiguration(), product.getQaTestConfig());
 		buildDAO.save(build4);
 

@@ -114,6 +114,18 @@ public interface BuildDAO {
 
 	void deleteTransformedFiles(Build build);
 
+	/**
+	 * Cleanup partial build artifacts before retrying the same buildId.
+	 * Preserves only manifest and configuration files.
+	 */
+	void cleanupForRetry(Build build);
+
+	/**
+	 * Persist the current retry attempt count as an S3 marker object under the build directory.
+	 * This is stored as a single overwritten marker of the form "retry-count:{n}".
+	 */
+	void updateRetryCountMarker(Build build, int retryCount) throws IOException;
+
 	InputStream getBuildInputGatherReportStream(Build build);
 
 	boolean isDerivativeProduct(Build build);

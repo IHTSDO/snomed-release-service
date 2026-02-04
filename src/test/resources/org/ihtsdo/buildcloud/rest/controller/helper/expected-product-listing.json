@@ -30,7 +30,6 @@
     "dailyBuild" : false,
     "classifyOutputFiles" : false,
     "licenceStatement" : null,
-    "releaseInformationFields" : null,
     "additionalReleaseInformationFields" : null,
     "useClassifierPreConditionChecks" : false,
     "conceptPreferredTerms" : null,

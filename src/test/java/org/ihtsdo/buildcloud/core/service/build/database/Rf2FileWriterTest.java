@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.core.service.build.database;
 
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.build.database.map.RF2TableExportDAOImpl;
+import org.ihtsdo.buildcloud.core.service.build.database.map.UUIDKey;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.junit.jupiter.api.AfterEach;
@@ -10,9 +11,13 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Collections;
+import java.util.Set;
 
-public class Rf2FileWriterTest {
+class Rf2FileWriterTest {
 
 	private static final String PREVIOUS_EXTENDED_MAP_REFSET_FULL = "der2_iisssccRefset_ExtendedMapFull_INT_20140131.txt";
 	private static final String PREVIOUS_RELEASE_DATE = "20130630";
@@ -35,7 +40,7 @@ public class Rf2FileWriterTest {
 	private RF2TableExportDAO rf2TableDAO;
 
 	@BeforeEach
-	public void setUp() throws Exception {
+    void setUp() throws Exception {
 	    rf2TableDAO = new RF2TableExportDAOImpl( null);
 	    rf2FileWriter = new Rf2FileWriter();
 	    fullOutputStream = new ByteArrayOutputStream();
@@ -47,7 +52,7 @@ public class Rf2FileWriterTest {
 	 * @throws Exception
 	 */
 	@Test
-	public void testSimpleRefsetExportFullAndSnapshot() throws Exception {
+    void testSimpleRefsetExportFullAndSnapshot() throws Exception {
 		// Prepare test object for this test
 		tableSchema = rf2TableDAO.createTable(SIMPLE_REFSET_FULL_PLUS_DELTA, getClass().getResourceAsStream(SIMPLE_REFSET_FULL_PLUS_DELTA), false);
 		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
@@ -61,7 +66,7 @@ public class Rf2FileWriterTest {
 	}
 
 	@Test
-	public void testSimpleRefsetExportDelta() throws Exception {
+    void testSimpleRefsetExportDelta() throws Exception {
 		// Prepare test object for this test
 		tableSchema = rf2TableDAO.createTable(CURRENT_SIMPLE_REFSET_DELTA, getClass().getResourceAsStream(CURRENT_SIMPLE_REFSET_DELTA), false);
 		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
@@ -73,11 +78,44 @@ public class Rf2FileWriterTest {
 		StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(CURRENT_SIMPLE_REFSET_DELTA), new ByteArrayInputStream(deltaOutputStream.toByteArray()));
 	}
 
-	/** Testing simple refset export using previous file and delta file 
+	@Test
+    void testSimpleRefsetExportDeltaWithDiscardedKeys() throws Exception {
+		// Prepare test object for this test
+		tableSchema = rf2TableDAO.createTable(CURRENT_SIMPLE_REFSET_DELTA, getClass().getResourceAsStream(CURRENT_SIMPLE_REFSET_DELTA), false);
+		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
+
+		// Read the input fixture to pick a real (id, effectiveTime) to discard
+		String header;
+		String firstDataLine;
+		String secondDataLine;
+		try (InputStream inputStream = getClass().getResourceAsStream(CURRENT_SIMPLE_REFSET_DELTA);
+			 BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8))) {
+			header = reader.readLine();
+			firstDataLine = reader.readLine();
+			secondDataLine = reader.readLine();
+		}
+
+		String[] firstLineParts = firstDataLine.split(RF2Constants.COLUMN_SEPARATOR, 3);
+		String idToDiscard = firstLineParts[0];
+		String effectiveTimeToDiscard = firstLineParts[1];
+		Set<org.ihtsdo.buildcloud.core.service.build.database.map.Key> keysToDiscard =
+				Collections.singleton(new UUIDKey(idToDiscard, effectiveTimeToDiscard));
+
+		// Run target test method
+		rf2FileWriter.exportDelta(tableResults, tableSchema, deltaOutputStream, keysToDiscard);
+
+		// Assert expectations: header + remaining row (the discarded row should be omitted)
+		String expected = header + RF2Constants.LINE_ENDING
+				+ secondDataLine + RF2Constants.LINE_ENDING;
+		StreamTestUtils.assertStreamsEqualLineByLine(new ByteArrayInputStream(expected.getBytes(RF2Constants.UTF_8)),
+				new ByteArrayInputStream(deltaOutputStream.toByteArray()));
+	}
+
+	/** Testing simple refset export using previous file and delta file
 	 * @throws Exception
 	 */
 	@Test
-	public void testSimpleRefsetExportWithAppendData() throws Exception {
+    void testSimpleRefsetExportWithAppendData() throws Exception {
 	    tableSchema = rf2TableDAO.createTable(PREVIOUS_SIMPLE_REFSET_FULL, getClass().getResourceAsStream(PREVIOUS_SIMPLE_REFSET_FULL), false);
 	    rf2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(CURRENT_SIMPLE_REFSET_DELTA), false);
 		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
@@ -93,7 +131,7 @@ public class Rf2FileWriterTest {
 	 * @throws Exception
 	 */
 	@Test
-	public void testSimpleRefsetSnapshotExportUsingPreviousReleaseDate() throws Exception {
+    void testSimpleRefsetSnapshotExportUsingPreviousReleaseDate() throws Exception {
 	    tableSchema = rf2TableDAO.createTable(SIMPLE_REFSET_FULL_PLUS_DELTA, getClass().getResourceAsStream(SIMPLE_REFSET_FULL_PLUS_DELTA), false);
 		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
 
@@ -103,7 +141,7 @@ public class Rf2FileWriterTest {
 	}
 
 	@Test
-	public void testExtendedMapRefsetExport() throws Exception {
+    void testExtendedMapRefsetExport() throws Exception {
 	    tableSchema = rf2TableDAO.createTable(PREVIOUS_EXTENDED_MAP_REFSET_FULL, getClass().getResourceAsStream(PREVIOUS_EXTENDED_MAP_REFSET_FULL), false);
 	    rf2TableDAO.appendData(tableSchema, getClass().getResourceAsStream(CURRENT_EXTENDED_MAP_REFSET_DELTA), false);
 		RF2TableResults tableResults = rf2TableDAO.selectAllOrdered(tableSchema);
@@ -115,7 +153,7 @@ public class Rf2FileWriterTest {
 	}
 
 	@AfterEach
-	public void tearDown() throws Exception {
+    void tearDown() throws Exception {
 		rf2TableDAO.closeConnection();
 	}
 

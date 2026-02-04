@@ -10,6 +10,7 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.*;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
+import org.ihtsdo.buildcloud.core.service.build.RF2BuildUtils;
 import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
 import org.ihtsdo.buildcloud.rest.controller.helper.PageRequestHelper;
 import org.slf4j.Logger;
@@ -123,6 +124,17 @@ public class CodeSystemNewAuthoringCycleHandler {
             ModuleMetadata moduleMetadata = allModuleMetadata.stream().filter(item -> item.getFilename().equals(previousPackage)).findFirst().orElse(null);
             if (moduleMetadata != null && !CollectionUtils.isEmpty(moduleMetadata.getDependencies())) {
                 extensionConfig.setPreviousEditionDependencyEffectiveDate(RF2Constants.DATE_FORMAT.parse(moduleMetadata.getDependencies().get(0).getEffectiveTimeString()));
+            } else {
+                // MSC may not populate dependencies for edition packages.
+                // Fallback: derive previous dependency effective date from the configured dependency release package name.
+                String dependencyRelease = extensionConfig.getDependencyRelease();
+                String dependencyReleaseDate = RF2BuildUtils.getReleaseDateFromReleasePackage(dependencyRelease); // yyyyMMdd
+                if (dependencyReleaseDate != null) {
+                    extensionConfig.setPreviousEditionDependencyEffectiveDate(RF2Constants.DATE_FORMAT.parse(dependencyReleaseDate));
+                } else {
+                    logger.warn("Could not derive previous edition dependency effective date from dependencyRelease='{}' for previousPackage='{}'.",
+                            dependencyRelease, previousPackage);
+                }
             }
         }
     }

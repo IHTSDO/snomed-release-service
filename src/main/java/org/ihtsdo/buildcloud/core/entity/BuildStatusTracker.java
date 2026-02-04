@@ -37,6 +37,8 @@ public class BuildStatusTracker {
 	@Column(name = "last_updated_time")
 	private Timestamp lastUpdatedTime;
 
+	@Column(name = "retry_count")
+	private int retryCount;
 
 	public BuildStatusTracker() {
 		this.startTime = new Timestamp(System.currentTimeMillis());
@@ -100,6 +102,14 @@ public class BuildStatusTracker {
 		return lastUpdatedTime;
 	}
 
+	public int getRetryCount() {
+		return retryCount;
+	}
+
+	public void setRetryCount(int retryCount) {
+		this.retryCount = retryCount;
+	}
+
 	@Override
 	public String toString() {
 		return new StringJoiner(", ", BuildStatusTracker.class.getSimpleName()
@@ -110,6 +120,7 @@ public class BuildStatusTracker {
 				.add("status='" + status + "'")
 				.add("startTime='" + startTime + "'")
 				.add("lastUpdatedTime='" + lastUpdatedTime + "'")
+				.add("retryCount=" + retryCount)
 				.toString();
 	}
 }

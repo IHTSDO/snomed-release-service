@@ -42,6 +42,9 @@ public class Build {
 
 	private BuildReport buildReport;
 
+	// Derived from S3 marker object "retry-count:{n}" (optional). Only set for retries (>= 1).
+	private Integer retryCount;
+
 	private QATestConfig qaTestConfig;
 
 	public enum Status {
@@ -172,6 +175,14 @@ public class Build {
 
 	public void setBuildReport(final BuildReport buildReport) {
 		this.buildReport = buildReport;
+	}
+
+	public Integer getRetryCount() {
+		return retryCount;
+	}
+
+	public void setRetryCount(Integer retryCount) {
+		this.retryCount = retryCount;
 	}
 
 	public QATestConfig getQaTestConfig() {

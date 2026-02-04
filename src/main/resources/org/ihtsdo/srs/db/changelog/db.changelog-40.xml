@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd">
+
+    <!-- Conditionally create idx_bst_product_status if it does not already exist -->
+    <changeSet id="2025112801-build-status-tracker-product-status-index" author="cursor-ai">
+
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN">
+            <not>
+                <indexExists tableName="build_status_tracker"
+                             indexName="idx_bst_product_status"/>
+            </not>
+        </preConditions>
+
+        <!-- For findByProductAndStatus(productKey, status...) -->
+        <createIndex tableName="build_status_tracker"
+                     indexName="idx_bst_product_status">
+            <column name="product_key"/>
+            <column name="status"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="build_status_tracker" indexName="idx_bst_product_status"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Conditionally create idx_bst_product_build if it does not already exist -->
+    <changeSet id="2025112802-build-status-tracker-product-build-index" author="cursor-ai">
+
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN">
+            <not>
+                <indexExists tableName="build_status_tracker"
+                             indexName="idx_bst_product_build"/>
+            </not>
+        </preConditions>
+
+        <!-- For findByProductKeyAndBuildId(productKey, buildId) -->
+        <createIndex tableName="build_status_tracker"
+                     indexName="idx_bst_product_build">
+            <column name="product_key"/>
+            <column name="build_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="build_status_tracker" indexName="idx_bst_product_build"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Conditionally create idx_bst_rc_product_start if it does not already exist -->
+    <changeSet id="2025112803-build-status-tracker-rc-product-start-index" author="cursor-ai">
+
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN">
+            <not>
+                <indexExists tableName="build_status_tracker"
+                             indexName="idx_bst_rc_product_start"/>
+            </not>
+        </preConditions>
+
+        <!-- For findLatestByReleaseCenterAndProduct(releaseCenterKey, productKey) ordered by start_time -->
+        <createIndex tableName="build_status_tracker"
+                     indexName="idx_bst_rc_product_start">
+            <column name="release_center_key"/>
+            <column name="product_key"/>
+            <column name="start_time"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="build_status_tracker" indexName="idx_bst_rc_product_start"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Conditionally create uk_bst_rvf_run_id if it does not already exist -->
+    <changeSet id="2025112804-build-status-tracker-rvf-run-id-unique-index" author="cursor-ai">
+
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN">
+            <not>
+                <indexExists tableName="build_status_tracker"
+                             indexName="uk_bst_rvf_run_id"/>
+            </not>
+        </preConditions>
+
+        <!-- Index (rvf_run_id, build_id) to speed up lookups -->
+        <createIndex tableName="build_status_tracker"
+                     indexName="uk_bst_rvf_run_id">
+            <column name="rvf_run_id"/>
+            <column name="build_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="build_status_tracker" indexName="uk_bst_rvf_run_id"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Conditionally create idx_bst_status if it does not already exist -->
+    <changeSet id="2025112805-build-status-tracker-status-index" author="cursor-ai">
+
+        <preConditions onFail="MARK_RAN" onError="MARK_RAN">
+            <not>
+                <indexExists tableName="build_status_tracker"
+                             indexName="idx_bst_status"/>
+            </not>
+        </preConditions>
+
+        <!-- For findByStatus(status...) scans (QUEUED, etc.) -->
+        <createIndex tableName="build_status_tracker"
+                     indexName="idx_bst_status">
+            <column name="status"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="build_status_tracker" indexName="idx_bst_status"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
+
+
+
+
+
+

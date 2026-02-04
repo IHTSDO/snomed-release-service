@@ -12,7 +12,9 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -31,6 +33,11 @@ public class Rf2FileWriter {
 	}
 
 	public void exportDelta(RF2TableResults tableResults, TableSchema tableSchema, OutputStream deltaOutputStream, Set<Key> deltaKeysToDiscard) throws SQLException, IOException {
+		// Pre-index keys once to avoid O(rows * keysToDiscard) linear scans.
+		final Set<String> ignoredKeyLookup = buildIgnoredKeyLookup(deltaKeysToDiscard);
+		final boolean isIdentifier = ComponentType.IDENTIFIER.equals(tableSchema.getComponentType());
+		final boolean isLanguageFile = !isIdentifier && Pattern.compile(RF2Constants.LANGUAGE_FILE_PATTERN).matcher(tableSchema.getFilename()).matches();
+
 		try (BufferedWriter deltaWriter = new BufferedWriter(new OutputStreamWriter(deltaOutputStream, RF2Constants.UTF_8))) {
 			List<Field> fields = tableSchema.getFields();
 			// Write header
@@ -43,13 +50,13 @@ public class Rf2FileWriter {
 			while ((line = tableResults.nextLine()) != null) {
 				String[] lineParts;
 				String languageRefsetId = null;
-				if (ComponentType.IDENTIFIER.equals(tableSchema.getComponentType())) {
+				if (isIdentifier) {
 					lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 6);
 					currentId = lineParts[0] + RF2Constants.COLUMN_SEPARATOR + lineParts[1];
 					// Replace the composite key by identifierSchemeId
 					line = line.replace(currentId, lineParts[0]);
 				} else {
-					if (Pattern.compile(RF2Constants.LANGUAGE_FILE_PATTERN).matcher(tableSchema.getFilename()).matches()) {
+					if (isLanguageFile) {
 						lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 6);
 						languageRefsetId = lineParts[4];
 					} else {
@@ -57,8 +64,10 @@ public class Rf2FileWriter {
 					}
 					currentId = lineParts[0];
 				}
-				if (isIgnoredKey(deltaKeysToDiscard, currentId, ComponentType.IDENTIFIER.equals(tableSchema.getComponentType()) ? lineParts[2] : lineParts[1])
-				 || (!ComponentType.IDENTIFIER.equals(tableSchema.getComponentType()) && isRF2LineExcluded(tableSchema, currentId, languageRefsetId))) {
+
+				final String effectiveTime = isIdentifier ? lineParts[2] : lineParts[1];
+				if (isIgnoredKey(ignoredKeyLookup, currentId, effectiveTime)
+				 || (!isIdentifier && isRF2LineExcluded(tableSchema, currentId, languageRefsetId))) {
 					continue;
 				}
 				deltaWriter.append(line);
@@ -67,13 +76,31 @@ public class Rf2FileWriter {
 		}
 	}
 
-	private boolean isIgnoredKey(Set<Key> deltaKeysToDiscard, String currentId, String effectiveTime) {
-		for (Key key : deltaKeysToDiscard) {
-			if (currentId.equals(key.getIdString()) && effectiveTime.equals(key.getDate())) {
-				return true;
-			}
+	private static Set<String> buildIgnoredKeyLookup(Set<Key> deltaKeysToDiscard) {
+		if (deltaKeysToDiscard == null || deltaKeysToDiscard.isEmpty()) {
+			return Collections.emptySet();
 		}
-		return false;
+		// Use a delimiter that cannot appear in tab-separated RF2 ids to avoid collisions.
+		final int capacity = (int) (deltaKeysToDiscard.size() / 0.75f) + 1;
+		Set<String> ignoredKeys = new HashSet<>(capacity);
+		for (Key key : deltaKeysToDiscard) {
+			if (key == null || key.getIdString() == null || key.getDate() == null) {
+				continue;
+			}
+			ignoredKeys.add(composeIgnoredKey(key.getIdString(), key.getDate()));
+		}
+		return ignoredKeys;
+	}
+
+	private static boolean isIgnoredKey(Set<String> ignoredKeyLookup, String currentId, String effectiveTime) {
+		if (ignoredKeyLookup.isEmpty()) {
+			return false;
+		}
+		return ignoredKeyLookup.contains(composeIgnoredKey(currentId, effectiveTime));
+	}
+
+	private static String composeIgnoredKey(String id, String effectiveTime) {
+		return id + '\u0000' + effectiveTime;
 	}
 
 	public void exportFullAndSnapshot(RF2TableResults tableResults, TableSchema schema, Date targetEffectiveTime, OutputStream fullOutputStream, OutputStream snapshotOutputStream) throws SQLException, IOException {

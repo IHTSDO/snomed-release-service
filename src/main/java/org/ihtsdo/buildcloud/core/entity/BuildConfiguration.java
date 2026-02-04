@@ -97,9 +97,6 @@ public class BuildConfiguration {
 	@Column(name="licence_statement")
 	private String licenceStatement;
 
-	@Column(name="release_information_fields")
-	private String releaseInformationFields;
-
 	@Column(name="additional_release_information_fields")
 	private String additionalReleaseInformationFields;
 
@@ -155,7 +152,11 @@ public class BuildConfiguration {
 	}
 
 	public void setEffectiveTimeFormatted(final String effectiveTimeFormatted) throws ParseException {
-		effectiveTime = DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(effectiveTimeFormatted);
+		if (effectiveTimeFormatted == null || effectiveTimeFormatted.isBlank()) {
+			this.effectiveTime = null;
+		} else {
+			this.effectiveTime = DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(effectiveTimeFormatted);
+		}
 	}
 
 	@JsonIgnore
@@ -367,14 +368,6 @@ public class BuildConfiguration {
 		this.licenceStatement = licenceStatement;
 	}
 
-	public String getReleaseInformationFields() {
-		return releaseInformationFields;
-	}
-
-	public void setReleaseInformationFields(String releaseInformationFields) {
-		this.releaseInformationFields = releaseInformationFields;
-	}
-
 	public String getAdditionalReleaseInformationFields() {
 		return additionalReleaseInformationFields;
 	}
@@ -483,7 +476,7 @@ public class BuildConfiguration {
 				", dailyBuild=" + dailyBuild +
 				", classifyOutputFiles=" + classifyOutputFiles +
 				", licenceStatement='" + licenceStatement + '\'' +
-				", releaseInformationFields='" + releaseInformationFields + '\'' +
+				", additionalReleaseInformationFields='" + additionalReleaseInformationFields + '\'' +
 				", useClassifierPreConditionChecks=" + useClassifierPreConditionChecks +
 				", conceptPreferredTerms='" + conceptPreferredTerms + '\'' +
 				", defaultBranchPath='" + defaultBranchPath + '\'' +

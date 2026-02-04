@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.core.entity;
 
-import org.hibernate.annotations.Type;
-
 import jakarta.persistence.*;
 import org.hibernate.type.YesNoConverter;
 
@@ -12,7 +10,8 @@ import java.util.Date;
 public class Notification {
 
 	public enum NotificationType {
-		BUILD_RUN_OUT_OF_TIME
+		BUILD_RUN_OUT_OF_TIME,
+		BUILD_RETRIED
 	}
 
 	@Id

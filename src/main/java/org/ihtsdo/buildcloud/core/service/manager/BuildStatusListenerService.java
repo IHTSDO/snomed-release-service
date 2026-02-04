@@ -3,11 +3,10 @@ package org.ihtsdo.buildcloud.core.service.manager;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ihtsdo.buildcloud.core.dao.BuildStatusTrackerDao;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.BuildServiceImpl;
-import org.ihtsdo.buildcloud.core.service.CacheService;
+import org.ihtsdo.buildcloud.core.service.NotificationService;
 import org.ihtsdo.buildcloud.core.service.ProductService;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.slf4j.Logger;
@@ -24,6 +23,7 @@ import jakarta.jms.TextMessage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -41,7 +41,7 @@ public class BuildStatusListenerService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildStatusListenerService.class);
 	private static final List<String> RVF_STATUS_MAP_KEYS = Arrays.asList(RUN_ID_KEY, STATE_KEY);
 	private static final List<String> RVF_VALIDATION_REQUEST_MAP_KEYS = Arrays.asList(RUN_ID_KEY, BUILD_ID_KEY, RELEASE_CENTER_KEY, PRODUCT_KEY);
-	private static final List<String> UPDATE_STATUS_MAP_KEYS = Arrays.asList(RELEASE_CENTER_KEY, PRODUCT_KEY, BUILD_ID_KEY, BUILD_STATUS_KEY);
+	private static final List<String> UPDATE_STATUS_MAP_KEYS = Arrays.asList(RELEASE_CENTER_KEY, PRODUCT_KEY, BUILD_ID_KEY, BUILD_STATUS_KEY, RETRY_COUNT);
 
 	@Autowired
 	private BuildService buildService;
@@ -59,10 +59,10 @@ public class BuildStatusListenerService {
 	private ObjectMapper objectMapper;
 
 	@Autowired
-	private BuildStatusTrackerDao statusTrackerDao;
+	private BuildStatusTrackerService trackerService;
 
 	@Autowired
-	private CacheService cacheService;
+	private NotificationService notificationService;
 
 	@SuppressWarnings("unchecked")
 	@JmsListener(destination = "${srs.jms.queue.prefix}.build-job-status")
@@ -93,7 +93,7 @@ public class BuildStatusListenerService {
 		String[] split = storageLocation.split("/");
 		String buildId = split.length == 3 ? split[2] : null;
 		LOGGER.info("RVF status response message: {} for run ID: {}", message, runId);
-		BuildStatusTracker tracker = statusTrackerDao.findByRvfRunIdAndBuildId(String.valueOf(runId), buildId);
+		BuildStatusTracker tracker = trackerService.findByRvfRunIdAndBuildId(String.valueOf(runId), buildId);
 		if (tracker == null) {
 			throw new IllegalStateException("No build status tracker found with RVF run id " + runId);
 		}
@@ -186,35 +186,124 @@ public class BuildStatusListenerService {
 		final String productBusinessKey = (String) message.get(PRODUCT_KEY);
 		final String buildId = (String) message.get(BUILD_ID_KEY);
 		final String status = (String) message.get(BUILD_STATUS_KEY);
+		final int incomingRetryCount = parseRetryCount(message);
+		Map<String, Object> messageToSend = message;
 
-		BuildStatusTracker tracker = statusTrackerDao.findByProductKeyAndBuildId(productBusinessKey, buildId);
-		if (tracker == null) {
-			throw new IllegalStateException(String.format("No build status tracker exists for product %s and build id %s", productBusinessKey, buildId));
+		// Ensure websocket payload always includes retryCount for clients (default 0).
+		if (!message.containsKey(RETRY_COUNT)) {
+			messageToSend = new HashMap<>(message);
+			messageToSend.put(RETRY_COUNT, incomingRetryCount);
 		}
+
+		BuildStatusTracker tracker = trackerService.findByProductKeyAndBuildId(productBusinessKey, buildId);
+		if (tracker == null) {
+			LOGGER.warn("No build status tracker exists for product {} and build id {}. Skipping status update message {}",
+					productBusinessKey, buildId, message);
+			return;
+		}
+
 		String previousStatus = tracker.getStatus();
 		Timestamp previousUpdatedTime = tracker.getLastUpdatedTime();
-		tracker.setStatus(status);
-		statusTrackerDao.update(tracker);
-		long timeTakenInMinutes = (tracker.getLastUpdatedTime().getTime() - previousUpdatedTime.getTime())/(1000*60);
-		if (previousStatus != null && !previousStatus.equals(status)) {
-			LOGGER.info("Status tracking stats for build id {}: It took {} minutes from {} to {}", buildId, timeTakenInMinutes, previousStatus, status);
+
+		// If worker indicates a new attempt (retryCount increased), create a new tracker row to preserve history.
+		// This avoids having to infer retries from specific status transitions.
+		if (incomingRetryCount > tracker.getRetryCount()) {
+			// Send notification (best-effort) when we detect a new retry attempt.
+			sendBuildRetriedNotification(message, buildId, incomingRetryCount);
+			tracker = trackerService.createRetryAttempt(tracker, incomingRetryCount, status);
+			previousStatus = status;
+			previousUpdatedTime = tracker.getLastUpdatedTime();
 		}
-		if (RELEASE_COMPLETE.name().equals(status) || RELEASE_COMPLETE_WITH_WARNINGS.name().equals(status)) {
-			long totalTimeTaken = (tracker.getLastUpdatedTime().getTime() - tracker.getStartTime().getTime())/(1000*60);
-			LOGGER.info("Status tracking stats for build id {}: It took {} minutes in total from start to {}", buildId, totalTimeTaken, status);
+
+		// Avoid updating lastUpdatedTime if status is unchanged.
+		if (previousStatus == null || !previousStatus.equals(status)) {
+			trackerService.updateStatus(tracker, status);
+			long timeTakenInMinutes = (tracker.getLastUpdatedTime().getTime() - previousUpdatedTime.getTime()) / (1000 * 60);
+			LOGGER.info("Status tracking stats for build id {}: It took {} minutes from {} to {}",
+					buildId, timeTakenInMinutes, previousStatus, status);
+			if (RELEASE_COMPLETE.name().equals(status) || RELEASE_COMPLETE_WITH_WARNINGS.name().equals(status)) {
+				long totalTimeTaken = (tracker.getLastUpdatedTime().getTime() - tracker.getStartTime().getTime()) / (1000 * 60);
+				LOGGER.info("Status tracking stats for build id {}: It took {} minutes in total from start to {}",
+						buildId, totalTimeTaken, status);
+			}
 		}
-		LOGGER.info("Web socket status update {}", message);
-		simpMessagingTemplate.convertAndSend("/topic/build-status-change", objectMapper.writeValueAsString(message));
+		LOGGER.info("Web socket status update {}", messageToSend);
+		simpMessagingTemplate.convertAndSend("/topic/build-status-change", objectMapper.writeValueAsString(messageToSend));
 	}
 
+	private void sendBuildRetriedNotification(final Map<String, Object> message, final String buildId, final int retryCount) {
+		try {
+			final String releaseCenterKey = (String) message.get(RELEASE_CENTER_KEY);
+			final String productKey = (String) message.get(PRODUCT_KEY);
+			if (releaseCenterKey == null || productKey == null) {
+				return;
+			}
+
+			// Fetch the build to resolve the recipient (trigger user).
+			final Build build = buildService.find(releaseCenterKey, productKey, buildId, false, false, false, null);
+			final String recipient = build != null ? build.getBuildUser() : null;
+			if (recipient == null || recipient.isBlank()) {
+				return;
+			}
+
+			// Resolve product metadata for a more informative message (matches BUILD_RUN_OUT_OF_TIME notification style).
+			final Product product = productService.find(releaseCenterKey, productKey, false);
+			final String productName = product != null ? product.getName() : null;
+			final String releaseCenterName = (product != null && product.getReleaseCenter() != null) ? product.getReleaseCenter().getName() : null;
+
+			final Notification notification = new Notification();
+			notification.setRead(false);
+			notification.setRecipient(recipient);
+			notification.setNotificationType(Notification.NotificationType.BUILD_RETRIED.name());
+
+			final Map<String, Object> details = new HashMap<>();
+			details.put(RELEASE_CENTER_KEY, releaseCenterKey);
+			details.put(PRODUCT_KEY, productKey);
+			details.put(BUILD_ID_KEY, buildId);
+			details.put(RETRY_COUNT, retryCount);
+			if (productName != null && !productName.isBlank()) {
+				details.put(PRODUCT_NAME_KEY, productName);
+			}
+			final String notificationMessage = (productName != null && !productName.isBlank() && releaseCenterName != null && !releaseCenterName.isBlank())
+					? String.format("The build %s in %s product in %s has been retried (attempt %d).", buildId, productName, releaseCenterName, retryCount)
+					: String.format("Build %s has been retried (attempt %d).", buildId, retryCount);
+			details.put("message", notificationMessage);
+			notification.setDetails(objectMapper.writeValueAsString(details));
+
+			notificationService.create(notification);
+
+			// Notify client (matches MonitorServiceImpl pattern)
+			final Map<String, Object> ws = new HashMap<>();
+			ws.put("event", "NEW_NOTIFICATION");
+			simpMessagingTemplate.convertAndSend("/topic/user/" + recipient + "/notification", objectMapper.writeValueAsString(ws));
+		} catch (Exception e) {
+			LOGGER.warn("Failed to create BUILD_RETRIED notification for build {} (retryCount={}).", buildId, retryCount, e);
+		}
+	}
+
+	private int parseRetryCount(final Map<String, Object> message) {
+		final Object retryCountObj = message.get(RETRY_COUNT);
+		if (retryCountObj == null) {
+			return 0;
+		}
+		if (retryCountObj instanceof Number n) {
+			return n.intValue();
+		}
+		try {
+			return Integer.parseInt(String.valueOf(retryCountObj));
+		} catch (NumberFormatException e) {
+			LOGGER.warn("Invalid retryCount value '{}' in build status message; defaulting to 0. Message={}", retryCountObj, message);
+			return 0;
+		}
+	}
 
 	private void processSrsWorkerRvfRequest(final Map<String, Object> message) {
 		LOGGER.info("Message from SRS worker for RVF validation request map: {}", message);
 		final String buildId = (String) message.get(BUILD_ID_KEY);
 		final String productKey = (String) message.get(PRODUCT_KEY);
 		final Long rvfRunId = (Long) message.get(RUN_ID_KEY);
-		BuildStatusTracker tracker = statusTrackerDao.findByProductKeyAndBuildId(productKey, buildId);
+		BuildStatusTracker tracker = trackerService.findByProductKeyAndBuildId(productKey, buildId);
 		tracker.setRvfRunId(String.valueOf(rvfRunId));
-		statusTrackerDao.update(tracker);
+		trackerService.update(tracker);
 	}
 }

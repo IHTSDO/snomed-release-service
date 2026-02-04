@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.jayway.jsonpath.JsonPath;
 import org.ihtsdo.buildcloud.core.entity.Build;
-import org.ihtsdo.buildcloud.core.service.PublishServiceImpl;
-import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.service.ProductService;
+import org.ihtsdo.buildcloud.core.service.helper.PublishStep;
+import org.ihtsdo.buildcloud.rest.controller.AbstractControllerTest;
 import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.buildcloud.test.StreamTestUtils;
 import org.json.JSONArray;
@@ -34,11 +34,11 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static org.ihtsdo.buildcloud.core.entity.Build.Status.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class IntegrationTestHelper {
 
@@ -66,6 +66,7 @@ public class IntegrationTestHelper {
 		setAssertionTestConfigProperty(ProductService.ASSERTION_GROUP_NAMES, "Test Assertion Group");
 		setReadmeHeader("This is the readme.");
 		setReadmeEndDate("2014");
+		setReleaseAdditionalInformationFields("{\\n  \\\"effectiveTime\\\": null,\\n  \\\"licenceStatement\\\": null,\\n  \\\"languageRefsets\\\": null,\\n  \\\"packageComposition\\\": {\\n    \\\"essentialComponents\\\": {},\\n    \\\"optionalComponents\\\": {}\\n  }\\n}");
 	}
 	
 	private String findOrCreateProduct() throws Exception {
@@ -234,6 +235,10 @@ public class IntegrationTestHelper {
 		setProductProperty("{ \"" + ProductService.CUSTOM_REFSET_COMPOSITE_KEYS + "\" : \"" + customRefsetCompositeKeys + "\" }");
 	}
 
+	public void setReleaseAdditionalInformationFields(final String releaseAdditionalInformationFields) throws Exception {
+		setProductProperty("{ \"" + ProductService.ADDITIONAL_RELEASE_INFORMATION_FIELDS + "\" : \"" + releaseAdditionalInformationFields + "\" }");
+	}
+
 	public void setNewRF2InputFiles(final String newRF2InputFiles) throws Exception {
 		setProductProperty("{ \"" + ProductService.NEW_RF2_INPUT_FILES + "\" : \"" + newRF2InputFiles + "\" }");
 	}
@@ -278,7 +283,7 @@ public class IntegrationTestHelper {
 
 
 	public void scheduleBuild(final String buildUrl) throws Exception {
-		final MvcResult result = mockMvc.perform(post(buildUrl + "/schedule")
+		mockMvc.perform(post(buildUrl + "/schedule")
 				.header("Authorization", getBasicDigestHeaderValue())
 				.contentType(MediaType.APPLICATION_JSON))
 				.andDo(print())
@@ -289,27 +294,38 @@ public class IntegrationTestHelper {
 
 
 	public void waitUntilCompleted(String buildUrl) throws Exception {
+		final java.time.Instant deadline = java.time.Instant.now().plus(java.time.Duration.ofMinutes(10));
 		boolean isDone = false;
-		MvcResult buildResult;
+		MvcResult buildResult = null;
 		Build.Status buildStatus = null;
+		Build.Status lastStatus = null;
 
-		while (!isDone) {
+		while (!isDone && java.time.Instant.now().isBefore(deadline)) {
 			Thread.sleep(1000);
 			buildResult = mockMvc.perform(
 					get(buildUrl)
 							.header("Authorization", getBasicDigestHeaderValue())
 							.contentType(MediaType.APPLICATION_JSON))
-					.andDo(print())
 					.andExpect(status().isOk())
 					.andExpect(content().contentTypeCompatibleWith(AbstractControllerTest.APPLICATION_JSON))
 					.andReturn();
 
 			final String statusString = JsonPath.read(buildResult.getResponse().getContentAsString(), "$.status");
 			buildStatus = Build.Status.valueOf(statusString);
-			System.out.println("Build status = " + buildStatus);
+			if (buildStatus != lastStatus) {
+				System.out.println("Build status = " + buildStatus);
+				lastStatus = buildStatus;
+			}
 			if (PENDING != buildStatus && QUEUED != buildStatus && BUILDING != buildStatus && BEFORE_TRIGGER != buildStatus) {
 				isDone = true;
 			}
+		}
+
+		if (!isDone) {
+			System.out.println("Timed out waiting for build to complete. Last status=" + buildStatus + " buildUrl=" + buildUrl);
+			printReport(buildUrl + "/buildLogs");
+			printReport(buildUrl + "/buildReport");
+			fail("Timed out waiting for build to complete. Last status=" + buildStatus);
 		}
 
 		if (FAILED_INPUT_PREPARE_REPORT_VALIDATION == buildStatus) {
@@ -540,7 +556,7 @@ public class IntegrationTestHelper {
 	}
 
 	public void printBuildConfig(String buildURL) throws Exception {
-		final MvcResult getBuildConfig = mockMvc.perform(
+		mockMvc.perform(
 				get(buildURL + "/configuration")
 						.header("Authorization", getBasicDigestHeaderValue())
 						.contentType(MediaType.APPLICATION_JSON)
@@ -561,26 +577,34 @@ public class IntegrationTestHelper {
 	}
 
 	void waitUntilPublishingCompleted(String buildUrl) throws Exception {
+		final java.time.Instant deadline = java.time.Instant.now().plus(java.time.Duration.ofMinutes(10));
 		boolean isDone = false;
 		MvcResult publishResult;
-		PublishServiceImpl.Status status;
+		String status = null;
+		String lastStatus = null;
 
-		while (!isDone) {
+		while (!isDone && java.time.Instant.now().isBefore(deadline)) {
 			Thread.sleep(1000);
 			publishResult = mockMvc.perform(get(buildUrl + "/publish/status").contentType(MediaType.APPLICATION_JSON))
-					.andDo(print())
 					.andExpect(status().isOk())
 					.andExpect(content().contentTypeCompatibleWith(AbstractControllerTest.APPLICATION_JSON))
 					.andReturn();
 
-			final String statusString = JsonPath.read(publishResult.getResponse().getContentAsString(), "$.status");
-			status = PublishServiceImpl.Status.valueOf(statusString);
-			if (PublishServiceImpl.Status.RUNNING != status) {
+			status = JsonPath.read(publishResult.getResponse().getContentAsString(), "$.overallStatus");
+			if (!status.equals(lastStatus)) {
+				System.out.println("Publish status = " + status);
+				lastStatus = status;
+			}
+			if (!PublishStep.StepStatus.RUNNING.name().equals(status)) {
 				isDone = true;
 			}
-			if (PublishServiceImpl.Status.FAILED == status) {
+			if (PublishStep.StepStatus.FAILED.name().equals(status)) {
 				fail("Failed to publish build " + buildUrl);
 			}
+		}
+
+		if (!isDone) {
+			fail("Timed out waiting for publish to complete. Last status=" + status + " buildUrl=" + buildUrl);
 		}
 	}
 }

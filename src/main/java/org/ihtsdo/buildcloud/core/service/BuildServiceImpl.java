@@ -3,15 +3,11 @@ package org.ihtsdo.buildcloud.core.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import jakarta.annotation.PostConstruct;
 import jakarta.jms.JMSException;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTextMessage;
-import org.apache.commons.text.StringEscapeUtils;
 import org.apache.log4j.MDC;
 import org.ihtsdo.buildcloud.config.DailyBuildResourceConfig;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
@@ -27,10 +23,7 @@ import org.ihtsdo.buildcloud.core.manifest.*;
 import org.ihtsdo.buildcloud.core.releaseinformation.ConceptMini;
 import org.ihtsdo.buildcloud.core.service.build.*;
 import org.ihtsdo.buildcloud.core.service.build.readme.ReadmeGenerator;
-import org.ihtsdo.buildcloud.core.service.build.transform.StreamingFileTransformation;
-import org.ihtsdo.buildcloud.core.service.build.transform.TransformationException;
-import org.ihtsdo.buildcloud.core.service.build.transform.TransformationFactory;
-import org.ihtsdo.buildcloud.core.service.build.transform.TransformationService;
+import org.ihtsdo.buildcloud.core.service.build.transform.*;
 import org.ihtsdo.buildcloud.core.service.helper.ManifestXmlFileParser;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
@@ -47,10 +40,7 @@ import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.ihtsdo.otf.rest.exception.*;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.ihtsdo.otf.utils.ZipFileUtils;
-import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
-import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
-import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
-import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
+import org.ihtsdo.snomed.util.rf2.schema.*;
 import org.ihtsdo.sso.integration.SecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,8 +57,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
-import us.monoid.json.JSONException;
-import us.monoid.json.JSONObject;
 
 import javax.naming.ConfigurationException;
 import javax.xml.bind.JAXBContext;
@@ -76,7 +64,6 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
@@ -86,7 +73,6 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -98,12 +84,13 @@ public class BuildServiceImpl implements BuildService {
 	private static final String ADDITIONAL_RELATIONSHIP = "900000000000227009";
 
 	private static final String STATED_RELATIONSHIP = "_StatedRelationship_";
+	private static final String DELTA_FROM_DATE = "deltaFromDate";
+	private static final String DELTA_TO_DATE = "deltaToDate";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildServiceImpl.class);
 	public static final String UNABLE_TO_FIND_PRODUCT = "Unable to find product: ";
 	public static final String PROGRESS_STATUS = "Progress Status";
 	public static final String MESSAGE = "Message";
-
 
 	@Autowired
 	private BuildDAO dao;
@@ -175,9 +162,6 @@ public class BuildServiceImpl implements BuildService {
 
 	@Autowired
 	private ModuleStorageCoordinator moduleStorageCoordinator;
-
-	@Autowired
-	private ModuleStorageCoordinatorCache moduleStorageCoordinatorCache;
 
 	@PostConstruct
 	public void init() {
@@ -730,10 +714,9 @@ public class BuildServiceImpl implements BuildService {
 		if (dao.isBuildCancelRequested(build)) return;
 
 		// Generate release package information
-		String releaseFilename = getReleaseFilename(build);
-		if (StringUtils.hasLength(releaseFilename) && (StringUtils.hasLength(configuration.getReleaseInformationFields())
-													|| StringUtils.hasLength(configuration.getAdditionalReleaseInformationFields()))) {
-			generateReleasePackageFile(build, releaseFilename);
+		String releaseInformationFilename = getReleaseInformationFilename(build);
+		if (StringUtils.hasLength(releaseInformationFilename) && StringUtils.hasLength(configuration.getAdditionalReleaseInformationFields())) {
+			generateReleasePackageFile(build, releaseInformationFilename);
 		}
 		// Generate readme file
 		generateReadmeFile(build);
@@ -800,7 +783,7 @@ public class BuildServiceImpl implements BuildService {
 	private File getReleaseFileFromMscOrNull(String releasePackageFilename) {
 		if (org.springframework.util.StringUtils.hasLength(releasePackageFilename)) {
 			try {
-				Map<String, List<ModuleMetadata>> allReleasesMap = moduleStorageCoordinatorCache.getAllReleases();
+				Map<String, List<ModuleMetadata>> allReleasesMap = moduleStorageCoordinator.getAllReleases();
 				List<ModuleMetadata> allModuleMetadata = new ArrayList<>();
 				allReleasesMap.values().forEach(allModuleMetadata::addAll);
 				ModuleMetadata moduleMetadata = allModuleMetadata.stream().filter(item -> item.getFilename().equals(releasePackageFilename)).findFirst().orElse(null);
@@ -905,44 +888,114 @@ public class BuildServiceImpl implements BuildService {
 		try {
 			LOGGER.info("Generating release package information file for build {}", build.getUniqueId());
 			Map<String, Object> releasePackageInformationMap = getReleasePackageInformationMap(build);
-			FileWriter fileWriter = null;
-			File releasePackageInfoFile;
-			try {
-				releasePackageInfoFile = new File(releaseFilename);
-				fileWriter = new FileWriter(releasePackageInfoFile, StandardCharsets.UTF_8);
+			File releasePackageInfoFile = new File(releaseFilename);
 
-				Gson gson = new GsonBuilder().serializeNulls().disableHtmlEscaping().setPrettyPrinting().create();
-				JsonElement je = JsonParser.parseString(mapToString(releasePackageInformationMap));
-				fileWriter.write(gson.toJson(je));
-			} finally {
-				fileWriter.flush();
-				fileWriter.close();
+			try (FileWriter fileWriter = new FileWriter(releasePackageInfoFile, StandardCharsets.UTF_8)) {
+				Gson gsonWithNulls = new GsonBuilder()
+						.serializeNulls()
+						.disableHtmlEscaping()
+						.setPrettyPrinting()
+						.create();
+				// Directly convert Map to JSON - Gson handles all nested structures, arrays, and complex types properly
+				// LinkedHashMap preserves insertion order, which Gson will maintain during serialization
+				String json = gsonWithNulls.toJson(releasePackageInformationMap);
+				fileWriter.write(json);
 			}
+
 			try {
-				if (releasePackageInfoFile != null) {
-					dao.putOutputFile(build, releasePackageInfoFile);
-				}
+				dao.putOutputFile(build, releasePackageInfoFile);
 			} finally {
-				if (releasePackageInfoFile != null) {
+				if (releasePackageInfoFile.exists()) {
 					releasePackageInfoFile.delete();
 				}
 			}
 		} catch (IOException e) {
 			throw new BusinessServiceException("Failed to generate release package information file.", e);
-		} catch (JSONException e) {
-            throw new RuntimeException(e);
-        }
+		}
     }
 
-	private <K, V> String mapToString(Map<K, V> map) {
-		return map.entrySet()
-				.stream()
-				.map(entry -> entry.getKey() + ":" + (entry.getValue() instanceof String ? "\"" + StringEscapeUtils.escapeJson(entry.getValue().toString()) + "\"" : entry.getValue()))
-				.collect(Collectors.joining(", ", "{", "}"));
+	/**
+	 * Converts JsonElement to Object while preserving order using LinkedHashMap for Maps.
+	 * This ensures that nested objects maintain their property order.
+	 */
+	private Object convertJsonElementToOrderedObject(JsonElement element) {
+		if (element == null || element.isJsonNull()) {
+			return null;
+		}
+		if (element.isJsonObject()) {
+			return convertJsonObjectToOrderedMap(element.getAsJsonObject());
+		}
+		if (element.isJsonArray()) {
+			return convertJsonArrayToOrderedList(element.getAsJsonArray());
+		}
+		if (element.isJsonPrimitive()) {
+			return convertJsonPrimitiveToObject(element.getAsJsonPrimitive());
+		}
+		return null;
 	}
 
-	private String getReleaseFilename(Build build) {
-		String releaseFilename = null;
+	/**
+	 * Converts JsonObject to LinkedHashMap while preserving property order.
+	 */
+	private Map<String, Object> convertJsonObjectToOrderedMap(JsonObject jsonObject) {
+		Map<String, Object> map = new LinkedHashMap<>();
+		for (java.util.Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
+			map.put(entry.getKey(), convertJsonElementToOrderedObject(entry.getValue()));
+		}
+		return map;
+	}
+
+	/**
+	 * Converts JsonArray to List while preserving element order.
+	 */
+	private java.util.List<Object> convertJsonArrayToOrderedList(JsonArray jsonArray) {
+		java.util.List<Object> list = new java.util.ArrayList<>();
+		for (JsonElement item : jsonArray) {
+			list.add(convertJsonElementToOrderedObject(item));
+		}
+		return list;
+	}
+
+	/**
+	 * Converts JsonPrimitive to appropriate Java object type.
+	 */
+	private Object convertJsonPrimitiveToObject(com.google.gson.JsonPrimitive primitive) {
+		if (primitive.isString()) {
+			return primitive.getAsString();
+		}
+		if (primitive.isNumber()) {
+			return convertJsonNumberToObject(primitive);
+		}
+		if (primitive.isBoolean()) {
+			return primitive.getAsBoolean();
+		}
+		return null;
+	}
+
+	/**
+	 * Converts JsonPrimitive number to appropriate numeric type (Long or Double).
+	 */
+	private Object convertJsonNumberToObject(com.google.gson.JsonPrimitive primitive) {
+		String numberStr = primitive.getAsString();
+		if (isFloatingPointNumber(numberStr)) {
+			return primitive.getAsDouble();
+		}
+		try {
+			return primitive.getAsLong();
+		} catch (NumberFormatException e) {
+			return primitive.getAsDouble();
+		}
+	}
+
+	/**
+	 * Checks if a number string represents a floating point number.
+	 */
+	private boolean isFloatingPointNumber(String numberStr) {
+		return numberStr.contains(".") || numberStr.contains("e") || numberStr.contains("E");
+	}
+
+	private String getReleaseInformationFilename(Build build) {
+		String releaseInformationFilename = null;
 		try {
 			final Unmarshaller unmarshaller = JAXBContext.newInstance(RF2Constants.MANIFEST_CONTEXT_PATH).createUnmarshaller();
 			final InputStream manifestStream = dao.getManifestStream(build);
@@ -955,7 +1008,7 @@ public class BuildServiceImpl implements BuildService {
 					for (final FileType file : files) {
 						final String filename = file.getName();
 						if (filename != null && filename.toLowerCase().startsWith(RF2Constants.RELEASE_INFORMATION_FILENAME_PREFIX) && filename.endsWith(RF2Constants.RELEASE_INFORMATION_FILENAME_EXTENSION)) {
-							releaseFilename = filename;
+							releaseInformationFilename = filename;
 							break;
 						}
 					}
@@ -967,7 +1020,7 @@ public class BuildServiceImpl implements BuildService {
 			throw new BusinessServiceRuntimeException("Failed to get filenames from the manifest.xml.", e);
 		}
 
-		return releaseFilename;
+		return releaseInformationFilename;
 	}
 
 	private Map<String, String> getPreferredTermMap(Build build) {
@@ -984,7 +1037,7 @@ public class BuildServiceImpl implements BuildService {
 		return result;
 	}
 
-	private Map<String, Object> getReleasePackageInformationMap(Build build) throws JSONException {
+	private Map<String, Object> getReleasePackageInformationMap(Build build) {
 		Map<String, Object> result = new LinkedHashMap<>();
 
 		BuildConfiguration buildConfig = build.getConfiguration();
@@ -993,90 +1046,140 @@ public class BuildServiceImpl implements BuildService {
 		Map<String, String> preferredTermMap = getPreferredTermMap(build);
 
 		if (StringUtils.hasLength(buildConfig.getAdditionalReleaseInformationFields())) {
-			JSONObject jsonObject = parseAdditionalReleaseInformationJSON(buildConfig.getAdditionalReleaseInformationFields());
-			Iterator<String> iterator = jsonObject.keys();
-			while(iterator.hasNext()) {
-				String key = iterator.next();
-				result.put(key, jsonObject.get(key));
-			}
-			for (String key : result.keySet()) {
-				if (JSONObject.NULL.equals(result.get(key))) {
-                    switch (key.trim()) {
-                        case "effectiveTime" ->
-                                result.put("effectiveTime", buildConfig.getEffectiveTime() != null ? buildConfig.getEffectiveTimeSnomedFormat() : null);
-                        case "deltaFromDate" -> {
-                            Integer deltaFromDateInt = deltaFromAndToDateMap.get("deltaFromDate");
-                            result.put("deltaFromDate", deltaFromDateInt != null ? deltaFromDateInt.toString() : null);
-                        }
-                        case "deltaToDate" -> {
-                            Integer deltaToDateInt = deltaFromAndToDateMap.get("deltaToDate");
-                            result.put("deltaToDate", deltaToDateInt != null ? deltaToDateInt.toString() : null);
-                        }
-                        case "previousPublishedPackage" ->
-                                result.put("previousPublishedPackage", buildConfig.getPreviousPublishedPackage());
-                        case "includedModules" -> {
-                            Set<String> extensionModules = buildConfig.getExtensionConfig() != null ? buildConfig.getExtensionConfig().getModuleIdsSet() : null;
-                            if (extensionModules != null) {
-                                List<ConceptMini> list = new ArrayList<>();
-                                for (String moduleId : extensionModules) {
-                                    ConceptMini conceptMini = new ConceptMini();
-                                    moduleId = moduleId.trim();
-                                    conceptMini.setId(moduleId);
-                                    conceptMini.setTerm(preferredTermMap.getOrDefault(moduleId, ""));
-                                    list.add(conceptMini);
-                                }
-                                result.put("includedModules", list);
-                            }
-                        }
-                        case "languageRefsets" -> {
-                            List<ConceptMini> list = new ArrayList<>();
-                            for (RefsetType refsetType : languagesRefsets) {
-                                ConceptMini conceptMini = new ConceptMini();
-                                String languageRefsetId = String.valueOf(refsetType.getId()).trim();
-                                conceptMini.setId(languageRefsetId);
-                                conceptMini.setTerm(preferredTermMap.containsKey(languageRefsetId) ? preferredTermMap.get(languageRefsetId) : refsetType.getLabel());
-                                list.add(conceptMini);
-                            }
-                            result.put("languageRefsets", list);
-                        }
-                        case "licenceStatement" ->
-                                result.put("licenceStatement", buildConfig.getLicenceStatement() != null ? buildConfig.getLicenceStatement() : "");
-                        default -> {
-                        }
-                    }
-				}
-			}
+			applyAdditionalReleaseInformation(
+					buildConfig,
+					result,
+					languagesRefsets,
+					deltaFromAndToDateMap,
+					preferredTermMap
+			);
 		}
 
 		return result;
 	}
 
-	private JSONObject parseAdditionalReleaseInformationJSON(String additionalFields) {
-		try {
-			return new JSONObject(additionalFields) {
-				/**
-				 * changes the value of JSONObject.map to a LinkedHashMap in order to maintain
-				 * order of keys.
-				 */
-				@Override
-				public JSONObject put(String key, Object value) throws JSONException {
-					try {
-						Field map = JSONObject.class.getDeclaredField("map");
-						map.setAccessible(true);
-						Object mapValue = map.get(this);
-						if (!(mapValue instanceof LinkedHashMap)) {
-							map.set(this, new LinkedHashMap<>());
-						}
-					} catch (NoSuchFieldException | IllegalAccessException e) {
-						throw new RuntimeException(e);
-					}
-					return super.put(key, value);
+	private void applyAdditionalReleaseInformation(BuildConfiguration buildConfig,
+	                                               Map<String, Object> result,
+	                                               List<RefsetType> languagesRefsets,
+	                                               Map<String, Integer> deltaFromAndToDateMap,
+	                                               Map<String, String> preferredTermMap) {
+		JsonObject jsonObject = parseAdditionalReleaseInformationJSON(buildConfig.getAdditionalReleaseInformationFields());
+
+		// copy entries from JsonObject into result map, converting JsonNull -> null and primitives/objects to Java types
+		// Preserve order by converting JsonElement to Object while maintaining LinkedHashMap structure
+		for (java.util.Map.Entry<String, com.google.gson.JsonElement> entry : jsonObject.entrySet()) {
+			String key = entry.getKey();
+			JsonElement el = entry.getValue();
+			Object value = (el == null || el.isJsonNull()) ? null : convertJsonElementToOrderedObject(el);
+			result.put(key, value);
+		}
+
+		// resolve null-valued fields
+		for (String key : new ArrayList<>(result.keySet())) {
+			if (result.get(key) == null) {
+				resolveNullField(key, result, buildConfig, languagesRefsets, deltaFromAndToDateMap, preferredTermMap);
+			}
+		}
+	}
+
+	private void resolveNullField(String key,
+	                              Map<String, Object> result,
+	                              BuildConfiguration buildConfig,
+	                              List<RefsetType> languagesRefsets,
+	                              Map<String, Integer> deltaFromAndToDateMap,
+	                              Map<String, String> preferredTermMap) {
+		switch (key.trim()) {
+			case "effectiveTime":
+				String et = buildConfig.getEffectiveTime() != null ? buildConfig.getEffectiveTimeSnomedFormat() : null;
+				result.put("effectiveTime", et);
+				break;
+
+			case DELTA_FROM_DATE: {
+				Integer deltaFromDateInt = deltaFromAndToDateMap.get(DELTA_FROM_DATE);
+				result.put(DELTA_FROM_DATE, deltaFromDateInt != null ? deltaFromDateInt.toString() : null);
+				break;
+			}
+
+			case DELTA_TO_DATE: {
+				Integer deltaToDateInt = deltaFromAndToDateMap.get(DELTA_TO_DATE);
+				result.put(DELTA_TO_DATE, deltaToDateInt != null ? deltaToDateInt.toString() : null);
+				break;
+			}
+
+			case "previousPublishedPackage":
+				result.put("previousPublishedPackage", buildConfig.getPreviousPublishedPackage());
+				break;
+
+			case "includedModules": {
+				List<ConceptMini> list = buildIncludedModules(buildConfig, preferredTermMap);
+				if (!list.isEmpty()) {
+					result.put("includedModules", list);
 				}
-			};
-		} catch (JSONException ex) {
+				break;
+			}
+
+			case "languageRefsets": {
+				List<ConceptMini> list = buildLanguageRefsets(languagesRefsets, preferredTermMap);
+				if (!list.isEmpty()) {
+					result.put("languageRefsets", list);
+				}
+				break;
+			}
+
+			case "licenceStatement":
+				result.put("licenceStatement",
+						buildConfig.getLicenceStatement() != null ? buildConfig.getLicenceStatement() : "");
+				break;
+
+			default:
+				// ignore unknown keys
+				break;
+		}
+	}
+
+
+	private List<ConceptMini> buildIncludedModules(BuildConfiguration buildConfig,
+	                                                         Map<String, String> preferredTermMap) {
+		java.util.Set<String> extensionModules = buildConfig.getExtensionConfig() != null
+				? buildConfig.getExtensionConfig().getModuleIdsSet()
+				: null;
+		List<ConceptMini> list = new ArrayList<>();
+		if (extensionModules != null) {
+			for (String moduleIdRaw : extensionModules) {
+				String moduleId = moduleIdRaw.trim();
+				ConceptMini conceptMini = new ConceptMini();
+				conceptMini.setId(moduleId);
+				conceptMini.setTerm(preferredTermMap.getOrDefault(moduleId, ""));
+				list.add(conceptMini);
+			}
+		}
+		return list;
+	}
+
+	private List<ConceptMini> buildLanguageRefsets(List<RefsetType> languagesRefsets,
+	                                                         Map<String, String> preferredTermMap) {
+		List<ConceptMini> list = new ArrayList<>();
+		for (RefsetType refsetType : languagesRefsets) {
+			String languageRefsetId = String.valueOf(refsetType.getId()).trim();
+			ConceptMini conceptMini = new ConceptMini();
+			conceptMini.setId(languageRefsetId);
+			conceptMini.setTerm(preferredTermMap.containsKey(languageRefsetId)
+					? preferredTermMap.get(languageRefsetId)
+					: refsetType.getLabel());
+			list.add(conceptMini);
+		}
+		return list;
+	}
+
+
+	private JsonObject parseAdditionalReleaseInformationJSON(String additionalFields) {
+		try {
+			return JsonParser.parseString(additionalFields).getAsJsonObject();
+		} catch (JsonParseException ex) {
 			throw new BusinessServiceRuntimeException("Failed to parse the additional fields to JSON object.", ex);
 		}
 	}
+
 
 	private List<RefsetType> getLanguageRefsets(Build build) {
 		List<RefsetType> languagesRefsets = new ArrayList<>();
@@ -1140,8 +1243,8 @@ public class BuildServiceImpl implements BuildService {
 			}
 		}
 
-		result.put("deltaFromDate", previousReleaseDateStr != null ? Integer.valueOf(previousReleaseDateStr) : null);
-		result.put("deltaToDate", Integer.valueOf(RF2Constants.DATE_FORMAT.format(configuration.getEffectiveTime())));
+		result.put(DELTA_FROM_DATE, previousReleaseDateStr != null ? Integer.valueOf(previousReleaseDateStr) : null);
+		result.put(DELTA_TO_DATE, Integer.valueOf(RF2Constants.DATE_FORMAT.format(configuration.getEffectiveTime())));
 
 		return result;
 	}
