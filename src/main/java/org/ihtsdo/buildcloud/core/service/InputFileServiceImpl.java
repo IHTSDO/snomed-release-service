@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipEntry;
@@ -253,7 +254,7 @@ public class InputFileServiceImpl implements InputFileService {
 			BuildConfiguration buildConfiguration = build.getConfiguration();
 			final long branchHeadTimestamp = termServerService.getBranch(buildConfiguration.getBranchPath()).getHeadTimestamp();
 			fileExported = termServerService.export(buildConfiguration.getBranchPath(), buildConfiguration.getEffectiveTimeSnomedFormat(),
-					buildConfiguration.getExtensionConfig() != null ? buildConfiguration.getExtensionConfig().getModuleIdsSet() : null, SnowstormRestClient.ExportCategory.valueOf(buildConfiguration.getExportType()));
+					buildConfiguration.getExtensionConfig() != null ? new HashSet<>(buildConfiguration.getExtensionConfig().getModuleIdsAsList()) : null, SnowstormRestClient.ExportCategory.valueOf(buildConfiguration.getExportType()));
 			build.getQaTestConfig().setContentHeadTimestamp(branchHeadTimestamp);
 			buildDAO.updateQATestConfig(build);
 			//Test whether the exported file is really a zip file

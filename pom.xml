@@ -9,7 +9,7 @@
 	<parent>
 		<groupId>org.snomed</groupId>
 		<artifactId>snomed-parent-bom</artifactId>
-		<version>3.13.0</version>
+		<version>3.14.0-SNAPSHOT</version>
 	</parent>
 
 	<properties>
@@ -95,6 +95,10 @@
 			<groupId>org.javassist</groupId>
 			<artifactId>javassist</artifactId>
 			<version>3.25.0-GA</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-xml</artifactId>
 		</dependency>
 
 		<!-- Jira -->

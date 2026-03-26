@@ -2,19 +2,17 @@ package org.ihtsdo.buildcloud.core.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.commons.lang3.time.DateFormatUtils;
-import org.hibernate.annotations.Type;
-
 import jakarta.persistence.*;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.hibernate.type.YesNoConverter;
+import org.ihtsdo.buildcloud.core.entity.helper.CollectionConverter;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.text.ParseException;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Entity
 @Table(name="extension_config")
@@ -64,9 +62,8 @@ public class ExtensionConfig implements Serializable {
 		this.defaultModuleId = defaultModuleId;
 	}
 
-	public Set<String> getModuleIdsSet() {
-		if (moduleIds == null) return null;
-		return Arrays.stream(moduleIds.split(",")).map(String::trim).collect(Collectors.toSet());
+	public List<String> getModuleIdsAsList() {
+		return moduleIds == null ? Collections.emptyList() : CollectionConverter.convertToEntityAttribute(moduleIds);
 	}
 
 	public String getModuleIds() {

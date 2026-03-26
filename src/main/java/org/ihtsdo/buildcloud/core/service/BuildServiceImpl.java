@@ -20,10 +20,14 @@ import org.ihtsdo.buildcloud.core.entity.Build.Status;
 import org.ihtsdo.buildcloud.core.entity.PreConditionCheckReport.State;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.manifest.*;
+import org.ihtsdo.buildcloud.core.manifest.generation.ReleaseManifestService;
 import org.ihtsdo.buildcloud.core.releaseinformation.ConceptMini;
 import org.ihtsdo.buildcloud.core.service.build.*;
 import org.ihtsdo.buildcloud.core.service.build.readme.ReadmeGenerator;
-import org.ihtsdo.buildcloud.core.service.build.transform.*;
+import org.ihtsdo.buildcloud.core.service.build.transform.StreamingFileTransformation;
+import org.ihtsdo.buildcloud.core.service.build.transform.TransformationException;
+import org.ihtsdo.buildcloud.core.service.build.transform.TransformationFactory;
+import org.ihtsdo.buildcloud.core.service.build.transform.TransformationService;
 import org.ihtsdo.buildcloud.core.service.helper.ManifestXmlFileParser;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
@@ -37,10 +41,14 @@ import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.buildcloud.telemetry.client.TelemetryStream;
 import org.ihtsdo.otf.jms.MessagingHelper;
 import org.ihtsdo.otf.resourcemanager.ResourceManager;
+import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.exception.*;
 import org.ihtsdo.otf.utils.FileUtils;
 import org.ihtsdo.otf.utils.ZipFileUtils;
-import org.ihtsdo.snomed.util.rf2.schema.*;
+import org.ihtsdo.snomed.util.rf2.schema.ComponentType;
+import org.ihtsdo.snomed.util.rf2.schema.FileRecognitionException;
+import org.ihtsdo.snomed.util.rf2.schema.SchemaFactory;
+import org.ihtsdo.snomed.util.rf2.schema.TableSchema;
 import org.ihtsdo.sso.integration.SecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -163,6 +171,9 @@ public class BuildServiceImpl implements BuildService {
 	@Autowired
 	private ModuleStorageCoordinator moduleStorageCoordinator;
 
+	@Autowired
+	private ReleaseManifestService releaseManifestService;
+
 	@PostConstruct
 	public void init() {
 		dailyBuildResourceManager = new ResourceManager(dailyBuildResourceConfig, cloudResourceLoader);
@@ -221,6 +232,10 @@ public class BuildServiceImpl implements BuildService {
 				build.setConfiguration(configuration);
 			}
 			build.setQaTestConfig(product.getQaTestConfig());
+
+			ManifestConfig manifestConfig = product.getManifestConfig();
+			build.setManifestConfig(manifestConfig);
+
 			if (build.getQaTestConfig() != null) {
 				QATestConfig qaTestConfig = objectMapper.readValue(objectMapper.writeValueAsString(build.getQaTestConfig()), QATestConfig.class);
 				qaTestConfig.setMaxFailureExport(buildRequest.getMaxFailuresExport() != null ? buildRequest.getMaxFailuresExport() : 100);
@@ -229,6 +244,9 @@ public class BuildServiceImpl implements BuildService {
 			}
 			build.setBuildUser(user);
 			build.setUserRoles(userRoles);
+
+			// generate manifest xml
+			String manifestXml = generateManifestXml(build, manifestConfig);
 
 			// create build status tracker
 			BuildStatusTracker tracker = new BuildStatusTracker();
@@ -241,15 +259,34 @@ public class BuildServiceImpl implements BuildService {
 			MDC.put(MDC_BUILD_KEY, build.getUniqueId());
 			dao.save(build);
 
-			// copy manifest.xml
-			dao.copyManifestFileFromProduct(build);
+			// upload or copy manifest file
+			uploadManifestFile(manifestXml, build);
+
 			LOGGER.info("Release build {} created for product {}", build.getId(), productKey);
 		} catch (Exception e) {
-			throw new BusinessServiceException("Failed to create build for product " + productKey, e);
+			throw new BusinessServiceException("Failed to create build for product " + productKey + ". Error message: " + e.getMessage(), e);
 		} finally {
 			MDC.remove(MDC_BUILD_KEY);
 		}
 		return build;
+	}
+
+	private void uploadManifestFile(String manifestXml, Build build) throws IOException {
+		if (StringUtils.hasLength(manifestXml)) {
+			try (InputStream inputStream = new ByteArrayInputStream(manifestXml.getBytes(StandardCharsets.UTF_8))) {
+				dao.putManifestFile(build, inputStream);
+			}
+		} else {
+			// copy manifest.xml
+			dao.copyManifestFileFromProduct(build);
+		}
+	}
+
+	private String generateManifestXml(Build build, ManifestConfig manifestConfig) throws BusinessServiceException, RestClientException {
+		if (StringUtils.hasLength(build.getConfiguration().getBranchPath()) && manifestConfig != null && manifestConfig.isAutoGenerateManifest()) {
+			return releaseManifestService.generateManifestXml(manifestConfig, build.getReleaseCenterKey(), build.getConfiguration().getBranchPath(), build.getConfiguration().getEffectiveTimeSnomedFormat(), build.getConfiguration().isDailyBuild(), build.getConfiguration().isBetaRelease());
+		}
+		return null;
 	}
 
 	private void validateBuildConfig(BuildConfiguration buildConfiguration, Date buildEffectiveTime, String branchPath) throws BadConfigurationException {
@@ -258,7 +295,7 @@ public class BuildServiceImpl implements BuildService {
 		}
 		ExtensionConfig extensionConfig = buildConfiguration.getExtensionConfig();
 		if (extensionConfig != null) {
-			if (extensionConfig.getModuleIdsSet() == null || extensionConfig.getModuleIdsSet().isEmpty()) {
+			if (extensionConfig.getModuleIdsAsList() == null || extensionConfig.getModuleIdsAsList().isEmpty()) {
 				throw new BadConfigurationException("The module ids must be set for " + (!StringUtils.hasLength(branchPath) ? "a derivative product." : "an extension build."));
 			}
 			if (extensionConfig.getNamespaceId() == null || extensionConfig.getNamespaceId().isEmpty()) {
@@ -814,7 +851,7 @@ public class BuildServiceImpl implements BuildService {
 
 			Set<String> expectedModules =  new HashSet<>();
 			if (build.getConfiguration().getExtensionConfig() != null) {
-				expectedModules = build.getConfiguration().getExtensionConfig().getModuleIdsSet();
+				expectedModules = new HashSet<>(build.getConfiguration().getExtensionConfig().getModuleIdsAsList());
 			}
 			Set<ModuleMetadata> dependencies = moduleStorageCoordinator.getDependencies(mdrsRows, expectedModules, true);
 			File extractedDirectory = null;
@@ -1141,7 +1178,7 @@ public class BuildServiceImpl implements BuildService {
 	private List<ConceptMini> buildIncludedModules(BuildConfiguration buildConfig,
 	                                                         Map<String, String> preferredTermMap) {
 		java.util.Set<String> extensionModules = buildConfig.getExtensionConfig() != null
-				? buildConfig.getExtensionConfig().getModuleIdsSet()
+				? new HashSet<>(buildConfig.getExtensionConfig().getModuleIdsAsList())
 				: null;
 		List<ConceptMini> list = new ArrayList<>();
 		if (extensionModules != null) {
@@ -1382,8 +1419,8 @@ public class BuildServiceImpl implements BuildService {
 				if (StringUtils.hasLength(extensionConfig.getDefaultModuleId())) {
 					defaultModuleId = extensionConfig.getDefaultModuleId();
 				} else {
-					if (!CollectionUtils.isEmpty(extensionConfig.getModuleIdsSet()) && extensionConfig.getModuleIdsSet().size() == 1) {
-						defaultModuleId = extensionConfig.getModuleIdsSet().iterator().next();
+					if (!CollectionUtils.isEmpty(extensionConfig.getModuleIdsAsList()) && extensionConfig.getModuleIdsAsList().size() == 1) {
+						defaultModuleId = extensionConfig.getModuleIdsAsList().get(0);
 					}
 				}
 			}

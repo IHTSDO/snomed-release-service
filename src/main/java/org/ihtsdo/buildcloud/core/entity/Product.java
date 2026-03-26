@@ -43,6 +43,9 @@ public class Product {
 	@OneToOne(mappedBy="product", cascade=CascadeType.ALL)
 	private QATestConfig qaTestConfig;
 
+	@OneToOne(mappedBy="product", cascade=CascadeType.ALL)
+	private ManifestConfig manifestConfig;
+
 	@Convert(converter = YesNoConverter.class)
 	@Column(name = "legacy_product")
 	private boolean isLegacyProduct;
@@ -72,6 +75,14 @@ public class Product {
 
 	public void setQaTestConfig(final QATestConfig qaTestConfig) {
 		this.qaTestConfig = qaTestConfig;
+	}
+
+	public ManifestConfig getManifestConfig() {
+		return manifestConfig;
+	}
+
+	public void setManifestConfig(ManifestConfig manifestConfig) {
+		this.manifestConfig = manifestConfig;
 	}
 
 	public BuildConfiguration getBuildConfiguration() {

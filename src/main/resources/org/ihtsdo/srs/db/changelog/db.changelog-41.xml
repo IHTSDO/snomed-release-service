@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd">
+
+    <changeSet author="qly" id="20260326">
+        <createTable tableName="manifest_config">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="auto_generate_manifest" type="char(1)" defaultValue="N"/>
+            <column name="derivative_product" type="char(1)" defaultValue="N"/>
+            <column name="include_product_namespace_in_package" type="char(1)" defaultValue="N"/>
+            <column name="excluded_refsets" type="TEXT"/>
+            <column name="product_name" type="VARCHAR(100)"/>
+            <column name="product_namespace" type="VARCHAR(255)"/>
+            <column name="product_id" type="BIGINT"/>
+            <column name="package_effective_time" type="datetime"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
+
+
+
+
+
+

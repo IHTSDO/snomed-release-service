@@ -56,7 +56,13 @@ public interface ProductService extends EntityService<Product> {
 	String DEFAULT_BRANCH_PATH = "defaultBranchPath";
 	String INTERNATIONAL = "international";
 	String OVERRIDDEN_SNOMEDCT_PRODUCT = "overriddenSnomedCtProduct";
-
+	String AUTO_GENERATE_MANIFEST = "autoGenerateManifest";
+	String DERIVATIVE_PRODUCT = "derivativeProduct";
+	String INCLUDE_PRODUCT_NAMESPACE_IN_PACKAGE = "includeProductNamespaceInPackage";
+	String PRODUCT_NAME = "productName";
+	String PRODUCT_NAMESPACE = "productNamespace";
+	String EXCLUDED_REFSETS = "excludedRefsets";
+	String PACKAGE_EFFECTIVE_TIME = "packageEffectiveTime";
 	Page<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions, Pageable pageable, boolean includedLatestBuildStatusAndTags);
 
 	Product getDailyBuildProductForCodeSystem(String codeSystemShortName);

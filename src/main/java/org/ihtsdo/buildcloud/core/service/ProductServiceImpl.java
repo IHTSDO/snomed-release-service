@@ -7,6 +7,7 @@ import org.ihtsdo.buildcloud.core.dao.ExtensionConfigDAO;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.dao.ReleaseCenterDAO;
 import org.ihtsdo.buildcloud.core.entity.*;
+import org.ihtsdo.buildcloud.core.entity.helper.CollectionConverter;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
@@ -242,6 +243,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		try {
 			updateProductBuildConfiguration(newPropertyValues, product);
 			updateProductQaTestConfig(newPropertyValues, product);
+			updateProductManifestConfig(newPropertyValues, product);
 
 			if (newPropertyValues.containsKey(STAND_ALONE_PRODUCT)) {
 				product.setStandAloneProduct(TRUE.equals(newPropertyValues.get(STAND_ALONE_PRODUCT)));
@@ -310,25 +312,17 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		update(product);
 	}
 
-	private void updateProductQaTestConfig(final Map<String, String> newPropertyValues, final Product product) {
+	private void updateProductQaTestConfig(final Map<String, String> newPropertyValues, final Product product) throws NoSuchFieldException {
 		QATestConfig qaTestConfig = product.getQaTestConfig();
 		if (qaTestConfig == null) {
 			qaTestConfig = new QATestConfig();
 			qaTestConfig.setProduct(product);
 			product.setQaTestConfig(qaTestConfig);
 		}
-		if (newPropertyValues.containsKey(ASSERTION_GROUP_NAMES)) {
-			qaTestConfig.setAssertionGroupNames(newPropertyValues.get(ASSERTION_GROUP_NAMES));
-		}
-		if (newPropertyValues.containsKey(ENABLE_DROOLS)) {
-			qaTestConfig.setEnableDrools(TRUE.equals(newPropertyValues.get(ENABLE_DROOLS)));
-		}
-		if (newPropertyValues.containsKey(ENABLE_MRCM)) {
-			qaTestConfig.setEnableMRCMValidation(TRUE.equals(newPropertyValues.get(ENABLE_MRCM)));
-		}
-		if (newPropertyValues.containsKey(DROOLS_RULES_GROUP_NAMES)) {
-			qaTestConfig.setDroolsRulesGroupNames(newPropertyValues.get(DROOLS_RULES_GROUP_NAMES));
-		}
+		setConfigurationValueIfPresent(newPropertyValues, ASSERTION_GROUP_NAMES, qaTestConfig, ASSERTION_GROUP_NAMES, false);
+		setConfigurationValueIfPresent(newPropertyValues, ENABLE_DROOLS, qaTestConfig, ENABLE_DROOLS, true);
+		setConfigurationValueIfPresent(newPropertyValues, ENABLE_MRCM, qaTestConfig, "enableMRCMValidation", true);
+		setConfigurationValueIfPresent(newPropertyValues, DROOLS_RULES_GROUP_NAMES, qaTestConfig, DROOLS_RULES_GROUP_NAMES, false);
 	}
 
 	private void updateProductBuildConfiguration(final Map<String, String> newPropertyValues, final Product product)
@@ -367,6 +361,62 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		validateDelaFilesThenSet(newPropertyValues, REMOVE_RF2_FILES, "Remove RF2 Files only allow the Delta filenames", configuration);
 
 		setExtensionConfig(newPropertyValues, configuration);
+	}
+
+	private void updateProductManifestConfig(Map<String, String> newPropertyValues, Product product) throws BadRequestException, NoSuchFieldException {
+		final ManifestConfig manifestConfig = getOrCreateManifestConfig(product);
+		setConfigurationValueIfPresent(newPropertyValues, AUTO_GENERATE_MANIFEST, manifestConfig, AUTO_GENERATE_MANIFEST, true);
+		setConfigurationValueIfPresent(newPropertyValues, DERIVATIVE_PRODUCT, manifestConfig, DERIVATIVE_PRODUCT, true);
+		setConfigurationValueIfPresent(newPropertyValues, INCLUDE_PRODUCT_NAMESPACE_IN_PACKAGE, manifestConfig, INCLUDE_PRODUCT_NAMESPACE_IN_PACKAGE, true);
+		setConfigurationValueIfPresent(newPropertyValues, PRODUCT_NAME, manifestConfig, PRODUCT_NAME, false);
+		setConfigurationValueIfPresent(newPropertyValues, PRODUCT_NAMESPACE, manifestConfig, PRODUCT_NAMESPACE, false);
+
+		setExcludedRefsetsIfPresent(newPropertyValues, manifestConfig);
+		setPackageEffectiveTimeIfPresent(newPropertyValues, manifestConfig);
+	}
+
+	private ManifestConfig getOrCreateManifestConfig(Product product) {
+		ManifestConfig manifestConfig = product.getManifestConfig();
+		if (manifestConfig == null) {
+			manifestConfig = new ManifestConfig();
+			manifestConfig.setProduct(product);
+			product.setManifestConfig(manifestConfig);
+		}
+		return manifestConfig;
+	}
+
+	private void setExcludedRefsetsIfPresent(final Map<String, String> newPropertyValues, final ManifestConfig manifestConfig) {
+		if (!newPropertyValues.containsKey(EXCLUDED_REFSETS)) {
+			return;
+		}
+
+		String excludedRefsets = newPropertyValues.get(EXCLUDED_REFSETS);
+		if (StringUtils.hasLength(excludedRefsets)) {
+			manifestConfig.setExcludedRefsets(CollectionConverter.convertToDatabaseColumn(
+					Arrays.stream(excludedRefsets.split(","))
+							.map(String::trim)
+							.toList()));
+		} else {
+			manifestConfig.setExcludedRefsets(null);
+		}
+	}
+
+	private void setPackageEffectiveTimeIfPresent(final Map<String, String> newPropertyValues, final ManifestConfig manifestConfig) throws BadRequestException {
+		if (!newPropertyValues.containsKey(PACKAGE_EFFECTIVE_TIME)) {
+			return;
+		}
+
+		final String packageEffectiveTimeValue = newPropertyValues.get(PACKAGE_EFFECTIVE_TIME);
+		if (StringUtils.hasLength(packageEffectiveTimeValue)) {
+			try {
+				final Date date = DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(packageEffectiveTimeValue);
+				manifestConfig.setPackageEffectiveTime(date);
+			} catch (final ParseException e) {
+				throw new BadRequestException("Invalid Package EffectiveTime format. Expecting format " + DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.getPattern() + ".", e);
+			}
+		} else {
+			manifestConfig.setPackageEffectiveTime(null);
+		}
 	}
 
 	private void validateDelaFilesThenSet(Map<String, String> newPropertyValues, String propertyName, String message, BuildConfiguration configuration) throws BusinessServiceException, NoSuchFieldException {

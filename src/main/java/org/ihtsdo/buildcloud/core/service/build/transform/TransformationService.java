@@ -376,8 +376,8 @@ public class TransformationService {
 			namespaceId = Integer.parseInt(extConfig.getNamespaceId());
 			if (StringUtils.hasLength(extConfig.getDefaultModuleId())) {
 				moduleId = extConfig.getDefaultModuleId();
-			} else if (!CollectionUtils.isEmpty(extConfig.getModuleIdsSet())) {
-				moduleId = extConfig.getModuleIdsSet().iterator().next();
+			} else if (!CollectionUtils.isEmpty(extConfig.getModuleIdsAsList())) {
+				moduleId = extConfig.getModuleIdsAsList().get(0);
 			}
 		}
 		LOGGER.info("NamespaceId:" + namespaceId +  " module id:" + moduleId);

@@ -59,15 +59,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -85,6 +77,7 @@ public class BuildDAOImpl implements BuildDAO {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuildDAOImpl.class);
 
 	private static final String INTERNATIONAL = "international";
+	public static final String MANIFEST_XML = "manifest.xml";
 
 	private final ExecutorService executorService;
 
@@ -202,16 +195,22 @@ public class BuildDAOImpl implements BuildDAO {
 		LOGGER.debug("Saving build {} for product {}", build.getId(), build.getProductKey());
 		File configJson = toJson(build.getConfiguration());
 		File qaConfigJson = toJson(build.getQaTestConfig());
+		File manifestConfigJson = toJson(build.getManifestConfig());
 		try (FileInputStream buildConfigInputStream = new FileInputStream(configJson);
-			 FileInputStream qaConfigInputStream = new FileInputStream(qaConfigJson)) {
+			 FileInputStream qaConfigInputStream = new FileInputStream(qaConfigJson);
+			 FileInputStream manifestConfigInputStream = new FileInputStream(manifestConfigJson)) {
 			s3Client.putObject(buildBucketName, pathHelper.getBuildConfigFilePath(build), buildConfigInputStream, ObjectMetadata.builder().build(), configJson.length());
 			s3Client.putObject(buildBucketName, pathHelper.getQATestConfigFilePath(build), qaConfigInputStream, ObjectMetadata.builder().build(), qaConfigJson.length());
+			s3Client.putObject(buildBucketName, pathHelper.getManifestConfigFilePath(build), manifestConfigInputStream, ObjectMetadata.builder().build(), manifestConfigJson.length());
 		} finally {
 			if (configJson != null) {
                 Files.deleteIfExists(configJson.toPath());
 			}
 			if (qaConfigJson != null) {
                 Files.deleteIfExists(qaConfigJson.toPath());
+			}
+			if (manifestConfigJson != null) {
+				Files.deleteIfExists(manifestConfigJson.toPath());
 			}
 		}
 
@@ -1553,7 +1552,7 @@ public class BuildDAOImpl implements BuildDAO {
 	@Override
 	public void putManifestFile(Build build, InputStream inputStream) throws IOException {
 		final String filePath = pathHelper.getBuildManifestDirectoryPath(build);
-		srsFileHelper.putFile(inputStream, filePath + "manifest.xml");
+		srsFileHelper.putFile(inputStream, filePath + MANIFEST_XML);
 	}
 
 	@Override

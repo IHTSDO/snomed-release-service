@@ -46,6 +46,7 @@ public class S3PathHelper {
 	public static final String MARK_AS_DELETED = "MARK_AS_DELETED";
 	public static final String BUILD_LOG_TXT = "build_log.txt";
 	public static final String QA_CONFIG_JSON = "qa-test-config.json";
+	public static final String MANIFEST_CONFIG_JSON = "manifest-config.json";
 	private static final String INPUT_PREPARE_REPORT_JSON = "input-prepare-report.json";
 	private static final String INPUT_GATHER_REPORT_JSON = "input-gather-report.json";
 	public static final String PRE_CONDITION_CHECKS_REPORT = "pre-condition-checks-report.json";
@@ -246,5 +247,9 @@ public class S3PathHelper {
 		return getReleaseCenterPath(releaseCenterKey, externallyMaintainedStoragePath)
 				.append(dateString)
 				.append(SEPARATOR).toString();
+	}
+
+	public String getManifestConfigFilePath(Build build) {
+		return getFilePath(build, MANIFEST_CONFIG_JSON);
 	}
 }

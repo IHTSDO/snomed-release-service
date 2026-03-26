@@ -5,13 +5,12 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.ihtsdo.otf.constants.Concepts;
 import org.ihtsdo.otf.rest.client.RestClientException;
+import org.ihtsdo.otf.rest.client.terminologyserver.Page;
 import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient;
 import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportCategory;
 import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportType;
 import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClientFactory;
-import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
-import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
-import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystemVersion;
+import org.ihtsdo.otf.rest.client.terminologyserver.pojo.*;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.utils.ZipFileUtils;
 import org.slf4j.Logger;
@@ -23,6 +22,7 @@ import org.springframework.util.Assert;
 import java.io.*;
 import java.nio.file.*;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -157,6 +157,23 @@ public class TermServerServiceImpl implements TermServerService {
 		return snowstormRestClient.eclQuery(branchPath, "<<" + Concepts.MODULE, 1000);
 	}
 
+	@Override
+	public Map<String, ConceptMiniPojo> getRefsetsWithTypeInformation(String branchPath, String module) {
+		SnowstormRestClient snowstormRestClient = getSnowstormClient();
+		return snowstormRestClient.getRefsetsWithTypeInformation(branchPath, module);
+	}
+
+	@Override
+	public ConceptMiniResponse getConcepts(String memberAnnotationStringRefset, String branchPath, String moduleFilter) throws RestClientException {
+		SnowstormRestClient snowstormRestClient = getSnowstormClient();
+		return snowstormRestClient.getConceptMinis(branchPath, memberAnnotationStringRefset,  moduleFilter != null ? moduleFilter : null, 10_000);
+	}
+
+	@Override
+	public Page<RefsetMember> getRefsetMembers(String refsetId, String branchPath, boolean activeOnly, int limit, String searchAfter) {
+		SnowstormRestClient snowstormRestClient = getSnowstormClient();
+		return snowstormRestClient.getRefsetMembers(refsetId, branchPath, activeOnly, limit, searchAfter);
+	}
 
 	public void unzipFlat(File archive, File targetDir) throws BusinessServiceException, IOException {
 

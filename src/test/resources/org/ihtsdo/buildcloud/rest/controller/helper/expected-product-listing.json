@@ -55,6 +55,7 @@
     "enableTraceabilityValidation" : false,
     "contentHeadTimestamp" : null
   },
+  "manifestConfig" : null,
   "visibility" : false,
   "standAloneProduct" : false,
   "overriddenSnomedCtProduct" : null,

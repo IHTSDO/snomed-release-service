@@ -7,11 +7,9 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import org.ihtsdo.buildcloud.config.Config;
 import org.ihtsdo.buildcloud.core.service.TermServerService;
 import org.ihtsdo.otf.rest.client.RestClientException;
-import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient;
+import org.ihtsdo.otf.rest.client.terminologyserver.Page;
 import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient.ExportCategory;
-import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
-import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
-import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystemVersion;
+import org.ihtsdo.otf.rest.client.terminologyserver.pojo.*;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
@@ -28,6 +26,7 @@ import org.testcontainers.junit.jupiter.Container;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @PropertySource(value = "classpath:application.properties", encoding = "UTF-8")
@@ -112,6 +111,21 @@ public class TestConfig extends Config {
 			@Override
 			public Set<String> getModulesForBranch(String branchPath) throws RestClientException {
 				return Collections.emptySet();
+			}
+
+			@Override
+			public Map<String, ConceptMiniPojo> getRefsetsWithTypeInformation(String branchPath, String module) {
+				return null;
+			}
+
+			@Override
+			public ConceptMiniResponse getConcepts(String memberAnnotationStringRefset, String branchPath, String moduleFilter) {
+				return null;
+			}
+
+			@Override
+			public Page<RefsetMember> getRefsetMembers(String refsetId, String branchPath, boolean activeOnly, int limit, String searchAfter) {
+				return null;
 			}
 		};
 	}

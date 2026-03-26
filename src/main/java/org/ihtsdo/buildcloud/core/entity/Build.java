@@ -34,6 +34,8 @@ public class Build {
 
 	private BuildConfiguration configuration;
 
+	private ManifestConfig manifestConfig;
+
 	private String releaseCenterKey;
 
 	private String productKey;
@@ -159,6 +161,14 @@ public class Build {
 
 	public void setConfiguration(final BuildConfiguration configuration) {
 		this.configuration = configuration;
+	}
+
+	public ManifestConfig getManifestConfig() {
+		return manifestConfig;
+	}
+
+	public void setManifestConfig(ManifestConfig manifestConfig) {
+		this.manifestConfig = manifestConfig;
 	}
 
 	public List<PreConditionCheckReport> getPreConditionCheckReports() {
