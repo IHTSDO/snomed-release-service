@@ -2,14 +2,20 @@ package org.ihtsdo.buildcloud.rest.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
-import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
+import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
+import org.ihtsdo.buildcloud.core.entity.ManifestConfig;
 import org.ihtsdo.buildcloud.core.entity.Product;
+import org.ihtsdo.buildcloud.core.manifest.generation.ReleaseManifestService;
+import org.ihtsdo.buildcloud.core.service.ProductService;
+import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
+import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.rest.controller.helper.PageRequestHelper;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser;
-import org.ihtsdo.buildcloud.core.service.ProductService;
-import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
+import org.ihtsdo.otf.rest.client.RestClientException;
+import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
@@ -24,24 +30,29 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import java.io.IOException;
 import java.util.*;
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
-@Controller
+@RestController
 @RequestMapping("/centers/{releaseCenterKey}/products")
 @Tag(name = "Product", description = "-")
-public class ProductController {
+	public class ProductController {
 
-	@Autowired
-	private ProductService productService;
+	private final ProductService productService;
 
-	@Autowired
-	private HypermediaGenerator hypermediaGenerator;
+	private final HypermediaGenerator hypermediaGenerator;
+
+	private final ReleaseManifestService releaseManifestService;
 
 	public static final String[] PRODUCT_LINKS = {"manifest", "builds"};
+
+	@Autowired
+	public ProductController(ProductService productService, HypermediaGenerator hypermediaGenerator, ReleaseManifestService releaseManifestService) {
+		this.productService = productService;
+		this.hypermediaGenerator = hypermediaGenerator;
+		this.releaseManifestService = releaseManifestService;
+	}
 
 	@GetMapping
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
@@ -78,7 +89,6 @@ public class ProductController {
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@Operation(summary = "Returns a list of  hidden products",
 			description = "Returns a list of hidden products for the extension specified in the URL")
-	@ResponseBody
 	public Page<Map<String, Object>> getHiddenProducts(@PathVariable String releaseCenterKey,
 	                                             @RequestParam(defaultValue = "0") Integer pageNumber,
 	                                             @RequestParam(defaultValue = "10") Integer pageSize,
@@ -99,9 +109,8 @@ public class ProductController {
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@Operation(summary = "Returns a product",
 			description = "Returns a single product object for a given product key")
-	@ResponseBody
 	public Map<String, Object> getProduct(@PathVariable String releaseCenterKey, @PathVariable String productKey,
-			HttpServletRequest request) throws BusinessServiceException {
+			HttpServletRequest request) {
 		Product product = productService.find(releaseCenterKey, productKey, true);
 		
 		if (product == null) {
@@ -131,7 +140,6 @@ public class ProductController {
 
 	@PatchMapping(value = "/{productKey}", consumes = MediaType.APPLICATION_JSON_VALUE)
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ResponseBody
 	@Operation(summary = "Update a product",
 			description = "Updates an existing product with new details and returns updated product")
 	public Map<String, Object> updateProduct(@PathVariable String releaseCenterKey, @PathVariable String productKey,
@@ -150,7 +158,6 @@ public class ProductController {
 	// See http://stackoverflow.com/questions/25163131/httpurlconnection-invalid-http-method-patch
 	@PutMapping(value = "/{productKey}/configuration", consumes = MediaType.APPLICATION_JSON_VALUE)
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ResponseBody
 	@Operation(summary = "Update a product",
 			description = "Updates an existing product with new details and returns updated product")
 	public Map<String, Object> updateProduct2(@PathVariable String releaseCenterKey, @PathVariable String productKey,
@@ -165,12 +172,44 @@ public class ProductController {
 
 	@PostMapping(value = "/{productKey}/visibility")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-	@ResponseBody
 	@Operation(summary = "Update visibility for product",
 			description = "Update an existing product with the visibility flag")
 	public ResponseEntity<Void> updateProductVisibility(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 													   @RequestParam(required = true, defaultValue = "true") boolean visibility) throws IOException {
 		productService.updateVisibility(releaseCenterKey, productKey, visibility);
 		return new ResponseEntity<>(HttpStatus.OK);
+	}
+
+	@PostMapping(value = "/{productKey}/manifest/generate",
+			consumes = MediaType.APPLICATION_JSON_VALUE,
+			produces = MediaType.APPLICATION_XML_VALUE)
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
+	@Operation(summary = "Generate manifest XML",
+			description = "Generates a release manifest from the request configuration and returns it as XML")
+	public ResponseEntity<String> generateManifest(@PathVariable final String releaseCenterKey,
+												   @PathVariable final String productKey,
+												   @RequestParam final String branchPath,
+												   @RequestBody final ManifestConfig manifestConfig)
+			throws ResourceNotFoundException, BusinessServiceException, RestClientException {
+		Product product = productService.find(releaseCenterKey, productKey, false);
+		if (product == null) {
+			throw new ResourceNotFoundException("Unable to find product: " + productKey);
+		}
+		BuildConfiguration buildConfiguration = product.getBuildConfiguration();
+		if (buildConfiguration == null) {
+			throw new BadConfigurationException("No configuration for product " + productKey);
+		}
+		if (buildConfiguration.getEffectiveTime() == null) {
+			throw new BadConfigurationException("Effective time has not been configured for product " + productKey);
+		}
+		if (manifestConfig == null) {
+			throw new BadRequestException("Manifest configuration is required.");
+		}
+
+		String manifestXml = releaseManifestService.generateManifestXml(manifestConfig, releaseCenterKey, branchPath,
+				buildConfiguration.getEffectiveTimeSnomedFormat(), buildConfiguration.isDailyBuild(), buildConfiguration.isBetaRelease());
+		return ResponseEntity.ok()
+				.contentType(MediaType.APPLICATION_XML)
+				.body(manifestXml);
 	}
 }
