@@ -27,7 +27,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -58,7 +57,6 @@ import java.util.*;
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@Operation(summary = "Returns a list of products",
 			description = "Returns a list of products for the extension specified in the URL")
-	@ResponseBody
 	public Page<Map<String, Object>> getProducts(@PathVariable String releaseCenterKey,
 												 @RequestParam(required = false) boolean includeRemoved,
 												 @RequestParam(required = false) boolean includeLegacy,
