@@ -29,7 +29,7 @@ public class GlobalControllerExceptionHandler {
 		return getErrorPayload(exception, HttpStatus.UNAUTHORIZED);
 	}
 
-	@ExceptionHandler(BadRequestException.class)
+	@ExceptionHandler({BadRequestException.class, MissingServletRequestParameterException.class, TypeMismatchException.class})
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	@ResponseBody
 	public Map<String, String> handleBadRequestError(Exception exception, HttpServletRequest request) {
@@ -51,14 +51,6 @@ public class GlobalControllerExceptionHandler {
 	public Map<String, String> handleResourceNotFoundError(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
 		return getErrorPayload(exception, HttpStatus.NOT_FOUND);
-	}
-
-	@ExceptionHandler({MissingServletRequestParameterException.class, TypeMismatchException.class})
-	@ResponseStatus(HttpStatus.BAD_REQUEST)
-	@ResponseBody
-	public Map<String, String> handleMissingServletRequestParameterException(Exception exception, HttpServletRequest request) {
-		logError(request, exception);
-		return getErrorPayload(exception, HttpStatus.BAD_REQUEST);
 	}
 
 	@ExceptionHandler(BadConfigurationException.class)

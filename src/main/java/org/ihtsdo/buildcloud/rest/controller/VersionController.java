@@ -12,8 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Version", description = "Build Version")
 public class VersionController {
 
-	@Autowired(required = false)
-	private BuildProperties buildProperties;
+	private final BuildProperties buildProperties;
+
+	public VersionController (@Autowired(required = false) BuildProperties buildProperties) {
+		this.buildProperties = buildProperties;
+	}
 
 	@Operation(summary = "Software build version and timestamp.")
 	@GetMapping(value = "/version", produces = "application/json")

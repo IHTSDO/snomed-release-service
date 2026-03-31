@@ -14,7 +14,6 @@ import org.easymock.EasyMock;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
 import org.ihtsdo.buildcloud.TestConfig;
-import org.ihtsdo.buildcloud.rest.controller.ProductController;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.Product;
@@ -32,6 +31,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.util.FileCopyUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.ihtsdo.buildcloud.core.service.ProductService.PRODUCT_LINKS;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestConfig.class)
@@ -74,7 +74,7 @@ class HypermediaGeneratorTest extends AbstractTest {
 		EasyMock.expect(mockServletRequest.getRequestURL()).andReturn(new StringBuffer("http://localhost/api/v1/centers/international/extensions/snomed_ct_international_edition/products/snomed_ct_international_edition/products")).anyTimes();
 		mocksControl.replay();
 
-		final List<Map<String, Object>> hypermedia = hypermediaGenerator.getEntityCollectionHypermedia(products, mockServletRequest, ProductController.PRODUCT_LINKS, "/products");
+		final List<Map<String, Object>> hypermedia = hypermediaGenerator.getEntityCollectionHypermedia(products, mockServletRequest, PRODUCT_LINKS.toArray(String[]::new), "/products");
 
 		mocksControl.verify();
 		assertNotNull(hypermedia);

@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.core.service;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -11,6 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface ProductService extends EntityService<Product> {
+
+	List<String> PRODUCT_LINKS = List.of("manifest", "builds");
 
 	String NAME = "name";
 	String EFFECTIVE_TIME = "effectiveTime";

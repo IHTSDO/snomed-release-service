@@ -16,7 +16,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Controller;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
@@ -26,25 +25,27 @@ import java.util.List;
 import java.util.UUID;
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
-@Controller
+@RestController
 @Tag(name = "Automated Test", description = "-")
 public class AutomatedTestController {
 
-    @Autowired
-    private BuildService buildService;
+    private final BuildService buildService;
+
+    private final AutomatedTestService automatedTestService;
 
     @Autowired
-    private AutomatedTestService automatedTestService;
+    public AutomatedTestController(BuildService buildService, AutomatedTestService automatedTestService) {
+        this.buildService = buildService;
+        this.automatedTestService = automatedTestService;
+    }
 
     @GetMapping(value = "/regression-test/test-reports")
-    @ResponseBody
     @Operation(summary = "Get all test reports")
     public List<BuildComparisonReport> getTestReports() {
         return automatedTestService.getAllTestReports();
     }
 
     @GetMapping(value = "/centers/{releaseCenterKey}/products/{productKey}/builds/compare/{compareId}")
-    @ResponseBody
     @Operation(summary = "Get test report for specific id")
     public BuildComparisonReport getTestReport(@PathVariable final String releaseCenterKey,
                                                @PathVariable final String productKey,
@@ -54,7 +55,6 @@ public class AutomatedTestController {
     }
 
     @DeleteMapping(value = "/centers/{releaseCenterKey}/products/{productKey}/builds/compare/{compareId}")
-    @ResponseBody
     @Operation(summary = "Delete test report for specific id")
     public void deleteTestReport(@PathVariable final String releaseCenterKey,
                                                @PathVariable final String productKey,
@@ -64,7 +64,6 @@ public class AutomatedTestController {
 
     @PostMapping(value = "/centers/{releaseCenterKey}/products/{productKey}/builds/compare")
     @IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
-    @ResponseBody
     @Operation(summary = "Compare 2 builds",
             description = "Compare 2 builds and put the report to product")
     public ResponseEntity<Void> compareBuilds(
@@ -82,7 +81,6 @@ public class AutomatedTestController {
     }
 
     @PostMapping(value = "/centers/{releaseCenterKey}/products/{productKey}/files/find-diff")
-    @ResponseBody
     @Operation(summary = "Compare file from 2 builds",
             description = "Compare files from 2 builds and put the report to product")
     public ResponseEntity<Void> compareFiles(
@@ -93,7 +91,7 @@ public class AutomatedTestController {
             @RequestParam final String fileName,
             @RequestParam(required = false) String compareId,
             @RequestParam(required = false, defaultValue = "false") boolean ignoreIdComparison,
-            final HttpServletRequest request) throws BusinessServiceException {
+            final HttpServletRequest request) {
         // Verify if the builds exist
         Build leftBuild  = buildService.find(releaseCenterKey, productKey, leftBuildId, false, false, false , null);
         Build rightBuild  = buildService.find(releaseCenterKey, productKey, rightBuildId, false, false, false , null);
@@ -108,7 +106,6 @@ public class AutomatedTestController {
     }
 
     @GetMapping(value = "/centers/{releaseCenterKey}/products/{productKey}/files/find-diff/{compareId}")
-    @ResponseBody
     public FileDiffReport getFileComparisonReport(
             @PathVariable final String releaseCenterKey,
             @PathVariable final String productKey,

@@ -6,31 +6,34 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.ihtsdo.buildcloud.core.service.PermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 import java.util.Set;
 
-@Controller
-@RequestMapping("/permissions")
+@RestController
+@RequestMapping(value = "/permissions", produces = {MediaType.APPLICATION_JSON_VALUE})
 @Tag(name = "Permissions", description = "-")
 public class PermissionController {
 
+    private final PermissionService permissionService;
+
     @Autowired
-    private PermissionService permissionService;
+    public PermissionController(PermissionService permissionService) {
+        this.permissionService = permissionService;
+    }
 
     @GetMapping(value = "/roles")
     @Operation(summary = "Returns a list all roles for a logged in user",
             description = "Returns a list of all roles visible to the currently logged in user")
-    @ResponseBody
     public ResponseEntity<Map<String, Set<String>>> getCurrentRoles(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication() ;
         if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {

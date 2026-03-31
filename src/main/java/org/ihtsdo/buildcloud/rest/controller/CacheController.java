@@ -19,11 +19,15 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Cache", description = "-")
 public class CacheController {
 
-    @Autowired
-    private CacheService cacheService;
+    private final CacheService cacheService;
+
+    private final BuildDAO buildDAO;
 
     @Autowired
-    private BuildDAO buildDAO;
+    public CacheController(CacheService cacheService, BuildDAO buildDAO) {
+        this.cacheService = cacheService;
+        this.buildDAO = buildDAO;
+    }
 
     @Operation(summary = "Clear all cache", description = "-")
     @PostMapping(value = "/clear-all")

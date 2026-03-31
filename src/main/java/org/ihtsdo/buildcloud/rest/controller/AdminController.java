@@ -26,11 +26,15 @@ import java.text.ParseException;
 @Tag(name = "Admin", description = "-")
 public class AdminController {
 
-	@Autowired
-	private ProductService productService;
+	private final ProductService productService;
+
+	private final ReleaseService releaseService;
 
 	@Autowired
-	private ReleaseService releaseService;
+	public AdminController(ProductService productService, ReleaseService releaseService) {
+		this.productService = productService;
+		this.releaseService = releaseService;
+	}
 
 	@PostMapping(value = "/{productKey}/new-authoring-cycle")
 	@IsAuthenticatedAsAdmin

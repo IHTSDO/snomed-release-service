@@ -2,15 +2,16 @@ package org.ihtsdo.buildcloud.rest.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
+import jakarta.servlet.http.HttpServletRequest;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
+import org.ihtsdo.buildcloud.core.service.PermissionService;
+import org.ihtsdo.buildcloud.core.service.PublishService;
+import org.ihtsdo.buildcloud.core.service.ReleaseCenterService;
+import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdmin;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManager;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser;
 import org.ihtsdo.buildcloud.rest.security.IsAuthenticatedAsGlobalAdmin;
-import org.ihtsdo.buildcloud.core.service.PermissionService;
-import org.ihtsdo.buildcloud.core.service.PublishService;
-import org.ihtsdo.buildcloud.core.service.ReleaseCenterService;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
@@ -22,43 +23,46 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.ihtsdo.buildcloud.core.service.PermissionService.GLOBAL_ROLE;
 import static org.ihtsdo.buildcloud.core.service.PermissionService.Role.*;
 
-@Controller
-@RequestMapping("/centers")
+@RestController
+@RequestMapping(value = "/centers", produces = {MediaType.APPLICATION_JSON_VALUE})
 @Tag(name = "Release Center", description = "-")
 public class ReleaseCenterController {
 
-    @Autowired
-    private ReleaseCenterService releaseCenterService;
+    private final ReleaseCenterService releaseCenterService;
 
-    @Autowired
-    private PermissionService permissionService;
+    private final PermissionService permissionService;
 
-    @Autowired
-    private PublishService publishService;
+    private final PublishService publishService;
 
-    @Autowired
-    private HypermediaGenerator hypermediaGenerator;
+    private final HypermediaGenerator hypermediaGenerator;
 
     private static final String[] RELEASE_CENTER_LINKS = {"products", "published"};
+
+    @Autowired
+    public ReleaseCenterController(ReleaseCenterService releaseCenterService, PermissionService permissionService, PublishService publishService, HypermediaGenerator hypermediaGenerator) {
+        this.releaseCenterService = releaseCenterService;
+        this.permissionService = permissionService;
+        this.publishService = publishService;
+        this.hypermediaGenerator = hypermediaGenerator;
+    }
 
     @GetMapping
     @Operation(summary = "Returns a list all release center for a logged in user",
             description = "Returns a list of all release centers visible to the currently logged in user")
-    @ResponseBody
     public List<Map<String, Object>> getReleaseCenters(@RequestParam(required = false) boolean includeRemoved, HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
@@ -78,7 +82,7 @@ public class ReleaseCenterController {
                                          (rolesMap.get(center.getCodeSystem())).contains(RELEASE_LEAD.name()) ||
                                          (rolesMap.get(center.getCodeSystem())).contains(RELEASE_USER.name()) ||
                                          (rolesMap.get(center.getCodeSystem())).contains(AUTHOR.name()))))))
-        ).collect(Collectors.toList());
+        ).toList();
 
         return hypermediaGenerator.getEntityCollectionHypermedia(centers, request, RELEASE_CENTER_LINKS);
     }
@@ -88,7 +92,7 @@ public class ReleaseCenterController {
     @Operation(summary = "Creates a new Release Center",
             description = "Creates a new Release Center and returns the newly created release center")
     public ResponseEntity<Map<String, Object>> createReleaseCenter(@RequestBody(required = false) Map<String, String> json,
-                                                                   HttpServletRequest request) throws IOException, EntityAlreadyExistsException {
+                                                                   HttpServletRequest request) throws EntityAlreadyExistsException {
 
         String name = json.get("name");
         String shortName = json.get("shortName");
@@ -106,7 +110,6 @@ public class ReleaseCenterController {
     @Operation(summary = "Updates a release center details",
             description = "Allows the name, shortName and the visibility of a release center (soft delete) to be changed. " +
                     "Note that the short name is used in the formation of the ‘business key'")
-    @ResponseBody
     public Map<String, Object> updateReleaseCenter(@PathVariable String releaseCenterKey,
                                                    @RequestBody(required = false) Map<String, String> json,
                                                    HttpServletRequest request) throws ResourceNotFoundException, BusinessServiceException {
@@ -133,7 +136,6 @@ public class ReleaseCenterController {
     @IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
     @Operation(summary = "Returns a single release center",
             description = "Returns a single release center for a given releaseCenterBusinessKey")
-    @ResponseBody
     public Map<String, Object> getReleaseCenter(@PathVariable String releaseCenterKey, HttpServletRequest request) throws ResourceNotFoundException {
         ReleaseCenter center = getReleaseCenterRequired(releaseCenterKey);
         return hypermediaGenerator.getEntityHypermedia(center, true, request, RELEASE_CENTER_LINKS);
@@ -143,7 +145,6 @@ public class ReleaseCenterController {
     @IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
     @Operation(summary = "Returns a list published releases names",
             description = "Returns a list published releases names for a given release center")
-    @ResponseBody
     public Map<String, Object> getReleaseCenterPublishedPackages(@PathVariable String releaseCenterKey, HttpServletRequest request) throws ResourceNotFoundException {
 
         ReleaseCenter center = getReleaseCenterRequired(releaseCenterKey);
@@ -156,7 +157,6 @@ public class ReleaseCenterController {
 
     @PostMapping(value = "/{releaseCenterKey}/published", consumes = MediaType.ALL_VALUE)
     @IsAuthenticatedAsAdminOrReleaseManager
-    @ResponseBody
     @Operation(hidden = true)
     public ResponseEntity<Object> publishReleaseCenterPackage(@PathVariable String releaseCenterKey,
                                                               @RequestParam(value = "file") final MultipartFile file, @RequestParam(value = "isComponentIdPublishingRequired", defaultValue = "true") boolean publishComponentIds) throws BusinessServiceException, IOException {

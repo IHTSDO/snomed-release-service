@@ -22,8 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,32 +37,35 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Controller
-@RequestMapping("/centers/{releaseCenterKey}/products/{productKey}")
+@RestController
+@RequestMapping(value = "/centers/{releaseCenterKey}/products/{productKey}", produces = {MediaType.APPLICATION_JSON_VALUE})
 @Tag(name = "Input Files", description = "-")
 public class InputFileController {
 
-	@Autowired
-	private InputFileService inputFileService;
+	private final InputFileService inputFileService;
 
-	@Autowired
-	private ProductService productService;
+	private final ProductService productService;
 
-	@Autowired
-	private BuildService buildService;
+	private final BuildService buildService;
 
-	@Autowired
-	private HypermediaGenerator hypermediaGenerator;
+	private final HypermediaGenerator hypermediaGenerator;
 
 	private static final String FILENAME = "filename";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(InputFileController.class);
 
+	@Autowired
+	public InputFileController(InputFileService inputFileService, ProductService productService, BuildService buildService, HypermediaGenerator hypermediaGenerator) {
+		this.inputFileService = inputFileService;
+		this.productService = productService;
+		this.buildService = buildService;
+		this.hypermediaGenerator = hypermediaGenerator;
+	}
+
 	@PostMapping(value = "/manifest")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@Operation(summary = "Stores a manifest file",
 			description = "Stores or replaces a file identified as the manifest for the package specified in the URL")
-	@ResponseBody
 	public ResponseEntity<Object> uploadManifestFile(@PathVariable final String releaseCenterKey,
 													 @PathVariable final String productKey,
 													 @RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException, DecoderException {
@@ -81,7 +84,6 @@ public class InputFileController {
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@Operation(summary = "Returns a manifest file name",
 			description = "Returns a manifest file name for given release center and product")
-	@ResponseBody
 	public Map<String, Object> getManifest(@PathVariable final String releaseCenterKey,
 										   @PathVariable final String productKey,
 										   final HttpServletRequest request) throws ResourceNotFoundException {
@@ -119,13 +121,12 @@ public class InputFileController {
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@Operation(summary = "Store or replace a file",
 			description = "Stores or replaces a file with its original name against the package specified in the URL")
-	@ResponseBody
 	public ResponseEntity<Void> uploadInputFileFile(@PathVariable final String releaseCenterKey,
 													@PathVariable final String productKey,
 													@PathVariable final String buildId,
 													@RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException, DecoderException {
 		String inputFileName = file.getOriginalFilename();
-		LOGGER.debug("uploading input file:" + inputFileName);
+		LOGGER.debug("uploading input file: {}", inputFileName);
 		if (!Normalizer.isNormalized(inputFileName, Form.NFC)) {
 			inputFileName = Normalizer.normalize(inputFileName, Form.NFC);
 		}
@@ -149,7 +150,6 @@ public class InputFileController {
 	@Operation(summary = "Store or replace a file in specified source",
 			description = "Stores or replaces a file in a specified source with its original name against the package specified in the URL. " +
 					"Possible source values are: terminology-server, reference-set-tool, mapping-tools, manual")
-	@ResponseBody
 	public ResponseEntity<Void> uploadSourceFile(@PathVariable final String releaseCenterKey,
 												 @PathVariable final String productKey,
 												 @PathVariable String buildId,
@@ -157,7 +157,7 @@ public class InputFileController {
 												 @RequestParam(value = "file") final MultipartFile file) throws IOException, ResourceNotFoundException, DecoderException {
 		if (file != null) {
 			String inputFileName = file.getOriginalFilename();
-			LOGGER.debug("uploading source file:" + inputFileName);
+			LOGGER.debug("uploading source file: {}", inputFileName);
 			if (!Normalizer.isNormalized(inputFileName, Form.NFC)) {
 				inputFileName = Normalizer.normalize(inputFileName, Form.NFC);
 			}
@@ -173,7 +173,6 @@ public class InputFileController {
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@Operation(summary = "Returns a list of file names in source directories",
 			description = "Returns a list of file names for the package specified in the URL")
-	@ResponseBody
 	public List<Map<String, Object>> listSourceFiles(@PathVariable final String releaseCenterKey,
 													 @PathVariable final String productKey,
 													 @PathVariable final String buildId,
@@ -225,7 +224,7 @@ public class InputFileController {
 		if (build == null) {
 			throw new ResourceNotFoundException(String.format("Unable to find build id %s for productKey %s", buildId, productKey));
 		}
-		inputFileService.prepareInputFiles(build, copyFilesInManifest != null ? copyFilesInManifest : true);
+		inputFileService.prepareInputFiles(build, copyFilesInManifest == null || copyFilesInManifest);
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 

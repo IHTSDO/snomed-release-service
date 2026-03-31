@@ -2,6 +2,7 @@ package org.ihtsdo.buildcloud.rest.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.ihtsdo.buildcloud.core.entity.Notification;
 import org.ihtsdo.buildcloud.core.service.NotificationService;
 import org.ihtsdo.buildcloud.rest.controller.helper.PageRequestHelper;
@@ -12,27 +13,29 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
-@Controller
+@RestController
 @Tag(name = "Notification", description = "-")
-@RequestMapping(value = "/notifications", produces = "application/json")
+@RequestMapping(value = "/notifications", produces = {MediaType.APPLICATION_JSON_VALUE})
 public class NotificationController {
 
+	private final NotificationService notificationService;
+
 	@Autowired
-	private NotificationService notificationService;
+	public NotificationController(NotificationService notificationService) {
+		this.notificationService = notificationService;
+	}
 
 	@GetMapping
 	@Operation(summary = "Get notifications for the current user", description = "-")
-	@ResponseBody
 	public Page<Notification> getNotificationsForCurrentUser(@RequestParam(defaultValue = "0") Integer pageNumber,
                                                                     @RequestParam(defaultValue = "10") Integer pageSize,
                                                                     HttpServletRequest request) {
@@ -44,7 +47,6 @@ public class NotificationController {
 
 	@GetMapping("/un-read/count")
 	@Operation(summary = "Count number of un-read notifications of current users", description = "-")
-	@ResponseBody
 	public Map<String, Long> countUnreadNotifications(HttpServletRequest request) {
 		final String username = SecurityUtil.getUsername();
 		Long result = notificationService.countUnreadNotifications(username);

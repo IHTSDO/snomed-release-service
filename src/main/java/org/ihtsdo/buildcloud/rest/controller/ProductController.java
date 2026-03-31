@@ -32,19 +32,21 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.util.*;
 
+import static org.ihtsdo.buildcloud.core.service.ProductService.PRODUCT_LINKS;
+
 @ConditionalOnProperty(name = "srs.manager", havingValue = "true")
 @RestController
-@RequestMapping("/centers/{releaseCenterKey}/products")
+@RequestMapping(value = "/centers/{releaseCenterKey}/products", produces = {MediaType.APPLICATION_JSON_VALUE})
 @Tag(name = "Product", description = "-")
 	public class ProductController {
 
+	public static final String UNABLE_TO_FIND_PRODUCT_ERROR = "Unable to find product: ";
 	private final ProductService productService;
 
 	private final HypermediaGenerator hypermediaGenerator;
 
 	private final ReleaseManifestService releaseManifestService;
 
-	public static final String[] PRODUCT_LINKS = {"manifest", "builds"};
 
 	@Autowired
 	public ProductController(ProductService productService, HypermediaGenerator hypermediaGenerator, ReleaseManifestService releaseManifestService) {
@@ -78,7 +80,7 @@ import java.util.*;
 				StringUtils.isEmpty(sortField) ? null : Collections.singletonList(sortField),
 				StringUtils.isEmpty(sortDirection) ? null : Collections.singletonList(sortDirection));
 		Page<Product> page = productService.findAll(releaseCenterKey, filterOptions, pageRequest, includedLatestBuildStatusAndTags);
-		List<Map<String, Object>> result = hypermediaGenerator.getEntityCollectionHypermedia(page.getContent(), request, PRODUCT_LINKS);
+		List<Map<String, Object>> result = hypermediaGenerator.getEntityCollectionHypermedia(page.getContent(), request, PRODUCT_LINKS.toArray(String[]::new));
 
 		return new PageImpl<>(result, pageRequest, page.getTotalElements());
 	}
@@ -98,7 +100,7 @@ import java.util.*;
 				StringUtils.isEmpty(sortField) ? null : Collections.singletonList(sortField),
 				StringUtils.isEmpty(sortDirection) ? null : Collections.singletonList(sortDirection));
 		Page<Product> page = productService.findHiddenProducts(releaseCenterKey, pageRequest);
-		List<Map<String, Object>> result = hypermediaGenerator.getEntityCollectionHypermedia(page.getContent(), request, PRODUCT_LINKS);
+		List<Map<String, Object>> result = hypermediaGenerator.getEntityCollectionHypermedia(page.getContent(), request, PRODUCT_LINKS.toArray(String[]::new));
 
 		return new PageImpl<>(result, pageRequest, page.getTotalElements());
 	}
@@ -112,10 +114,10 @@ import java.util.*;
 		Product product = productService.find(releaseCenterKey, productKey, true);
 		
 		if (product == null) {
-			throw new ResourceNotFoundException("Unable to find product: " +  productKey);
+			throw new ResourceNotFoundException(UNABLE_TO_FIND_PRODUCT_ERROR +  productKey);
 		}
 		
-		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS);
+		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS.toArray(String[]::new));
 	}
 
 	@PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -133,7 +135,7 @@ import java.util.*;
 		String name = json.get(ProductService.NAME);
 		String overriddenSnomedCtProduct = json.get(ProductService.OVERRIDDEN_SNOMEDCT_PRODUCT);
 		Product product = productService.create(releaseCenterKey, name.trim(), overriddenSnomedCtProduct);
-		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(product, false, request, ProductController.PRODUCT_LINKS), HttpStatus.CREATED);
+		return new ResponseEntity<>(hypermediaGenerator.getEntityHypermedia(product, false, request, PRODUCT_LINKS.toArray(String[]::new)), HttpStatus.CREATED);
 	}
 
 	@PatchMapping(value = "/{productKey}", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -143,12 +145,7 @@ import java.util.*;
 	public Map<String, Object> updateProduct(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@RequestBody Map<String, String> json,
 			HttpServletRequest request) throws BusinessServiceException {
-
-		Product product = productService.update(releaseCenterKey, productKey, json);
-		if (product == null) {
-			throw new ResourceNotFoundException("Unable to find product: " +  productKey);
-		}
-		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS);
+		return doUpdateProduct(releaseCenterKey, productKey, json, request);
 	}
 	
 	// Writing clients in Java we find that the standard Java libraries don't support PATCH so, we need
@@ -160,11 +157,15 @@ import java.util.*;
 			description = "Updates an existing product with new details and returns updated product")
 	public Map<String, Object> updateProduct2(@PathVariable String releaseCenterKey, @PathVariable String productKey,
 			@RequestBody Map<String, String> json, HttpServletRequest request) throws BusinessServiceException {
+		return doUpdateProduct(releaseCenterKey, productKey, json, request);
+	}
+
+	private Map<String, Object> doUpdateProduct(String releaseCenterKey, String productKey, Map<String, String> json, HttpServletRequest request) throws BusinessServiceException {
 		Product product = productService.update(releaseCenterKey, productKey, json);
 		if (product == null) {
-			throw new ResourceNotFoundException("Unable to find product: " + productKey);
+			throw new ResourceNotFoundException(UNABLE_TO_FIND_PRODUCT_ERROR + productKey);
 		}
-		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS);
+		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS.toArray(String[]::new));
 	}
 
 
@@ -191,7 +192,7 @@ import java.util.*;
 			throws ResourceNotFoundException, BusinessServiceException, RestClientException {
 		Product product = productService.find(releaseCenterKey, productKey, false);
 		if (product == null) {
-			throw new ResourceNotFoundException("Unable to find product: " + productKey);
+			throw new ResourceNotFoundException(UNABLE_TO_FIND_PRODUCT_ERROR + productKey);
 		}
 		BuildConfiguration buildConfiguration = product.getBuildConfiguration();
 		if (buildConfiguration == null) {

@@ -19,12 +19,14 @@ import java.util.Map;
 @RequestMapping(produces={MediaType.APPLICATION_JSON_VALUE})
 public class ReleasePackageController {
 
-    @Autowired
-    private ModuleStorageCoordinatorCache moduleStorageCoordinatorCache;
+    private final ModuleStorageCoordinatorCache moduleStorageCoordinatorCache;
 
+    @Autowired
+    public ReleasePackageController(ModuleStorageCoordinatorCache moduleStorageCoordinatorCache) {
+        this.moduleStorageCoordinatorCache = moduleStorageCoordinatorCache;
+    }
     @GetMapping(value = "/releases")
     @Operation(summary = "Returns the list all release packages")
-    @ResponseBody
     public Map<String, List<ModuleMetadata>> getAllReleases(
             @RequestParam(value = "page", required = false) String page,
             @RequestParam(value = "size", required = false) String size
