@@ -58,6 +58,8 @@ import static org.ihtsdo.buildcloud.core.service.PermissionServiceCache.BRANCH_R
 @Transactional
 public class PublishServiceImpl implements PublishService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(PublishServiceImpl.class);
+	public static final String EXTENSION_BRANCH_PREFIX = "MAIN/SNOMEDCT-";
+	public static final String SLASH = "/";
 
 	private final FileHelper srsFileHelper;
 
@@ -424,7 +426,7 @@ public class PublishServiceImpl implements PublishService {
 		List<String> paths = new ArrayList<>();
 		paths.add(path);
 		int index;
-		while ((index = path.lastIndexOf("/")) != -1) {
+		while ((index = path.lastIndexOf(SLASH)) != -1) {
 			path = path.substring(0, index);
 			paths.add(path);
 		}
@@ -475,14 +477,19 @@ public class PublishServiceImpl implements PublishService {
 	private void updateCodeSystemVersion(Build build, String releaseFileName) throws BusinessServiceException {
 		try {
 			List<CodeSystem> codeSystems = termServerService.getCodeSystems();
-			ReleaseCenter releaseCenter = releaseCenterDAO.find(build.getReleaseCenterKey());
-			CodeSystem codeSystem = codeSystems.stream().filter(item -> releaseCenter.getCodeSystem().equals(item.getShortName()))
-					.findAny()
-					.orElse(null);
-			if (codeSystem != null && build.getConfiguration().getBranchPath().startsWith(codeSystem.getBranchPath())
-			&& (!BRANCH_ROOT.equals(codeSystem.getBranchPath()) || !build.getConfiguration().getBranchPath().contains("SNOMEDCT-"))) {
-				LOGGER.info("Update the release package for Code System Version: {}, {}, {}", codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
-				termServerService.updateCodeSystemVersionPackage(codeSystem.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
+			String branchPath = build.getConfiguration().getBranchPath();
+			String codeSystemBranch;
+			if (branchPath.startsWith(EXTENSION_BRANCH_PREFIX)) {
+				String[] split = branchPath.split(SLASH);
+				codeSystemBranch = split[0] + SLASH + split[1];
+			} else {
+				codeSystemBranch = BRANCH_ROOT;
+			}
+			List<CodeSystem> filteredCodeSystems = codeSystems.stream().filter(item -> item.getBranchPath().equals(codeSystemBranch))
+					.toList();
+			for (CodeSystem item : filteredCodeSystems) {
+				LOGGER.info("Update the release package for Code System Version: {}, {}, {}", item.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
+				termServerService.updateCodeSystemVersionPackage(item.getShortName(), build.getConfiguration().getEffectiveTimeSnomedFormat(), releaseFileName);
 			}
 		} catch (Exception e) {
 			throw new BusinessServiceException("Failed to update Code System Version Package.", e);
@@ -523,7 +530,7 @@ public class PublishServiceImpl implements PublishService {
 				// publish component ids
 				if (publishComponentIds) {
 					boolean isBetaRelease = originalFilename.startsWith(RF2Constants.BETA_RELEASE_PREFIX);
-					String publishFileExtractedDir = publishFilePath.replace(".zip", "/");
+					String publishFileExtractedDir = publishFilePath.replace(".zip", SLASH);
 					LOGGER.info("Start publishing component ids for published file {} ", originalFilename);
 					publishComponentIds(srsFileHelper, publishFileExtractedDir, isBetaRelease, originalFilename, null, null);
 					LOGGER.info("End publishing component ids for published file {} ", originalFilename);
@@ -867,7 +874,7 @@ public class PublishServiceImpl implements PublishService {
 		PublishStep step = stepTracker.startStep("Upload release file to the old versioned content directory");
 		try {
 			StringBuilder outputPathBuilder = new StringBuilder(versionedContentPath);
-			if(!versionedContentPath.endsWith("/")) outputPathBuilder.append("/");
+			if(!versionedContentPath.endsWith(SLASH)) outputPathBuilder.append(SLASH);
 			if(StringUtils.isNotBlank(prefix)) outputPathBuilder.append(prefix.toUpperCase()).append("_");
 			outputPathBuilder.append(releaseFileName);
 			srsFileHelper.copyFile(releaseFileFullPath, versionedContentBucket, outputPathBuilder.toString());
@@ -905,18 +912,18 @@ public class PublishServiceImpl implements PublishService {
 	}
 
 	private String getShortNameFromBranch(String branchPath) {
-		if (!branchPath.startsWith("MAIN")) {
+		if (!branchPath.startsWith(BRANCH_ROOT)) {
 			return null;
 		}
 
-		if (branchPath.startsWith("MAIN/SNOMEDCT-")) {
+		if (branchPath.startsWith(EXTENSION_BRANCH_PREFIX)) {
 			Pattern pattern = Pattern.compile("SNOMEDCT-[^/]+/?");
 			Matcher matcher = pattern.matcher(branchPath);
 
 			if (matcher.find()) {
 				String snomedSegment = matcher.group();
 
-				snomedSegment = snomedSegment.replace("/", "");
+				snomedSegment = snomedSegment.replace(SLASH, "");
 				snomedSegment = snomedSegment.replace("SNOMEDCT-", "");
 
 				return snomedSegment;
