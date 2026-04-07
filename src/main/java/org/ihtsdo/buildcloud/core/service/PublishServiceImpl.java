@@ -271,7 +271,7 @@ public class PublishServiceImpl implements PublishService {
 				throw e;
 			}
 		} else {
-			stepTracker.markStepSkipped(step);
+			stepTracker.markStepSkipped(step, "Skipped because publishComponentIds was false for this publish request");
 		}
 	}
 
@@ -295,6 +295,12 @@ public class PublishServiceImpl implements PublishService {
 		uploadToNewVersionedContentDirectory(build, releaseFiles, stepTracker);
 		updateCodeSystemVersionIfNeeded(build, releaseFiles.releaseFileName(), stepTracker);
 		addPublishedTagToBuild(build, stepTracker);
+		markPublishAsComplete(stepTracker);
+	}
+
+	private void markPublishAsComplete(PublishStepTracker stepTracker) {
+		PublishStep step = stepTracker.startStep("Publishing process complete");
+		stepTracker.markStepSuccess(step);
 	}
 
 	private void copyMd5FileIfPresentWithTracking(Build build, String md5FileName,
@@ -309,7 +315,7 @@ public class PublishServiceImpl implements PublishService {
 				throw e;
 			}
 		} else {
-			stepTracker.markStepSkipped(step);
+			stepTracker.markStepSkipped(step, "No MD5 file was found alongside the release package in build output");
 		}
 	}
 
@@ -325,7 +331,7 @@ public class PublishServiceImpl implements PublishService {
 				throw e;
 			}
 		} else {
-			stepTracker.markStepSkipped(step);
+			stepTracker.markStepSkipped(step, "Skipped because OfflineMode is enabled");
 		}
 	}
 
@@ -341,7 +347,7 @@ public class PublishServiceImpl implements PublishService {
 				throw e;
 			}
 		} else {
-			stepTracker.markStepSkipped(step);
+			stepTracker.markStepSkipped(step, skipUpdateCodeSystemVersionComment(build));
 		}
 	}
 
@@ -355,6 +361,20 @@ public class PublishServiceImpl implements PublishService {
 			throw e;
 		}
 	}
+
+	private String skipUpdateCodeSystemVersionComment(Build build) {
+		if (build.getConfiguration().isBetaRelease()) {
+			return "Skipped because of beta release build";
+		}
+		if (StringUtils.isEmpty(build.getConfiguration().getBranchPath())) {
+			return "Skipped because the branch path is not configured";
+		}
+		if (Boolean.TRUE.equals(offlineMode)) {
+			return "Skipped because Offline mode is enabled";
+		}
+		return "";
+	}
+
 	private void uploadReleaseFileToNewVersionedContentBucket(Build build, ReleaseFile releaseFiles, String md5Filename) throws BusinessServiceException {
 		String branchPath = build.getConfiguration().getBranchPath();
 		String shortName = null;

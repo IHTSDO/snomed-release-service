@@ -41,6 +41,7 @@ public class PublishStepTracker {
 	 */
 	public void markStepSuccess(PublishStep step) {
 		if (step != null) {
+			step.finishTiming();
 			step.setStatus(PublishStep.StepStatus.SUCCESS);
 		}
 	}
@@ -53,6 +54,7 @@ public class PublishStepTracker {
 	 */
 	public void markStepFailed(PublishStep step, String errorMessage, List<String> errorDetails) {
 		if (step != null) {
+			step.finishTiming();
 			step.setStatus(PublishStep.StepStatus.FAILED);
 			step.setErrorMessage(errorMessage);
 			step.setErrorDetails(errorDetails);
@@ -62,10 +64,13 @@ public class PublishStepTracker {
 	/**
 	 * Marks a step as skipped.
 	 *
-	 * @param step the step to mark as skipped
+	 * @param step    the step to mark as skipped
+	 * @param comment why the step was skipped (shown in API and logs; may be null)
 	 */
-	public void markStepSkipped(PublishStep step) {
+	public void markStepSkipped(PublishStep step, String comment) {
 		if (step != null) {
+			step.finishTiming();
+			step.setSkipComment(comment);
 			step.setStatus(PublishStep.StepStatus.SKIPPED);
 		}
 	}
