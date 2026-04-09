@@ -23,6 +23,10 @@ public interface BuildService {
 		DEFAULT, UNPUBLISHED, PUBLISHED, ALL_RELEASES
 	}
 
+	enum BuildStorageOption {
+		DEFAULT, REGRESSION_STORAGE /* can be found from "srs.regression-build.storage.path" */
+	}
+
 	Build createBuildFromProduct(String releaseCenterKey, String productKey, BuildRequestPojo buildRequest, String user, List<String> userRoles) throws BusinessServiceException;
 
 	/**
@@ -85,7 +89,7 @@ public interface BuildService {
 
 	void saveTags(Build build, List<Build.Tag> tags) throws IOException;
 
-	Build cloneBuild(String releaseCenterKey, String productKey, String buildId, String username) throws BusinessServiceException;
+	Build cloneBuild(String releaseCenterKey, String productKey, String buildId, String username, BuildStorageOption targetStoragePathType) throws BusinessServiceException;
 
 	String getManifestFileName(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException;
 

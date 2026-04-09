@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.core.service;
 import com.github.difflib.text.DiffRowGenerator;
 import org.apache.commons.collections.CollectionUtils;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
+import org.ihtsdo.buildcloud.core.dao.RegressionTestReportDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Build.Status;
 import org.ihtsdo.buildcloud.core.entity.Product;
@@ -63,6 +64,9 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	private BuildDAO buildDAO;
 
 	@Autowired
+	private RegressionTestReportDAO regressionTestReportDAO;
+
+	@Autowired
 	private BuildService buildService;
 
 	@Autowired
@@ -97,10 +101,10 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 			products.forEach(product -> {
 				final String releaseCenterKey = product.getReleaseCenter().getBusinessKey();
 				final String productKey = product.getBusinessKey();
-				List<String> paths = buildDAO.listBuildComparisonReportPaths(releaseCenterKey, productKey);
+				List<String> paths = regressionTestReportDAO.listBuildComparisonReportPaths(releaseCenterKey, productKey);
 				paths.forEach(path -> {
 					try {
-						BuildComparisonReport buildComparisonReport = buildDAO.getBuildComparisonReport(releaseCenterKey, productKey, path.replace(".json", ""));
+						BuildComparisonReport buildComparisonReport = regressionTestReportDAO.getBuildComparisonReport(releaseCenterKey, productKey, path.replace(".json", ""));
 						if (buildComparisonReport != null) {
 							reports.add(buildComparisonReport);
 						}
@@ -117,7 +121,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	@Override
 	public BuildComparisonReport getTestReport(String releaseCenterKey, String productKey, String compareId) {
 		try {
-			return buildDAO.getBuildComparisonReport(releaseCenterKey, productKey, compareId);
+			return regressionTestReportDAO.getBuildComparisonReport(releaseCenterKey, productKey, compareId);
 		} catch (IOException e) {
 			throw new ResourceNotFoundException("Unable to find report for key: %s", compareId);
 		}
@@ -130,7 +134,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 				report.getStatus().equals(BuildComparisonReport.Status.FAILED.name()) ||
 				report.getStatus().equals(BuildComparisonReport.Status.FAILED_TO_COMPARE.name()) ||
 				(System.currentTimeMillis() - report.getStartDate().getTime()) > maxPollPeriod) {
-			buildDAO.deleteBuildComparisonReport(releaseCenterKey, productKey, compareId);
+			regressionTestReportDAO.deleteBuildComparisonReport(releaseCenterKey, productKey, compareId);
 			return;
 		}
 
@@ -153,7 +157,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		report.setStatus(BuildComparisonReport.Status.QUEUED.name());
 
 		try {
-			buildDAO.saveBuildComparisonReport(releaseCenterKey, productKey, compareId, report);
+			regressionTestReportDAO.saveBuildComparisonReport(releaseCenterKey, productKey, compareId, report);
 			Build leftBuild = getBuild(releaseCenterKey, productKey, leftBuildId, false, false, false);
 			Build rightBuild = getBuild(releaseCenterKey, productKey, rightBuildId, false, false, false);
 			if (Arrays.stream(BUILD_FINAL_STATES).noneMatch(status -> status.equals(leftBuild.getStatus()))) {
@@ -162,7 +166,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 				} catch (BusinessServiceException e) {
 					report.setStatus(BuildComparisonReport.Status.FAILED_TO_COMPARE.name());
 					report.setMessage(String.format("Failed to compare for id %s. Error message: %s", compareId, e.getMessage()));
-					buildDAO.saveBuildComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), compareId, report);
+					regressionTestReportDAO.saveBuildComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), compareId, report);
 					return;
 				}
 			}
@@ -172,7 +176,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 				} catch (BusinessServiceException e) {
 					report.setStatus(BuildComparisonReport.Status.FAILED_TO_COMPARE.name());
 					report.setMessage(String.format("Failed to compare for id %s. Error message: %s", compareId, e.getMessage()));
-					buildDAO.saveBuildComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), compareId, report);
+					regressionTestReportDAO.saveBuildComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), compareId, report);
 					return;
 				}
 			}
@@ -191,8 +195,8 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		if (Arrays.stream(BUILD_STATES_FOR_PUBLISHMENT).anyMatch(status -> status.equals(latestBuild.getStatus()))) {
 			try {
 				report.setStatus(BuildComparisonReport.Status.PUBLISHING.name());
-				buildDAO.saveBuildComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), compareId, report);
-				publishService.publishBuild(latestBuild, true, null);
+				regressionTestReportDAO.saveBuildComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), compareId, report);
+				publishService.publishBuild(latestBuild, true, false, null);
 				report.setPublishStatus("COMPLETED");
 			} catch (Exception ex) {
 				report.setPublishStatus("FAILED");
@@ -209,7 +213,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	 public void compareFiles(Build leftBuild, Build rightBuild, String fileName, String compareId, boolean ignoreIdComparison) {
 		FileDiffReport report = null;
 		try {
-			report = buildDAO.getFileComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), compareId, fileName, ignoreIdComparison);
+			report = regressionTestReportDAO.getFileComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), compareId, fileName, ignoreIdComparison);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(), e);
 		}
@@ -225,7 +229,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 			report.setRightBuildId(rightBuild.getId());
 
 			fileComparisonBlockingQueue.put(new FileComparisonQueue(compareId, fileName, leftBuild, rightBuild, report, ignoreIdComparison));
-			buildDAO.saveFileComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), compareId, ignoreIdComparison, report);
+			regressionTestReportDAO.saveFileComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), compareId, ignoreIdComparison, report);
 			processFileComparisonJobs();
 		} catch (InterruptedException | IOException e) {
 			LOGGER.error(e.getMessage(), e);
@@ -235,7 +239,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	@Override
 	public FileDiffReport getFileDiffReport(String releaseCenterKey, String productKey, String compareId, String fileName, boolean ignoreIdComparison) {
 		try {
-			return buildDAO.getFileComparisonReport(releaseCenterKey, productKey, compareId, fileName, ignoreIdComparison);
+			return regressionTestReportDAO.getFileComparisonReport(releaseCenterKey, productKey, compareId, fileName, ignoreIdComparison);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(), e);
 		}
@@ -253,7 +257,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 				LOGGER.info("Staring build comparison for Id: {}", automatePromoteProcess.getCompareId());
 				BuildComparisonReport report = automatePromoteProcess.getReport();
 				report.setStatus(BuildComparisonReport.Status.COMPARING.name());
-				buildDAO.saveBuildComparisonReport(automatePromoteProcess.getLeftBuild().getReleaseCenterKey(), automatePromoteProcess.getLeftBuild().getProductKey(), automatePromoteProcess.getCompareId(), report);
+				regressionTestReportDAO.saveBuildComparisonReport(automatePromoteProcess.getLeftBuild().getReleaseCenterKey(), automatePromoteProcess.getLeftBuild().getProductKey(), automatePromoteProcess.getCompareId(), report);
 
 				Build leftBuild = automatePromoteProcess.getLeftBuild();
 				Build rightBuild = automatePromoteProcess.getRightBuild();
@@ -265,7 +269,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 				report.setStatus(isFailed ? BuildComparisonReport.Status.FAILED.name() : BuildComparisonReport.Status.PASSED.name());
 				report.setReports(highLevelComparisonReports);
 
-				buildDAO.saveBuildComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), automatePromoteProcess.getCompareId(), report);
+				regressionTestReportDAO.saveBuildComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), automatePromoteProcess.getCompareId(), report);
 				LOGGER.info("Completed build comparison for Id: {}", automatePromoteProcess.getCompareId());
 			} catch (Exception e) {
 				LOGGER.error(e.getMessage(), e);
@@ -274,7 +278,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 					report.setStatus(BuildComparisonReport.Status.FAILED_TO_COMPARE.name());
 					report.setMessage(String.format("Failed to compare for id %s. Error message: %s", automatePromoteProcess.getCompareId(), e.getMessage()));
 					try {
-						buildDAO.saveBuildComparisonReport(automatePromoteProcess.getLeftBuild().getReleaseCenterKey(), automatePromoteProcess.getLeftBuild().getProductKey(), automatePromoteProcess.getCompareId(), report);
+						regressionTestReportDAO.saveBuildComparisonReport(automatePromoteProcess.getLeftBuild().getReleaseCenterKey(), automatePromoteProcess.getLeftBuild().getProductKey(), automatePromoteProcess.getCompareId(), report);
 					} catch (IOException ioe) {
 						LOGGER.error(ioe.getMessage(), ioe);
 					}
@@ -366,7 +370,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 		report.setDeleteRows(deleteRows);
 		report.setInsertRows(insertRows);
 		report.setChangeRows(changeRows);
-		buildDAO.saveFileComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), automatePromoteProcess.getCompareId(), ignoreIdComparison, report);
+		regressionTestReportDAO.saveFileComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), automatePromoteProcess.getCompareId(), ignoreIdComparison, report);
 
 		// clear temp list
 		deleteIds.clear();
@@ -409,7 +413,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 			Build latestBuild = getBuild(build.getReleaseCenterKey(), build.getProductKey(), build.getId(), false, false, false);
 			if (!report.getStatus().equals(latestBuild.getStatus().name())) {
 				report.setStatus(latestBuild.getStatus().name());
-				buildDAO.saveBuildComparisonReport(build.getReleaseCenterKey(), build.getProductKey(), report.getCompareId(), report);
+				regressionTestReportDAO.saveBuildComparisonReport(build.getReleaseCenterKey(), build.getProductKey(), report.getCompareId(), report);
 			}
 			if (Arrays.stream(BUILD_FINAL_STATES).anyMatch(status -> status.equals(latestBuild.getStatus()))) {
 				isFinalState = true;

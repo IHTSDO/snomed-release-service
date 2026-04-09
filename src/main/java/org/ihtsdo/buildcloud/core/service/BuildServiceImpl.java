@@ -1677,10 +1677,12 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public Build cloneBuild(final String releaseCenterKey, final String productKey, final String buildId, final String username) throws BusinessServiceException {
+	public Build cloneBuild(final String releaseCenterKey, final String productKey, final String buildId,
+							final String username, final BuildStorageOption targetStoragePathType) throws BusinessServiceException {
 		Build build;
 		String sourceBuildPath;
 		String sourceBucketName;
+		String destinationStorageRoot = resolveCloneDestinationStorageRoot(targetStoragePathType);
 		try {
 			build = this.find(releaseCenterKey, productKey, buildId, true, true, null , null);
 			sourceBuildPath = pathHelper.getBuildPath(build).toString();
@@ -1712,6 +1714,7 @@ public class BuildServiceImpl implements BuildService {
 		try {
 			newBuild = new Build(creationDate, build.getReleaseCenterKey(), build.getProductKey(), buildConfiguration, qaTestConfig);
 			newBuild.setBuildUser(username);
+			newBuild.setContentStoragePath(destinationStorageRoot);
 
 			// Copy build and qa configurations
 			buildConfiguration.setBuildName(build.getId() + " - clone");
@@ -1743,6 +1746,14 @@ public class BuildServiceImpl implements BuildService {
 		}
 
 		return newBuild;
+	}
+
+	private String resolveCloneDestinationStorageRoot(final BuildStorageOption targetStoragePathType) {
+		BuildStorageOption option = targetStoragePathType == null ? BuildStorageOption.DEFAULT : targetStoragePathType;
+		return switch (option) {
+			case DEFAULT -> pathHelper.getBuildStoragePath();
+			case REGRESSION_STORAGE -> pathHelper.getRegressionBuildStoragePath();
+		};
 	}
 
 	@Override

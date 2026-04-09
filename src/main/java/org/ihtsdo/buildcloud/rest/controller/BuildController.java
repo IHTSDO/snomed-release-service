@@ -127,11 +127,12 @@ public class BuildController {
 			@PathVariable final String releaseCenterKey,
 			@PathVariable final String productKey,
 			@PathVariable final String buildId,
+			@RequestParam(required = false, defaultValue = "DEFAULT") final BuildService.BuildStorageOption targetStoragePathType,
 			final HttpServletRequest request) throws BusinessServiceException, IOException {
 		final String username = SecurityUtil.getUsername();
 		final String authenticationToken = SecurityUtil.getAuthenticationToken();
 
-		Build newBuild = buildService.cloneBuild(releaseCenterKey, productKey, buildId, username);
+		Build newBuild = buildService.cloneBuild(releaseCenterKey, productKey, buildId, username, targetStoragePathType);
 		releaseBuildManager.queueBuild(new CreateReleasePackageBuildRequest(newBuild, username, authenticationToken));
 		monitorService.startMonitorBuild(newBuild, username);
 		return new ResponseEntity<>(newBuild, HttpStatus.OK);

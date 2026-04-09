@@ -24,7 +24,7 @@ public interface PublishService {
 
 	Map<String, String> getPublishedBuildPathMap(String releaseCenterKey, String productKey);
 
-	void publishBuild(Build build, boolean publishComponentIds, String env) throws BusinessServiceException, IOException, DecoderException;
+	void publishBuild(Build build, boolean isRegressionTestBuild, boolean publishComponentIds, String env) throws BusinessServiceException, IOException, DecoderException;
 
 	void publishBuildAsync(Build build, boolean publishComponentIds, String env);
 

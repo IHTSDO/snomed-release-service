@@ -1,5 +1,6 @@
 package org.ihtsdo.buildcloud.core.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -39,6 +40,13 @@ public class Build {
 	private String releaseCenterKey;
 
 	private String productKey;
+
+	/**
+	 * When non-null, S3 content for this build lives under this storage root (e.g. {@code srs.regression-build.storage.path}).
+	 * When null, {@code srs.build.storage.path} is used. Not persisted in API responses.
+	 */
+	@JsonIgnore
+	private String contentStoragePath;
 
 	private List<PreConditionCheckReport> preConditionCheckReports;
 
@@ -129,6 +137,14 @@ public class Build {
 
 	public String getProductKey() {
 		return productKey;
+	}
+
+	public String getContentStoragePath() {
+		return contentStoragePath;
+	}
+
+	public void setContentStoragePath(String contentStoragePath) {
+		this.contentStoragePath = contentStoragePath;
 	}
 
 	public Status getStatus() {

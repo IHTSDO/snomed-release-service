@@ -116,7 +116,7 @@ public class PublishServiceImpl2Test extends AbstractTest {
 		//Now call a final time and ensure same
 		boolean expectedExceptionThrown = false;
 		try {
-			publishService.publishBuild(build, true, null);
+			publishService.publishBuild(build, false, true, null);
 		} catch (EntityAlreadyExistsException | DecoderException eaee) {
 			expectedExceptionThrown = true;
 		}
@@ -129,7 +129,7 @@ public class PublishServiceImpl2Test extends AbstractTest {
 			final Class<?> expectedExceptionClass) {
 		Thread thread = new Thread(() -> {
             try {
-                service.publishBuild(build, true, null);
+                service.publishBuild(build, false, true, null);
                 LOGGER.info("Publishing complete in thread {}", threadName);
             } catch (Exception e) {
                 if (expectedExceptionClass == null) {

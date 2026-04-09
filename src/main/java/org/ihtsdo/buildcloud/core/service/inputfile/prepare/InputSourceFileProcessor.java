@@ -230,13 +230,14 @@ public class InputSourceFileProcessor {
 	}
 
 	private File copySourceFilesToLocal(List <String> sourceFileLists, String buildId, Integer fileProcessingFailureMaxRetry) throws IOException{
+		String storageRoot = s3PathHelper.resolveContentStorageRoot(releaseCenterKey, productKey, buildId, fileHelper::exists);
 		for (String sourceFilePath : sourceFileLists) {
 			if (sourceFilePath.trim().isEmpty()) {
 				// S3 creates zero byte file when copying files from other bucket.
 				continue;
 			}
 			//Copy files from S3 to local for processing
-			String s3FilePath = s3PathHelper.getBuildSourcesPath(releaseCenterKey, productKey, buildId).append(sourceFilePath).toString();
+			String s3FilePath = s3PathHelper.getBuildSourcesPath(releaseCenterKey, productKey, buildId, storageRoot).append(sourceFilePath).toString();
 			InputStream sourceFileStream = null;
 			try {
 				sourceFileStream = fileHelper.getFileStream(s3FilePath);
@@ -862,6 +863,7 @@ public class InputSourceFileProcessor {
 	}
 
 	private void uploadOutFilesToBuildInputFiles(String buildId) {
+		String storageRoot = s3PathHelper.resolveContentStorageRoot(releaseCenterKey, productKey, buildId, fileHelper::exists);
 		File[] files = outDir.listFiles();
 		List<String> filesPrepared = new ArrayList<>();
 		logger.debug("Found {} prepared files in directory {} to upload to the input-files folder in S3", files.length, outDir.getAbsolutePath());
@@ -875,7 +877,7 @@ public class InputSourceFileProcessor {
 			if (!Normalizer.isNormalized(inputFileName, Form.NFC)) {
 				inputFileName = Normalizer.normalize(inputFileName, Form.NFC);
 			}
-			String filePath = s3PathHelper.getBuildInputFilesPath(releaseCenterKey, productKey, buildId).append(inputFileName).toString();
+			String filePath = s3PathHelper.getBuildInputFilesPath(releaseCenterKey, productKey, buildId, storageRoot).append(inputFileName).toString();
 			fileProcessingReport.add(ReportType.INFO,inputFileName, null, null, "Uploaded to product input files directory");
 			try {
 				fileHelper.putFile(file,filePath);

@@ -98,7 +98,8 @@ public class InputFileServiceImpl implements InputFileService {
 
 	@Override
 	public void putInputFile(final String centerKey, final String productKey, final String buildId, final InputStream inputStream, final String filename, final long fileSize) throws IOException, DecoderException {
-		String buildInputFilesPath = s3PathHelper.getBuildInputFilesPath(centerKey, productKey, buildId).toString();
+		String root = s3PathHelper.resolveContentStorageRoot(centerKey, productKey, buildId, fileHelper::exists);
+		String buildInputFilesPath = s3PathHelper.getBuildInputFilesPath(centerKey, productKey, buildId, root).toString();
 		putFile(filename, inputStream, buildInputFilesPath, fileSize);
 	}
 
@@ -106,7 +107,8 @@ public class InputFileServiceImpl implements InputFileService {
 	public void putSourceFile(String sourceName, String centerKey, String productKey, String buildId, InputStream inputStream, String filename, long fileSize) throws ResourceNotFoundException, IOException, DecoderException {
 		if (StringUtils.isBlank(sourceName)) throw new IllegalArgumentException("sourceName cannot be empty");
 
-		String sourceFilesPath = s3PathHelper.getBuildSourceSubDirectoryPath(centerKey, productKey, buildId, sourceName).toString();
+		String root = s3PathHelper.resolveContentStorageRoot(centerKey, productKey, buildId, fileHelper::exists);
+		String sourceFilesPath = s3PathHelper.getBuildSourceSubDirectoryPath(centerKey, productKey, buildId, sourceName, root).toString();
 		putSourceFile(filename, inputStream, sourceFilesPath, fileSize);
 	}
 
@@ -297,6 +299,7 @@ public class InputFileServiceImpl implements InputFileService {
 
 	@Override
 	public InputStream getSourceFileStream(String centerKey, String productKey, String buildId, String source, String sourceFileName) {
-		return fileHelper.getFileStream(s3PathHelper.getBuildSourcesPath(centerKey, productKey, buildId) + source + S3PathHelper.SEPARATOR + sourceFileName);
+		String storageRoot = s3PathHelper.resolveContentStorageRoot(centerKey, productKey, buildId, fileHelper::exists);
+		return fileHelper.getFileStream(s3PathHelper.getBuildSourcesPath(centerKey, productKey, buildId, storageRoot) + source + S3PathHelper.SEPARATOR + sourceFileName);
 	}
 }

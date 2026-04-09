@@ -75,8 +75,13 @@ public class InputFileDAOImpl implements InputFileDAO {
 		return manifestDirectoryPath + xmlFiles.get(0);
 	}
 
+	private String resolvedStorageRoot(final String releaseCenterKey, final String productKey, final String buildId) {
+		return s3PathHelper.resolveContentStorageRoot(releaseCenterKey, productKey, buildId, fileHelper::exists);
+	}
+
 	public String getManifestPath(final String releaseCenterKey, final String productKey, final String buildId) {
-		final String manifestDirectoryPath = s3PathHelper.getBuildManifestDirectoryPath(releaseCenterKey, productKey, buildId);
+		final String manifestDirectoryPath = s3PathHelper.getBuildManifestDirectoryPath(releaseCenterKey, productKey, buildId,
+				resolvedStorageRoot(releaseCenterKey, productKey, buildId));
 		LOGGER.debug("manifestDirectoryPath '{}'", manifestDirectoryPath);
 		final List<String> xmlFiles = fileHelper.listFiles(manifestDirectoryPath).stream().filter(file -> file.endsWith(".xml")).toList();
 		if (xmlFiles.isEmpty()) {
@@ -99,7 +104,8 @@ public class InputFileDAOImpl implements InputFileDAO {
 
 	@Override
 	public void putManifestFile(final String releaseCenterKey, final String productKey, final String buildId, final InputStream inputStream, final String originalFilename, final long fileSize) throws IOException, DecoderException {
-		final String filePath = s3PathHelper.getBuildManifestDirectoryPath(releaseCenterKey, productKey, buildId) + "manifest.xml";
+		final String filePath = s3PathHelper.getBuildManifestDirectoryPath(releaseCenterKey, productKey, buildId,
+				resolvedStorageRoot(releaseCenterKey, productKey, buildId)) + "manifest.xml";
 		fileHelper.putFile(inputStream, fileSize, filePath);
 	}
 
@@ -119,7 +125,8 @@ public class InputFileDAOImpl implements InputFileDAO {
 
 	@Override
 	public List<String> listRelativeSourceFilePaths(final String releaseCenterKey, final String productKey, final String buildId) {
-		String sourcesPath = s3PathHelper.getBuildSourcesPath(releaseCenterKey, productKey, buildId).toString();
+		String sourcesPath = s3PathHelper.getBuildSourcesPath(releaseCenterKey, productKey, buildId,
+				resolvedStorageRoot(releaseCenterKey, productKey, buildId)).toString();
 		return fileHelper.listFiles(sourcesPath);
 	}
 
@@ -128,7 +135,8 @@ public class InputFileDAOImpl implements InputFileDAO {
 		List<String> filesPath = new ArrayList<>();
 		if (subDirectories != null && !subDirectories.isEmpty()) {
 			for (String subDirectory : subDirectories) {
-				String sourcePath = s3PathHelper.getBuildSourceSubDirectoryPath(releaseCenterKey, productKey, buildId, subDirectory).toString();
+				String sourcePath = s3PathHelper.getBuildSourceSubDirectoryPath(releaseCenterKey, productKey, buildId, subDirectory,
+						resolvedStorageRoot(releaseCenterKey, productKey, buildId)).toString();
 				filesPath.addAll(fileHelper.listFiles(sourcePath));
 			}
 		}
@@ -137,7 +145,8 @@ public class InputFileDAOImpl implements InputFileDAO {
 
 	@Override
 	public void persistInputPrepareReport(final String releaseCenterKey, final String productKey, final String buildId, final SourceFileProcessingReport fileProcessingReport) throws IOException {
-		String reportPath = s3PathHelper.getBuildInputFilePrepareReportPath(releaseCenterKey, productKey, buildId);
+		String reportPath = s3PathHelper.getBuildInputFilePrepareReportPath(releaseCenterKey, productKey, buildId,
+				resolvedStorageRoot(releaseCenterKey, productKey, buildId));
 		try (InputStream inputStream = IOUtils.toInputStream(fileProcessingReport.toString(), CharEncoding.UTF_8)) {
 			s3Client.putObject(buildBucketName, reportPath, inputStream);
 		}
@@ -145,7 +154,8 @@ public class InputFileDAOImpl implements InputFileDAO {
 
 	@Override
 	public void persistSourcesGatherReport(final String releaseCenterKey, final String productKey, final String buildId, InputGatherReport inputGatherReport) throws IOException {
-		String reportPath = s3PathHelper.getBuildInputGatherReportPath(releaseCenterKey, productKey, buildId);
+		String reportPath = s3PathHelper.getBuildInputGatherReportPath(releaseCenterKey, productKey, buildId,
+				resolvedStorageRoot(releaseCenterKey, productKey, buildId));
 		try (InputStream inputStream = IOUtils.toInputStream(inputGatherReport.toString(), CharEncoding.UTF_8)) {
 			s3Client.putObject(buildBucketName, reportPath, inputStream);
 		}

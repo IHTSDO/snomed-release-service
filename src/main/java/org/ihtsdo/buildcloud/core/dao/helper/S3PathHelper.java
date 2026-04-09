@@ -6,12 +6,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 @Service
 public class S3PathHelper {
 
 	@Value("${srs.build.storage.path}")
 	private String buildStoragePath;
+
+
+	@Value("${srs.regression-build.storage.path}")
+	private String regressionBuildStoragePath;
+
+	@Value("${srs.regression-test-report.storage.path}")
+	private String regressionTestReportStoragePath;
 
 	@Value("${srs.product.manifest.storage.path}")
 	private String productManifestStoragePath;
@@ -66,20 +74,57 @@ public class S3PathHelper {
 		return path;
 	}
 
+	public String getBuildStoragePath() {
+		return buildStoragePath;
+	}
+
+	public String getRegressionBuildStoragePath() {
+		return regressionBuildStoragePath;
+	}
+
+	/**
+	 * Resolves whether build content is under {@link #buildStoragePath} or {@link #regressionBuildStoragePath}
+	 * by checking for {@code configuration.json}. Falls back to primary when neither exists (e.g. new build).
+	 */
+	public String resolveContentStorageRoot(final String releaseCenterKey, final String productKey, final String buildId,
+			final Predicate<String> pathExists) {
+		String primaryConfig = getBuildPath(releaseCenterKey, productKey, buildId, buildStoragePath).append(CONFIG_JSON).toString();
+		if (pathExists.test(primaryConfig)) {
+			return buildStoragePath;
+		}
+		String regressionConfig = getBuildPath(releaseCenterKey, productKey, buildId, regressionBuildStoragePath).append(CONFIG_JSON).toString();
+		if (pathExists.test(regressionConfig)) {
+			return regressionBuildStoragePath;
+		}
+		return buildStoragePath;
+	}
+
 	public StringBuilder getProductPath(final String releaseCenterKey, final String productKey) {
-		return getReleaseCenterPath(releaseCenterKey, buildStoragePath).append(productKey).append(SEPARATOR);
+		return getProductPath(releaseCenterKey, productKey, buildStoragePath);
+	}
+
+	public StringBuilder getProductPath(final String releaseCenterKey, final String productKey, final String storageRoot) {
+		return getReleaseCenterPath(releaseCenterKey, storageRoot).append(productKey).append(SEPARATOR);
 	}
 
 	public StringBuilder getBuildInputFilesPath(final String releaseCenterKey, final String productKey, final String buildId) {
-		return getBuildPath(releaseCenterKey, productKey, buildId).append(INPUT_FILES).append(SEPARATOR);
+		return getBuildInputFilesPath(releaseCenterKey, productKey, buildId, buildStoragePath);
+	}
+
+	public StringBuilder getBuildInputFilesPath(final String releaseCenterKey, final String productKey, final String buildId, final String storageRoot) {
+		return getBuildPath(releaseCenterKey, productKey, buildId, storageRoot).append(INPUT_FILES).append(SEPARATOR);
+	}
+
+	public StringBuilder getBuildInputFilesPath(final Build build) {
+		return getBuildPath(build).append(INPUT_FILES).append(SEPARATOR);
 	}
 
 	public String getBuildInputFilePath(final Build build, final String inputFile) {
-		return getBuildInputFilesPath(build.getReleaseCenterKey(), build.getProductKey(), build.getId()).append(inputFile).toString();
+		return getBuildInputFilesPath(build).append(inputFile).toString();
 	}
 
 	public StringBuilder getBuildOutputFilesPath(final Build build) {
-		return getBuildPath(build.getReleaseCenterKey(), build.getProductKey(), build.getId()).append(OUTPUT_FILES).append(SEPARATOR);
+		return getBuildPath(build).append(OUTPUT_FILES).append(SEPARATOR);
 	}
 
 	public String getBuildOutputFilePath(final Build build, final String relativeFilePath) {
@@ -91,7 +136,7 @@ public class S3PathHelper {
 	}
 
 	public StringBuilder getBuildLogFilesPath(final Build build) {
-		return getBuildPath(build.getReleaseCenterKey(), build.getProductKey(), build.getId()).append(LOG).append(SEPARATOR);
+		return getBuildPath(build).append(LOG).append(SEPARATOR);
 	}
 
 	public String getMainBuildLogFilePath(final Build build) {
@@ -99,15 +144,27 @@ public class S3PathHelper {
 	}
 
 	public StringBuilder getBuildPath(final Build build) {
-		return getBuildPath(build.getReleaseCenterKey(), build.getProductKey(), build.getId());
+		return getBuildPath(build.getReleaseCenterKey(), build.getProductKey(), build.getId(), storageRootFor(build));
 	}
 
 	public StringBuilder getBuildPath(final String releaseCenterKey, final String productKey, final String buildId) {
-		return getProductPath(releaseCenterKey, productKey).append(buildId).append(SEPARATOR);
+		return getBuildPath(releaseCenterKey, productKey, buildId, buildStoragePath);
+	}
+
+	public StringBuilder getBuildPath(final String releaseCenterKey, final String productKey, final String buildId, final String storageRoot) {
+		return getProductPath(releaseCenterKey, productKey, storageRoot).append(buildId).append(SEPARATOR);
+	}
+
+	private String storageRootFor(final Build build) {
+		return build.getContentStoragePath() != null ? build.getContentStoragePath() : buildStoragePath;
 	}
 
 	public String getBuildConfigFilePath(final Build build) {
 		return getFilePath(build, CONFIG_JSON);
+	}
+
+	public String getBuildConfigFilePath(final String releaseCenterKey, final String productKey, final String buildId, final String storageRoot) {
+		return getBuildPath(releaseCenterKey, productKey, buildId, storageRoot).append(CONFIG_JSON).toString();
 	}
 
 	public String getQATestConfigFilePath(final Build build) {
@@ -172,15 +229,19 @@ public class S3PathHelper {
 	}
 
 	public String getReportPath(final Build build) {
-		return getBuildPath(build.getReleaseCenterKey(), build.getProductKey(), build.getId()).append(BUILD_REPORT_JSON).toString();
+		return getBuildPath(build).append(BUILD_REPORT_JSON).toString();
 	}
 
 	public String getBuildManifestDirectoryPath(final Build build) {
-		return getBuildManifestDirectoryPath(build.getReleaseCenterKey(), build.getProductKey(), build.getId());
+		return getBuildPath(build).append(MANIFEST).append(SEPARATOR).toString();
 	}
 
 	public String getBuildManifestDirectoryPath(final String releaseCenterKey, final String productKey, final String buildId) {
 		return getBuildPath(releaseCenterKey, productKey, buildId).append(MANIFEST).append(SEPARATOR).toString();
+	}
+
+	public String getBuildManifestDirectoryPath(final String releaseCenterKey, final String productKey, final String buildId, final String storageRoot) {
+		return getBuildPath(releaseCenterKey, productKey, buildId, storageRoot).append(MANIFEST).append(SEPARATOR).toString();
 	}
 
 	public String getProductManifestDirectoryPath(final String releaseCenterKey, final String productKey) {
@@ -194,23 +255,47 @@ public class S3PathHelper {
 	}
 
 	public StringBuilder getBuildSourcesPath(final String releaseCenterKey, final String productKey, final String buildId) {
-		return getProductPath(releaseCenterKey, productKey).append(buildId).append(SEPARATOR).append(SOURCES_FILES).append(SEPARATOR);
+		return getBuildSourcesPath(releaseCenterKey, productKey, buildId, buildStoragePath);
+	}
+
+	public StringBuilder getBuildSourcesPath(final String releaseCenterKey, final String productKey, final String buildId, final String storageRoot) {
+		return getProductPath(releaseCenterKey, productKey, storageRoot).append(buildId).append(SEPARATOR).append(SOURCES_FILES).append(SEPARATOR);
 	}
 
 	public StringBuilder getBuildSourceSubDirectoryPath(final Build build, final String sourceName) {
-		return getBuildSourcesPath(build.getReleaseCenterKey(), build.getProductKey(), build.getId()).append(sourceName).append(SEPARATOR);
+		return getBuildPath(build).append(SOURCES_FILES).append(SEPARATOR).append(sourceName).append(SEPARATOR);
 	}
 
 	public StringBuilder getBuildSourceSubDirectoryPath(final String releaseCenterKey, final String productKey, final String buildId, final String sourceName) {
 		return getBuildSourcesPath(releaseCenterKey, productKey, buildId).append(sourceName).append(SEPARATOR);
 	}
 
+	public StringBuilder getBuildSourceSubDirectoryPath(final String releaseCenterKey, final String productKey, final String buildId, final String sourceName, final String storageRoot) {
+		return getBuildSourcesPath(releaseCenterKey, productKey, buildId, storageRoot).append(sourceName).append(SEPARATOR);
+	}
+
 	public String getBuildInputFilePrepareReportPath(final String releaseCenterKey, final String productKey, final String buildId) {
-		return getBuildPath(releaseCenterKey, productKey, buildId).append(INPUT_PREPARE_REPORT_JSON).toString();
+		return getBuildInputFilePrepareReportPath(releaseCenterKey, productKey, buildId, buildStoragePath);
+	}
+
+	public String getBuildInputFilePrepareReportPath(final String releaseCenterKey, final String productKey, final String buildId, final String storageRoot) {
+		return getBuildPath(releaseCenterKey, productKey, buildId, storageRoot).append(INPUT_PREPARE_REPORT_JSON).toString();
+	}
+
+	public String getBuildInputFilePrepareReportPath(final Build build) {
+		return getBuildPath(build).append(INPUT_PREPARE_REPORT_JSON).toString();
 	}
 
 	public String getBuildInputGatherReportPath(final String releaseCenterKey, final String productKey, final String buildId) {
-		return getBuildPath(releaseCenterKey, productKey, buildId).append(INPUT_GATHER_REPORT_JSON).toString();
+		return getBuildInputGatherReportPath(releaseCenterKey, productKey, buildId, buildStoragePath);
+	}
+
+	public String getBuildInputGatherReportPath(final String releaseCenterKey, final String productKey, final String buildId, final String storageRoot) {
+		return getBuildPath(releaseCenterKey, productKey, buildId, storageRoot).append(INPUT_GATHER_REPORT_JSON).toString();
+	}
+
+	public String getBuildInputGatherReportPath(final Build build) {
+		return getBuildPath(build).append(INPUT_GATHER_REPORT_JSON).toString();
 	}
 
 	public String getBuildPreConditionCheckReportPath(final Build build) {
@@ -222,7 +307,7 @@ public class S3PathHelper {
 	}
 
 	public StringBuilder getClassificationResultOutputFilePath(final Build build) {
-		return getBuildPath(build.getReleaseCenterKey(), build.getProductKey(), build.getId()).append(CLASSIFICATION_RESULT_OUTPUT_FILES).append(SEPARATOR);
+		return getBuildPath(build).append(CLASSIFICATION_RESULT_OUTPUT_FILES).append(SEPARATOR);
 	}
 
 	public String getClassificationResultOutputPath(final Build build, final String relativeFilePath) {
@@ -230,6 +315,21 @@ public class S3PathHelper {
 	}
 
 	public String getBuildComparisonReportPath(final String releaseCenterKey, final String productKey, final String compareId) {
+		StringBuilder builder = getReleaseCenterPath(releaseCenterKey, regressionTestReportStoragePath)
+				.append(productKey)
+				.append(SEPARATOR)
+				.append(BUILD_COMPARISON_REPORT)
+				.append(SEPARATOR);
+		if (StringUtils.hasLength(compareId)) {
+			builder.append(compareId).append(".json");
+		}
+		return builder.toString();
+	}
+
+	/**
+	 * Legacy location under default build storage path. Kept for backward-compatible reads/deletes.
+	 */
+	public String getLegacyBuildComparisonReportPath(final String releaseCenterKey, final String productKey, final String compareId) {
 		StringBuilder builder = getProductPath(releaseCenterKey, productKey).append(BUILD_COMPARISON_REPORT).append(SEPARATOR);
 		if (StringUtils.hasLength(compareId)) {
 			builder.append(compareId).append(".json");
@@ -238,6 +338,17 @@ public class S3PathHelper {
 	}
 
 	public String getFileComparisonReportPath(final String releaseCenterKey, final String productKey, final String compareId, final String fileName) {
+		return getReleaseCenterPath(releaseCenterKey, regressionTestReportStoragePath)
+				.append(productKey)
+				.append(SEPARATOR)
+				.append(FILE_COMPARISON_REPORT).append(SEPARATOR).append(compareId).append(SEPARATOR)
+				.append(fileName).toString();
+	}
+
+	/**
+	 * Legacy location under default build storage path. Kept for backward-compatible reads/deletes.
+	 */
+	public String getLegacyFileComparisonReportPath(final String releaseCenterKey, final String productKey, final String compareId, final String fileName) {
 		return getProductPath(releaseCenterKey, productKey)
 				.append(FILE_COMPARISON_REPORT).append(SEPARATOR).append(compareId).append(SEPARATOR)
 				.append(fileName).toString();

@@ -141,7 +141,7 @@ public class PublishServiceImpl implements PublishService {
 		Map<String, String> buildPathMap = new HashMap<>();
 		List<Build> publishedBuilds = this.findPublishedBuilds(releaseCenterKey, productKey);
 		for (Build build : publishedBuilds) {
-			buildPathMap.put(build.getId(), storageBucketName + S3PathHelper.SEPARATOR + s3PathHelper.getBuildPath(releaseCenterKey, productKey, build.getId()));
+			buildPathMap.put(build.getId(), storageBucketName + S3PathHelper.SEPARATOR + s3PathHelper.getBuildPath(build).toString());
 		}
 		return buildPathMap;
 	}
@@ -150,7 +150,7 @@ public class PublishServiceImpl implements PublishService {
 	@Async("securityContextAsyncTaskExecutor")
 	public void publishBuildAsync(Build build, boolean publishComponentIds, String env) {
 		try {
-			this.publishBuild(build, publishComponentIds, env);
+			this.publishBuild(build, false, publishComponentIds, env);
 		} catch (Exception e) {
 			LOGGER.error("An error occurs while publishing the build {}. Error message: {}", build.getId(), e.getMessage());
 		}
@@ -163,7 +163,7 @@ public class PublishServiceImpl implements PublishService {
     }
 
 	@Override
-	public void publishBuild(final Build build, boolean publishComponentIds, String env) throws BusinessServiceException, IOException {
+	public void publishBuild(final Build build, boolean isRegressionTestBuild, boolean publishComponentIds, String env) throws BusinessServiceException, IOException {
 		MDC.put(BuildService.MDC_BUILD_KEY, build.getUniqueId());
 		LOGGER.info("Start publishing for build {}", build.getUniqueId());
 		String buildKey = getBuildUniqueKey(build);
@@ -175,8 +175,8 @@ public class PublishServiceImpl implements PublishService {
 		try {
 			ReleaseFile releaseFiles = findAndValidateReleaseFiles(build, stepTracker);
 			if (releaseFiles.releaseFileName() != null) {
-				publishReleaseFile(build, releaseFiles, publishComponentIds, stepTracker);
-				performPostPublishingSteps(build, releaseFiles, env, stepTracker);
+				publishReleaseFile(build, isRegressionTestBuild, releaseFiles, publishComponentIds, stepTracker);
+				performPostPublishingSteps(build, isRegressionTestBuild, releaseFiles, env, stepTracker);
 			}
 		} catch (Exception e) {
 			LOGGER.error("Failed to publish the build {}. Error: {}", build.getUniqueId(), e.getMessage(), e);
@@ -222,13 +222,15 @@ public class PublishServiceImpl implements PublishService {
 		return releaseFiles;
 	}
 
-	private void publishReleaseFile(Build build, ReleaseFile releaseFiles, boolean publishComponentIds, 
-			PublishStepTracker stepTracker)
+	private void publishReleaseFile(Build build, boolean isRegressionTestBuild, ReleaseFile releaseFiles, boolean publishComponentIds,
+									PublishStepTracker stepTracker)
 			throws BusinessServiceException, IOException{
 		String fileLock = releaseFiles.releaseFileName().intern();
 		synchronized (fileLock) {
 			String publishFilePath = s3PathHelper.getPublishJobFilePath(build.getReleaseCenterKey(), releaseFiles.releaseFileName());
 			validateReleaseFileWithTracking(build, publishFilePath, stepTracker);
+			if (isRegressionTestBuild) return;
+
 			publishComponentIdsIfNeededWithTracking(build, releaseFiles.releaseFileName(), publishComponentIds, stepTracker);
 			copyReleaseFileWithTracking(build, releaseFiles.releaseFileName(), publishFilePath, stepTracker);
 			copyMd5FileIfPresentWithTracking(build, releaseFiles.md5FileName(), stepTracker);
@@ -289,11 +291,13 @@ public class PublishServiceImpl implements PublishService {
 		}
 	}
 
-	private void performPostPublishingSteps(Build build, ReleaseFile releaseFiles,
+	private void performPostPublishingSteps(Build build, boolean isRegressionTestBuild, ReleaseFile releaseFiles,
 											String env, PublishStepTracker stepTracker) throws BusinessServiceException, IOException {
-		uploadToOldVersionedContentDirectory(s3PathHelper.getBuildOutputFilePath(build, releaseFiles.releaseFileName()), releaseFiles.releaseFileName(), env, stepTracker);
-		uploadToNewVersionedContentDirectory(build, releaseFiles, stepTracker);
-		updateCodeSystemVersionIfNeeded(build, releaseFiles.releaseFileName(), stepTracker);
+		if (!isRegressionTestBuild) {
+			uploadToOldVersionedContentDirectory(s3PathHelper.getBuildOutputFilePath(build, releaseFiles.releaseFileName()), releaseFiles.releaseFileName(), env, stepTracker);
+			uploadToNewVersionedContentDirectory(build, releaseFiles, stepTracker);
+			updateCodeSystemVersionIfNeeded(build, releaseFiles.releaseFileName(), stepTracker);
+		}
 		addPublishedTagToBuild(build, stepTracker);
 		markPublishAsComplete(stepTracker);
 	}

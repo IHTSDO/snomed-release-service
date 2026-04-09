@@ -3,8 +3,6 @@ package org.ihtsdo.buildcloud.core.dao;
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.BuildService;
-import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonReport;
-import org.ihtsdo.buildcloud.core.service.build.compare.FileDiffReport;
 import org.ihtsdo.buildcloud.rest.pojo.BuildPage;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.springframework.data.domain.PageRequest;
@@ -159,18 +157,6 @@ public interface BuildDAO {
 	void updateVisibility(Build build, boolean visibility) throws IOException;
 
 	void putManifestFile(Build build, InputStream inputStream) throws IOException;
-
-	void saveBuildComparisonReport(String releaseCenterKey, String productKey, String compareId, BuildComparisonReport report) throws IOException;
-
-	List<String> listBuildComparisonReportPaths(String releaseCenterKey, String productKey);
-
-	BuildComparisonReport getBuildComparisonReport(String releaseCenterKey, String productKey, String compareId) throws IOException;
-
-	void deleteBuildComparisonReport(String releaseCenterKey, String productKey, String compareId);
-
-	void saveFileComparisonReport(String releaseCenterKey, String productKey, String compareId, boolean ignoreIdComparison, FileDiffReport report) throws IOException;
-
-	FileDiffReport getFileComparisonReport(String releaseCenterKey, String productKey, String compareId, String fileName, boolean ignoreIdComparison) throws IOException;
 
 	void markBuildAsDeleted(Build build) throws IOException;
 

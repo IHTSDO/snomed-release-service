@@ -19,8 +19,6 @@ import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
-import org.ihtsdo.buildcloud.core.service.build.compare.BuildComparisonReport;
-import org.ihtsdo.buildcloud.core.service.build.compare.FileDiffReport;
 import org.ihtsdo.buildcloud.core.service.helper.Rf2FileNameTransformation;
 import org.ihtsdo.buildcloud.rest.pojo.BuildPage;
 import org.ihtsdo.buildcloud.telemetry.core.TelemetryStreamPathBuilder;
@@ -291,19 +289,26 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public Build find(final String releaseCenterKey, final String productKey, final String buildId, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) {
-		final String buildDirectoryPath = pathHelper.getBuildPath(releaseCenterKey, productKey, buildId).toString();
 		final BuildRequestParameter requestParameter = new BuildRequestParameter(releaseCenterKey, productKey, includeBuildConfiguration, includeQAConfiguration, includeRvfURL, visibility, null, null, null);
-		final List<Build> builds = findBuildsDesc(buildDirectoryPath, requestParameter);
+		final String primaryBuildDirectoryPath = pathHelper.getBuildPath(releaseCenterKey, productKey, buildId).toString();
+		List<Build> builds = findBuildsDesc(primaryBuildDirectoryPath, requestParameter);
+		if (builds.isEmpty()) {
+			String regressionBuildDirectoryPath = pathHelper.getBuildPath(releaseCenterKey, productKey, buildId, pathHelper.getRegressionBuildStoragePath()).toString();
+			builds = findBuildsDesc(regressionBuildDirectoryPath, requestParameter);
+			if (!builds.isEmpty()) {
+				builds.forEach(b -> b.setContentStoragePath(pathHelper.getRegressionBuildStoragePath()));
+			}
+		}
 		if (!builds.isEmpty()) {
 			return builds.get(0);
-		} else {
-			return null;
 		}
+		return null;
 	}
 
 	@Override
 	public void delete(String releaseCenterKey, String productKey, String buildId) {
-		String buildDirectoryPath = pathHelper.getBuildPath(releaseCenterKey, productKey, buildId).toString();
+		String storageRoot = pathHelper.resolveContentStorageRoot(releaseCenterKey, productKey, buildId, srsFileHelper::exists);
+		String buildDirectoryPath = pathHelper.getBuildPath(releaseCenterKey, productKey, buildId, storageRoot).toString();
 		List<String> filenames = srsFileHelper.listFiles(buildDirectoryPath);
 		for (String filename : filenames) {
 			s3Client.deleteObject(buildBucketName, buildDirectoryPath + filename);
@@ -474,7 +479,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public List<String> listInputFileNames(final Build build) {
-		final String buildInputFilesPath = pathHelper.getBuildInputFilesPath(build.getReleaseCenterKey(), build.getProductKey(), build.getId()).toString();
+		final String buildInputFilesPath = pathHelper.getBuildInputFilesPath(build).toString();
 		return srsFileHelper.listFiles(buildInputFilesPath);
 	}
 
@@ -696,15 +701,22 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	private List<Build> findBuildsDesc(final String directoryPathPrefix, BuildRequestParameter requestParameter) {
-
-		// Not easy to make this efficient because our timestamp immediately under the product name means that we can only prefix
-		// with the product name. The S3 API doesn't allow us to pattern match just the status files.
-		// I think an "index" directory might be the solution
-
-		// I think adding a pipe to the end of the status filename and using that as the delimiter would be
-		// the simplest way to give performance - KK
 		LOGGER.trace("Finding all Builds in {}, {}.", buildBucketName, directoryPathPrefix);
 		BuildResponse response = getAllBuildsFromS3(directoryPathPrefix, requestParameter.releaseCenterKey, requestParameter.productKey, requestParameter.forYears);
+		String contentStoragePath = resolveContentStoragePathFromPrefix(directoryPathPrefix, requestParameter.releaseCenterKey, requestParameter.productKey);
+		response.builds().forEach(build -> build.setContentStoragePath(contentStoragePath));
+		return postProcessBuildResponse(response, requestParameter);
+	}
+
+	private String resolveContentStoragePathFromPrefix(final String directoryPathPrefix, final String releaseCenterKey, final String productKey) {
+		String regressionProductPrefix = pathHelper.getProductPath(releaseCenterKey, productKey, pathHelper.getRegressionBuildStoragePath()).toString();
+		if (directoryPathPrefix != null && directoryPathPrefix.startsWith(regressionProductPrefix)) {
+			return pathHelper.getRegressionBuildStoragePath();
+		}
+		return pathHelper.getBuildStoragePath();
+	}
+
+	private List<Build> postProcessBuildResponse(BuildResponse response, BuildRequestParameter requestParameter) {
 		List<Build> builds = response.builds();
 		Collections.reverse(builds);
 		builds = removeInvisibleBuilds(requestParameter.visibility, response.visibilityPaths, builds);
@@ -715,6 +727,11 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	private BuildPage<Build> findBuilds(final String productDirectoryPath, BuildRequestParameter requestParameter) {
+		BuildResponse response = getAllBuildsFromS3(productDirectoryPath, requestParameter.releaseCenterKey, requestParameter.productKey, requestParameter.forYears);
+		return findBuildsFromMergedResponse(response, requestParameter, productDirectoryPath);
+	}
+
+	private BuildPage<Build> findBuildsFromMergedResponse(BuildResponse response, BuildRequestParameter requestParameter, String logPathForPrimaryOnly) {
 		int pageNumber = requestParameter.pageRequest.getPageNumber();
 		int pageSize = requestParameter.pageRequest.getPageSize();
 		if (pageNumber < 0 || pageSize <= 0) {
@@ -722,14 +739,13 @@ public class BuildDAOImpl implements BuildDAO {
 			return BuildPage.empty();
 		}
 
-		LOGGER.trace("Finding all builds in {}, {}.", buildBucketName, productDirectoryPath);
-		BuildResponse response = getAllBuildsFromS3(productDirectoryPath, requestParameter.releaseCenterKey, requestParameter.productKey, requestParameter.forYears);
-
+		LOGGER.trace("Finding all builds in {}, {}.", buildBucketName, logPathForPrimaryOnly != null ? logPathForPrimaryOnly : "(merged)");
 		List<Build> allBuilds = prepareAllBuilds(response, requestParameter);
 		List<Build> pagedBuilds = buildPagedBuilds(response, requestParameter, allBuilds, pageNumber, pageSize);
 
 		int totalPages = ListHelper.getTotalPages(allBuilds, pageSize);
-		LOGGER.info("Returning {} builds to client from {}, {}. {} pages available.", pagedBuilds.size(), buildBucketName, productDirectoryPath, totalPages);
+		LOGGER.info("Returning {} builds to client from {}, {}. {} pages available.", pagedBuilds.size(), buildBucketName,
+				logPathForPrimaryOnly != null ? logPathForPrimaryOnly : "merged storages", totalPages);
 		return new BuildPage<>(allBuilds.size(), totalPages, pageNumber, pageSize, pagedBuilds);
 	}
 
@@ -836,9 +852,16 @@ public class BuildDAOImpl implements BuildDAO {
         GetS3ObjectResponse getS3ObjectResponse = getS3Objects(buildBucketName, releaseCenterKey, productKey, directoryPathPrefix, forYears);
         BuildResponse response = findBuilds(releaseCenterKey, productKey, getS3ObjectResponse.s3Objects());
         if (Boolean.TRUE.equals(getS3ObjectResponse.isGetAllBuild())) {
-            this.buildIdsToProductMap.put(releaseCenterKey + org.ihtsdo.otf.RF2Constants.DASH + productKey, response.builds.stream().map(Build::getId).collect(Collectors.toSet()));
+			String mapKey = releaseCenterKey + org.ihtsdo.otf.RF2Constants.DASH + productKey;
+			this.buildIdsToProductMap.merge(mapKey,
+					response.builds().stream().map(Build::getId).collect(Collectors.toSet()),
+					(existing, incoming) -> {
+						Set<String> union = new HashSet<>(existing);
+						union.addAll(incoming);
+						return union;
+					});
         }
-        LOGGER.trace("Found {} Builds in {}, {}.", response.builds.size(), buildBucketName, directoryPathPrefix);
+        LOGGER.trace("Found {} Builds in {}, {}.", response.builds().size(), buildBucketName, directoryPathPrefix);
         return response;
     }
 
@@ -1274,7 +1297,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public InputStream getBuildInputFilesPrepareReportStream(Build build) {
-		final String reportFilePath = pathHelper.getBuildInputFilePrepareReportPath(build.getReleaseCenterKey(), build.getProductKey(), build.getId());
+		final String reportFilePath = pathHelper.getBuildInputFilePrepareReportPath(build);
 		return srsFileHelper.getFileStream(reportFilePath);
 	}
 
@@ -1402,7 +1425,7 @@ public class BuildDAOImpl implements BuildDAO {
 
 	@Override
 	public InputStream getBuildInputGatherReportStream(Build build) {
-		String reportFilePath = pathHelper.getBuildInputGatherReportPath(build.getReleaseCenterKey(), build.getProductKey(), build.getId());
+		String reportFilePath = pathHelper.getBuildInputGatherReportPath(build);
 		return srsFileHelper.getFileStream(reportFilePath);
 	}
 
@@ -1555,77 +1578,6 @@ public class BuildDAOImpl implements BuildDAO {
 		srsFileHelper.putFile(inputStream, filePath + MANIFEST_XML);
 	}
 
-	@Override
-	public void saveBuildComparisonReport(String releaseCenterKey, String productKey, String compareId, BuildComparisonReport report) throws IOException {
-		File reportFile = toJson(report);
-		try (FileInputStream reportInputStream = new FileInputStream(reportFile)) {
-			s3Client.putObject(buildBucketName, pathHelper.getBuildComparisonReportPath(releaseCenterKey, productKey, compareId), reportInputStream, ObjectMetadata.builder().build(), reportFile.length());
-		} finally {
-			if (reportFile != null) {
-                // remove local file
-                Files.deleteIfExists(reportFile.toPath());
-			}
-		}
-	}
-
-	@Override
-	public List<String> listBuildComparisonReportPaths(String releaseCenterKey, String productKey) {
-		final String reportPath = pathHelper.getBuildComparisonReportPath(releaseCenterKey, productKey, null);
-		return srsFileHelper.listFiles(reportPath);
-	}
-
-	@Override
-	public BuildComparisonReport getBuildComparisonReport(String releaseCenterKey, String productKey, String compareId) throws IOException {
-		BuildComparisonReport report = null;
-		String filePath = pathHelper.getBuildComparisonReportPath(releaseCenterKey, productKey, compareId);
-		try (final InputStream s3Object = s3Client.getObject(buildBucketName, filePath)) {
-			if (s3Object != null) {
-				final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
-				try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
-					report = jsonParser.readValueAs(BuildComparisonReport.class);
-				}
-			}
-		}
-
-		return report;
-	}
-
-	@Override
-	public void deleteBuildComparisonReport(String releaseCenterKey, String productKey, String compareId) {
-		String filePath = pathHelper.getBuildComparisonReportPath(releaseCenterKey, productKey, compareId);
-		s3Client.deleteObject(buildBucketName, filePath);
-	}
-
-	@Override
-	public void saveFileComparisonReport(String releaseCenterKey, String productKey, String compareId, boolean ignoreIdComparison, FileDiffReport report) throws IOException {
-		File reportFile = toJson(report);
-		try (FileInputStream reportInputStream = new FileInputStream(reportFile)) {
-			String reportFileName = report.getFileName().replace(".txt", ".diff.json") + "-" + ignoreIdComparison;
-			s3Client.putObject(buildBucketName, pathHelper.getFileComparisonReportPath(releaseCenterKey, productKey, compareId, reportFileName), reportInputStream, ObjectMetadata.builder().build(), reportFile.length());
-		} finally {
-			if (reportFile != null) {
-                Files.deleteIfExists(reportFile.toPath());
-			}
-		}
-	}
-
-	@Override
-	public FileDiffReport getFileComparisonReport(String releaseCenterKey, String productKey, String compareId, String fileName, boolean ignoreIdComparison) throws IOException {
-		FileDiffReport report = null;
-		String reportFileName = fileName.replace(".txt", ".diff.json") + "-" + ignoreIdComparison;
-		String filePath = pathHelper.getFileComparisonReportPath(releaseCenterKey, productKey, compareId, reportFileName);
-		try (final InputStream s3Object = s3Client.getObject(buildBucketName, filePath)) {
-			if (s3Object != null) {
-				final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
-				try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
-					report = jsonParser.readValueAs(FileDiffReport.class);
-				}
-			}
-		}
-
-		return report;
-	}
-
 	private List<String> listFiles(String bucketName, String path) {
 		List<String> files = new ArrayList<>();
 
@@ -1655,7 +1607,9 @@ public class BuildDAOImpl implements BuildDAO {
 		boolean isGetAllBuilds = false;
 		boolean isGetBuildsForProduct = prefix.endsWith(productKey) || prefix.endsWith(productKey + S3PathHelper.SEPARATOR);
 		String key = releaseCenterKey + org.ihtsdo.otf.RF2Constants.DASH + productKey;
-		if (isGetBuildsForProduct && buildIdsToProductMap.containsKey(key) && !buildIdsToProductMap.get(key).isEmpty()) {
+		String primaryProductPath = pathHelper.getProductPath(releaseCenterKey, productKey).toString();
+		if (isGetBuildsForProduct && buildIdsToProductMap.containsKey(key) && !buildIdsToProductMap.get(key).isEmpty()
+				&& prefix.equals(primaryProductPath)) {
 			Set<String> buildIds = buildIdsToProductMap.get(key);
 			if (!CollectionUtils.isEmpty(forYears)) {
 				buildIds = buildIds.stream() .filter(item -> forYears.stream().anyMatch(year -> item.startsWith(String.valueOf(year)))).collect(Collectors.toSet());
