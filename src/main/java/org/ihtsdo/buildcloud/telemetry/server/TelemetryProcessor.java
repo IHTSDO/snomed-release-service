@@ -21,8 +21,13 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
+import org.ihtsdo.otf.dao.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 @Service
 @ConditionalOnProperty(name = "srs.build.offlineMode", havingValue = "false")
@@ -44,15 +49,18 @@ public class TelemetryProcessor {
 	private final Session jmsSession;
 
 	private final ResourceLoader resourceLoader;
+	private final S3Client s3Client;
 
 	@Autowired
 	public TelemetryProcessor(final Session jmsSession, final ResourceLoader resourceLoader,
-			@Value("${srs.build.offlineMode}") final boolean isOffLine) throws JMSException {
+			@Value("${srs.build.offlineMode}") final boolean isOffLine,
+			final S3Client s3Client) throws JMSException {
 		this.streamWriters = new HashMap<>();
 		this.jmsSession = jmsSession;
 		this.consumer = jmsSession.createConsumer(jmsSession.createQueue(Constants.QUEUE_RELEASE_EVENTS));
 		this.resourceLoader = resourceLoader;
 		this.isOffline = isOffLine;
+		this.s3Client = s3Client;
 		new File(TEMP_DIRECTORY_PATH).mkdirs();
 	}
 
@@ -159,7 +167,8 @@ public class TelemetryProcessor {
 		final String path = split[1];
 
 		if (Constants.FILE.equals(protocol)) {
-			return new BufferedWriter(new FileWriter(path));
+			// Keep existing log content and append new telemetry entries.
+			return new BufferedWriter(new FileWriter(path, true));
 		} else if (Constants.s3.equals(protocol)) {
 			return createS3StreamWriter(correlationID, path);
 		} else {
@@ -177,18 +186,33 @@ public class TelemetryProcessor {
 				new ResourceConfiguration.Local(), new ResourceConfiguration.Cloud(bucketName, objectKey)),
 				resourceLoader);
 
-		final File temporaryFile = new File(TEMP_DIRECTORY_PATH + "/" + correlationID);
+		final File temporaryFile = new File(TEMP_DIRECTORY_PATH + Constants.SLASH + correlationID);
+		prepareTemporaryS3FileForAppend(bucketName, objectKey, temporaryFile);
 
-		return new BufferedWriterTaskOnClose(new FileWriter(temporaryFile), () -> {
+		return new BufferedWriterTaskOnClose(new FileWriter(temporaryFile, true), () -> {
 			if (!isOffline) {
 				try {
 					resourceManager.writeResource("", temporaryFile.toURI().toURL().openStream());
-					temporaryFile.delete();
+					 Files.deleteIfExists(temporaryFile.toPath());
 				} catch (IOException e) {
 					LOGGER.error("Error occurred while trying to upload the file to S3.", e);
 				}
 			}
 		});
+	}
+
+	private void prepareTemporaryS3FileForAppend(final String bucketName, final String objectKey, final File temporaryFile) throws IOException {
+		try (InputStream existingObjectInputStream = s3Client.getObject(bucketName, objectKey)) {
+			if (existingObjectInputStream != null) {
+				Files.copy(existingObjectInputStream, temporaryFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				return;
+			}
+		} catch (S3Exception e) {
+			if (e.statusCode() != 404) {
+				throw e;
+			}
+		}
+		Files.deleteIfExists(temporaryFile.toPath());
 	}
 
 	private void processJMSException(final JMSException e) {
