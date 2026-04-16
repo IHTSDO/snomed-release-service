@@ -38,7 +38,6 @@ import org.ihtsdo.buildcloud.core.service.validation.rvf.RVFClient;
 import org.ihtsdo.buildcloud.core.service.validation.rvf.ValidationRequest;
 import org.ihtsdo.buildcloud.rest.pojo.BuildPage;
 import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
-import org.ihtsdo.buildcloud.telemetry.client.TelemetryStream;
 import org.ihtsdo.otf.jms.MessagingHelper;
 import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.ihtsdo.otf.rest.client.RestClientException;
@@ -376,14 +375,11 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
-	public Build triggerBuild(Build build, Boolean enableTelemetryStream) throws IOException {
+	public Build triggerBuild(Build build) throws IOException {
 		if (dao.isBuildCancelRequested(build)) return build;
 
 		// Start the build telemetry stream. All future logging on this thread and it's children will be captured.
 		try {
-			if (Boolean.TRUE.equals(enableTelemetryStream)) {
-				TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
-			}
 			// Get build configurations from S3
 			getBuildConfigurations(build);
 			if (dao.isBuildCancelRequested(build)) return build;
@@ -409,11 +405,6 @@ public class BuildServiceImpl implements BuildService {
 		} catch (Exception e) {
 			LOGGER.error("Error occurred while trying to trigger the build {}.", build.getId(), e);
 			dao.updateStatus(build, Status.FAILED);
-		} finally {
-			// Finish the telemetry stream. Logging on this thread will no longer be captured.
-			if (Boolean.TRUE.equals(enableTelemetryStream)) {
-				TelemetryStream.finish(LOGGER);
-			}
 		}
 		return build;
 	}

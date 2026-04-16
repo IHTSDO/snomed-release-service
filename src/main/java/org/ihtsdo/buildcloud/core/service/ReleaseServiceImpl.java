@@ -18,12 +18,10 @@ import org.ihtsdo.buildcloud.core.service.inputfile.gather.InputGatherReport;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.FileProcessingReportDetail;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.ReportType;
 import org.ihtsdo.buildcloud.core.service.inputfile.prepare.SourceFileProcessingReport;
-import org.ihtsdo.buildcloud.telemetry.client.TelemetryStream;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -40,8 +38,6 @@ import java.util.Map;
 
 @Service
 public class ReleaseServiceImpl implements ReleaseService {
-
-	private static final String TRACKER_ID = "trackerId";
 
 	@Autowired
 	private BuildDAO buildDAO;
@@ -65,26 +61,20 @@ public class ReleaseServiceImpl implements ReleaseService {
 	@Override
 	public void runReleaseBuild(Build build) throws IOException {
 		if (buildDAO.isBuildCancelRequested(build)) return;
-
-		TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
 		try {
-			MDC.put(TRACKER_ID, build.getReleaseCenterKey() + "|" + build.getProductKey() + "|" + build.getId());
 			LOGGER.info("Running release build for center/{}/product/{}/buildId/{}", build.getReleaseCenterKey(), build.getProductKey(), build.getId());
 			if (gatherSourceFiles(build)) {
 				if (buildDAO.isBuildCancelRequested(build)) return;
 				if (prepareInputFiles(build)) {
 					// trigger build
 					LOGGER.info("Build {} is triggered for product {}", build.getId(), build.getProductKey());
-					buildService.triggerBuild(build, false);
+					buildService.triggerBuild(build);
 				}
 			}
 		} catch (Exception e) {
 			String msg = String.format(ERROR_MSG_FORMAT, build.getId(), build.getProductKey());
 			LOGGER.error(msg, e);
 			buildDAO.updateStatus(build, Status.FAILED);
-		} finally {
-			MDC.remove(TRACKER_ID);
-			TelemetryStream.finish(LOGGER);
 		}
 	}
 

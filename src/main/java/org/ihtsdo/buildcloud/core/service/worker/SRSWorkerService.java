@@ -2,6 +2,8 @@ package org.ihtsdo.buildcloud.core.service.worker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.jms.JMSException;
+import jakarta.jms.TextMessage;
 import org.apache.commons.io.IOUtils;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.dao.io.AsyncPipedStreamBean;
@@ -11,8 +13,10 @@ import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.CreateReleasePackageBuildRequest;
 import org.ihtsdo.buildcloud.core.service.ReleaseService;
 import org.ihtsdo.buildcloud.core.service.manager.ReleaseBuildManager;
+import org.ihtsdo.buildcloud.telemetry.client.TelemetryStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -21,8 +25,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.stereotype.Service;
 
-import jakarta.jms.JMSException;
-import jakarta.jms.TextMessage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,8 +33,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 
-import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.*;
 import static org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper.BUILD_LOG_TXT;
+import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.MESSAGE;
+import static org.ihtsdo.buildcloud.core.service.BuildServiceImpl.PROGRESS_STATUS;
 import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.MESSAGE_DELIVERY_COUNT;
 import static org.ihtsdo.buildcloud.core.service.helper.SRSConstants.RETRY_COUNT;
 
@@ -42,6 +45,8 @@ public class SRSWorkerService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SRSWorkerService.class);
 	private static final String LAST_UPDATED_TIME = "lastUpdatedTime";
+
+	private static final String TRACKER_ID = "trackerId";
 
     private final ObjectMapper objectMapper;
 
@@ -54,89 +59,107 @@ public class SRSWorkerService {
 	@Value("${srs.build.interrupted.max-retries:3}")
 	private int interruptedMaxRetries;
 
+	private static class PendingBuildReportSummaryAppend {
+		private Build build;
+		private BuildReport report;
+	}
+
     @Autowired
     public SRSWorkerService(ObjectMapper objectMapper, ReleaseService releaseService, BuildService buildService, BuildDAO buildDAO) {
         this.objectMapper = objectMapper;
         this.releaseService = releaseService;
         this.buildService = buildService;
         this.buildDAO = buildDAO;
-
     }
 
     @JmsListener(destination = "${srs.jms.queue.prefix}.build-jobs", concurrency = "${srs.jms.queue.concurrency}")
     public void consumeSRSJob(final TextMessage srsMessage) throws IOException {
 		final Instant start = Instant.now();
+		final PendingBuildReportSummaryAppend pendingAppend = new PendingBuildReportSummaryAppend();
 		CreateReleasePackageBuildRequest buildRequest;
 		try {
 			buildRequest = objectMapper.readValue(srsMessage.getText(), CreateReleasePackageBuildRequest.class);
 		} catch (JMSException | JsonProcessingException e) {
 			throw new IllegalStateException("Error occurred while trying to consume the SRS build request message.", e);
 		}
-
-		final Build messageBuild = buildRequest.getBuild();
-
-		if (messageBuild.getId().equals(ReleaseBuildManager.EPOCH_TIME)) {
-			return;
-		}
-
-		// Reload the authoritative build state from storage
-		Build build = buildDAO.find(
-				messageBuild.getReleaseCenterKey(),
-				messageBuild.getProductKey(),
-				messageBuild.getId(),
-				true,
-				true,
-				null,
-				null);
-
-		if (build == null) {
-			LOGGER.warn("Build not found for releaseCenterKey {}, productKey {}, buildId {}. Ignoring message.",
-					messageBuild.getReleaseCenterKey(), messageBuild.getProductKey(), messageBuild.getId());
-			return;
-		}
-
-		final Build.Status status = build.getStatus();
-        final int deliveryCount = getDeliveryCount(srsMessage);
-
-		SecurityContextHolder.getContext().setAuthentication(getPreAuthenticatedAuthenticationToken(buildRequest));
 		try {
-			if (Build.Status.PENDING == status || Build.Status.QUEUED == status) {
-				// First (or clean) attempt: run as normal
-				if (buildDAO.isBuildCancelRequested(build)) {
-					return;
+			final Build messageBuild = buildRequest.getBuild();
+
+			TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(messageBuild));
+			MDC.put(TRACKER_ID, messageBuild.getReleaseCenterKey() + "|" + messageBuild.getProductKey() + "|" + messageBuild.getId());
+
+			if (messageBuild.getId().equals(ReleaseBuildManager.EPOCH_TIME)) {
+				return;
+			}
+
+			// Reload the authoritative build state from storage
+			Build build = buildDAO.find(
+					messageBuild.getReleaseCenterKey(),
+					messageBuild.getProductKey(),
+					messageBuild.getId(),
+					true,
+					true,
+					null,
+					null);
+
+			if (build == null) {
+				LOGGER.warn("Build not found for releaseCenterKey {}, productKey {}, buildId {}. Ignoring message.",
+						messageBuild.getReleaseCenterKey(), messageBuild.getProductKey(), messageBuild.getId());
+				return;
+			}
+
+			final Build.Status status = build.getStatus();
+			final int deliveryCount = getDeliveryCount(srsMessage);
+
+			SecurityContextHolder.getContext().setAuthentication(getPreAuthenticatedAuthenticationToken(buildRequest));
+			try {
+				if (Build.Status.PENDING == status || Build.Status.QUEUED == status) {
+					// First (or clean) attempt: run as normal
+					if (buildDAO.isBuildCancelRequested(build)) {
+						return;
+					}
+
+					LOGGER.info("Starting release build: {} for product: {}", build.getId(), build.getProductKey());
+					// build status response message is handled by buildDAO
+					buildDAO.updateStatus(build, Build.Status.BEFORE_TRIGGER);
+					releaseService.runReleaseBuild(build);
+
+					final Instant finish = Instant.now();
+					LOGGER.info("Release build {} completed in {} minute(s) for product: {}",
+							build.getId(), Duration.between(start, finish).toMinutes(), build.getProductKey());
+				} else if (deliveryCount > 1 && (Build.Status.BEFORE_TRIGGER == status || Build.Status.BUILDING == status)) {
+					// If we're seeing a build mid-flight, only retry if this is a redelivery (i.e. prior attempt likely died before ack due to spot instances)
+					retryInterruptedBuild(build, start, deliveryCount, deliveryCount - 1, pendingAppend);
 				}
+			} finally {
+				if (buildDAO.isBuildCancelRequested(build)) {
+					final BuildReport buildReport = getBuildReportFile(build);
+					if (buildReport != null) {
+						buildReport.add(PROGRESS_STATUS, "cancelled");
+						buildReport.add(MESSAGE, "Build was cancelled");
+						build.setBuildReport(buildReport);
+						buildDAO.persistReport(build);
+					}
 
-				LOGGER.info("Starting release build: {} for product: {}", build.getId(), build.getProductKey());
-				// build status response message is handled by buildDAO
-				buildDAO.updateStatus(build, Build.Status.BEFORE_TRIGGER);
-				releaseService.runReleaseBuild(build);
-
-				final Instant finish = Instant.now();
-				LOGGER.info("Release build {} completed in {} minute(s) for product: {}",
-						build.getId(), Duration.between(start, finish).toMinutes(), build.getProductKey());
-			} else if (deliveryCount > 1 && (Build.Status.BEFORE_TRIGGER == status || Build.Status.BUILDING == status)) {
-				// If we're seeing a build mid-flight, only retry if this is a redelivery (i.e. prior attempt likely died before ack due to spot instances)
-                retryInterruptedBuild(build, start, deliveryCount, deliveryCount - 1);
+					buildDAO.updateStatus(build, Build.Status.CANCELLED);
+					buildDAO.deleteOutputFiles(build);
+					LOGGER.info("Build has been canceled");
+				}
 			}
 		} finally {
-			if (buildDAO.isBuildCancelRequested(build)) {
-				final BuildReport buildReport = getBuildReportFile(build);
-				if (buildReport != null) {
-					buildReport.add(PROGRESS_STATUS, "cancelled");
-					buildReport.add(MESSAGE, "Build was cancelled");
-					build.setBuildReport(buildReport);
-					buildDAO.persistReport(build);
-				}
-
-				buildDAO.updateStatus(build, Build.Status.CANCELLED);
-				buildDAO.deleteOutputFiles(build);
-				LOGGER.info("Build has been canceled");
+			MDC.remove(TRACKER_ID);
+			TelemetryStream.finish(LOGGER);
+			// Important: write summary bytes after TelemetryStream finished to prevent TelemetryProcessor
+			// from overwriting the object with its temp-file upload.
+			if (pendingAppend.build != null && pendingAppend.report != null) {
+				appendBuildReportSummaryToEndOfBuildLog(pendingAppend.build, pendingAppend.report);
 			}
 		}
     }
 
 
-	private void retryInterruptedBuild(Build build, Instant start, int messageDeliveryCount, int retryAttempt) throws IOException {
+	private void retryInterruptedBuild(Build build, Instant start, int messageDeliveryCount, int retryAttempt,
+									   final PendingBuildReportSummaryAppend pendingAppend) throws IOException {
 		try {
 			if (buildDAO.isBuildCancelRequested(build)) {
 				return;
@@ -154,7 +177,9 @@ public class SRSWorkerService {
 						failMessage);
 				build.setBuildReport(report);
 				buildDAO.persistReport(build);
-				appendBuildReportSummaryToEndOfBuildLog(build, report);
+				// Defer actual log-file append until after TelemetryStream finishes.
+				pendingAppend.build = build;
+				pendingAppend.report = report;
 				// Do not persist/send retryCount when max retries is exceeded.
 				// This prevents downstream "retried" notifications and avoids reporting a new attempt when we're not retrying.
 				buildDAO.updateStatus(build, Build.Status.FAILED);
@@ -242,9 +267,10 @@ public class SRSWorkerService {
 		summaryMap.put(LAST_UPDATED_TIME, reportMap.get(LAST_UPDATED_TIME));
 
 		final byte[] summaryBytes;
+		final String summary;
 		try {
 			final String summaryJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(summaryMap);
-			final String summary = "\n\n"
+			summary = "\n\n"
 					+ "===== BUILD REPORT UPDATE =====\n"
 					+ summaryJson + "\n"
 					+ "===============================\n";

@@ -35,7 +35,7 @@ public interface BuildService {
 	 * @return
 	 * @throws BusinessServiceException
 	 */
-	Build triggerBuild(Build build, Boolean enableTelemetryStream) throws IOException;
+	Build triggerBuild(Build build) throws IOException;
 
 	List<Build> findAllDesc(String releaseCenterKey, String productKey, Boolean includeBuildConfiguration, Boolean includeQAConfiguration, Boolean includeRvfURL, Boolean visibility) throws ResourceNotFoundException;
 

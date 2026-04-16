@@ -73,6 +73,8 @@ class SRSWorkerServiceRetryTest {
 		EasyMock.expect(buildDAO.find(build.getReleaseCenterKey(), build.getProductKey(), build.getId(), true, true, null, null))
 				.andReturn(build);
 		EasyMock.expect(buildDAO.isBuildCancelRequested(build)).andReturn(false).anyTimes();
+		EasyMock.expect(buildDAO.getTelemetryBuildLogFilePath(EasyMock.anyObject(Build.class)))
+				.andReturn("s3://test-bucket/test-build-log.txt").anyTimes();
 
 		EasyMock.expect(buildService.getBuildReportFile(build)).andReturn(null);
 
@@ -132,6 +134,8 @@ class SRSWorkerServiceRetryTest {
 		EasyMock.expect(buildDAO.find(build.getReleaseCenterKey(), build.getProductKey(), build.getId(), true, true, null, null))
 				.andReturn(build);
 		EasyMock.expect(buildDAO.isBuildCancelRequested(build)).andReturn(false).anyTimes();
+		EasyMock.expect(buildDAO.getTelemetryBuildLogFilePath(EasyMock.anyObject(Build.class)))
+				.andReturn("s3://test-bucket/test-build-log.txt").anyTimes();
 		EasyMock.expect(buildService.getBuildReportFile(build)).andReturn(null);
 
 		// Existing build log content should be preserved and the report summary appended.
