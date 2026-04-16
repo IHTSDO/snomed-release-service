@@ -120,6 +120,7 @@ public class BuildDAOImpl implements BuildDAO {
 	private static final String SORT_PROPERTY_BUILD_USER = "buildUser";
 
     private static final String MANIFEST_DIR_PREFIX = "manifest" + S3PathHelper.SEPARATOR;
+	private static final String MAIN_BUILD_LOG_RELATIVE_PATH = S3PathHelper.LOG + S3PathHelper.SEPARATOR + S3PathHelper.BUILD_LOG_TXT;
 
 	private static final Set<Build.Status> TERMINAL_STATUSES = EnumSet.of(
 			Build.Status.FAILED_INPUT_GATHER_REPORT_VALIDATION,
@@ -1407,6 +1408,10 @@ public class BuildDAOImpl implements BuildDAO {
 	private static boolean shouldDeleteForRetry(String relativePath) {
 		// Preserve manifest directory contents (and potential directory marker key)
 		if (relativePath.equals("manifest") || relativePath.startsWith(MANIFEST_DIR_PREFIX)) {
+			return false;
+		}
+		// Preserve the primary build log to keep telemetry and retry diagnostics.
+		if (MAIN_BUILD_LOG_RELATIVE_PATH.equals(relativePath)) {
 			return false;
 		}
 

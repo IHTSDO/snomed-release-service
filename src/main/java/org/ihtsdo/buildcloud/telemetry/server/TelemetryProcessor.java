@@ -15,6 +15,7 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import jakarta.jms.IllegalStateException;
 import jakarta.jms.*;
 import java.io.BufferedWriter;
@@ -24,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashMap;
 import java.util.Map;
 import org.ihtsdo.otf.dao.s3.S3Client;
@@ -36,10 +38,13 @@ public class TelemetryProcessor {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TelemetryProcessor.class);
 
 	private static final int ONE_SECOND = 1000;
+	private static final long S3_UPLOAD_INTERVAL_MILLIS = 10_000L;
 
 	private static final String TEMP_DIRECTORY_PATH = "/tmp/telemetry-tmp";
 
 	private final Map<String, BufferedWriter> streamWriters;
+	private final Map<String, Runnable> activeS3UploadTasks;
+	private final Map<String, Long> activeS3LastUploadMillis;
 
 	private boolean shutdown;
 	private final boolean isOffline;
@@ -55,7 +60,9 @@ public class TelemetryProcessor {
 	public TelemetryProcessor(final Session jmsSession, final ResourceLoader resourceLoader,
 			@Value("${srs.build.offlineMode}") final boolean isOffLine,
 			final S3Client s3Client) throws JMSException {
-		this.streamWriters = new HashMap<>();
+		this.streamWriters = new ConcurrentHashMap<>();
+		this.activeS3UploadTasks = new ConcurrentHashMap<>();
+		this.activeS3LastUploadMillis = new ConcurrentHashMap<>();
 		this.jmsSession = jmsSession;
 		this.consumer = jmsSession.createConsumer(jmsSession.createQueue(Constants.QUEUE_RELEASE_EVENTS));
 		this.resourceLoader = resourceLoader;
@@ -66,6 +73,10 @@ public class TelemetryProcessor {
 
 	@PostConstruct
 	public void startup() {
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			shutdown = true;
+			closeOpenStreams();
+		}, "telemetry-processor-shutdown"));
 		new Thread(this::doStartUp).start();
 	}
 
@@ -75,6 +86,7 @@ public class TelemetryProcessor {
 		while (!shutdown) {
 			printedWaiting = doStartUp(printedWaiting);
 		}
+		closeOpenStreams();
 	}
 
 	private boolean doStartUp(boolean printedWaiting) {
@@ -83,6 +95,7 @@ public class TelemetryProcessor {
 		} catch (IllegalStateException e) {
 			LOGGER.info("Connection closed. Shutting down telemetry consumer.");
 			shutdown = true;
+			closeOpenStreams();
 		} catch (JMSException e) {
 			processJMSException(e);
 		} catch (IOException e) {
@@ -130,6 +143,7 @@ public class TelemetryProcessor {
 			writeMessageText(message, text, writer);
 			// We need output to disk to be up to the minute, so flush each line
 			writer.flush();
+			pushS3StreamIfDue(correlationID);
 		} else {
 			LOGGER.error("Attempting to write to stream but no open stream for correlationID {}.", correlationID);
 		}
@@ -149,6 +163,8 @@ public class TelemetryProcessor {
 		if (writer != null) {
 			writer.close();
 			streamWriters.remove(correlationID);
+			activeS3UploadTasks.remove(correlationID);
+			activeS3LastUploadMillis.remove(correlationID);
 		} else {
 			LOGGER.error("Attempting to close stream but no open stream for correlationID {}", correlationID);
 		}
@@ -189,14 +205,12 @@ public class TelemetryProcessor {
 		final File temporaryFile = new File(TEMP_DIRECTORY_PATH + Constants.SLASH + correlationID);
 		prepareTemporaryS3FileForAppend(bucketName, objectKey, temporaryFile);
 
+		activeS3UploadTasks.put(correlationID, () -> uploadTemporaryFile(resourceManager, temporaryFile, false));
+		activeS3LastUploadMillis.put(correlationID, System.currentTimeMillis());
+
 		return new BufferedWriterTaskOnClose(new FileWriter(temporaryFile, true), () -> {
 			if (!isOffline) {
-				try {
-					resourceManager.writeResource("", temporaryFile.toURI().toURL().openStream());
-					 Files.deleteIfExists(temporaryFile.toPath());
-				} catch (IOException e) {
-					LOGGER.error("Error occurred while trying to upload the file to S3.", e);
-				}
+				uploadTemporaryFile(resourceManager, temporaryFile, true);
 			}
 		});
 	}
@@ -215,19 +229,67 @@ public class TelemetryProcessor {
 		Files.deleteIfExists(temporaryFile.toPath());
 	}
 
+	private void pushS3StreamIfDue(final String correlationID) {
+		final Runnable uploadTask = activeS3UploadTasks.get(correlationID);
+		if (uploadTask == null || isOffline) {
+			return;
+		}
+		final long now = System.currentTimeMillis();
+		final long lastUpload = activeS3LastUploadMillis.getOrDefault(correlationID, 0L);
+		if (now - lastUpload < S3_UPLOAD_INTERVAL_MILLIS) {
+			return;
+		}
+		uploadTask.run();
+		activeS3LastUploadMillis.put(correlationID, now);
+	}
+
+	private void uploadTemporaryFile(final ResourceManager resourceManager, final File temporaryFile, final boolean deleteAfterUpload) {
+		try {
+			resourceManager.writeResource("", temporaryFile.toURI().toURL().openStream());
+			if (deleteAfterUpload) {
+				Files.deleteIfExists(temporaryFile.toPath());
+			}
+		} catch (IOException e) {
+			LOGGER.error("Error occurred while trying to upload the file to S3.", e);
+		}
+	}
+
 	private void processJMSException(final JMSException e) {
 		final Exception linkedException = e.getLinkedException();
 		if (linkedException != null && linkedException.getClass().equals(TransportDisposedIOException.class)) {
 			LOGGER.info("Transport disposed. Shutting down telemetry consumer.");
 			shutdown = true;
+			closeOpenStreams();
 		} else {
 			LOGGER.error("Error occurred while trying to receive the message.", e);
 		}
 	}
 
+	@PreDestroy
 	public final void shutdown() throws JMSException {
 		shutdown = true;
+		closeOpenStreams();
 		consumer.close();
 		jmsSession.close();
+	}
+
+	private void closeOpenStreams() {
+		final Map<String, BufferedWriter> activeWriters;
+		synchronized (streamWriters) {
+			if (streamWriters.isEmpty()) {
+				return;
+			}
+			activeWriters = new HashMap<>(streamWriters);
+			streamWriters.clear();
+			activeS3UploadTasks.clear();
+			activeS3LastUploadMillis.clear();
+		}
+		activeWriters.forEach((correlationId, writer) -> {
+			try {
+				writer.close();
+			} catch (IOException e) {
+				LOGGER.error("Failed to close stream for correlationID {} during shutdown.", correlationId, e);
+			}
+		});
 	}
 }
