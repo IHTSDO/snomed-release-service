@@ -216,7 +216,6 @@ import static org.ihtsdo.buildcloud.core.service.ProductService.PRODUCT_LINKS;
 			description = "Generates a release manifest from the request configuration and returns it as XML")
 	public ResponseEntity<String> generateManifest(@PathVariable final String releaseCenterKey,
 												   @PathVariable final String productKey,
-												   @RequestParam final String branchPath,
 												   @RequestBody final ManifestConfig manifestConfig)
 			throws ResourceNotFoundException, BusinessServiceException, RestClientException {
 		Product product = productService.find(releaseCenterKey, productKey, false);
@@ -234,8 +233,7 @@ import static org.ihtsdo.buildcloud.core.service.ProductService.PRODUCT_LINKS;
 			throw new BadRequestException("Manifest configuration is required.");
 		}
 		List<String> moduleIds = buildConfiguration.getExtensionConfig() != null ? buildConfiguration.getExtensionConfig().getModuleIdsAsList() : Collections.emptyList();
-		String manifestXml = releaseManifestService.generateManifestXml(manifestConfig, releaseCenterKey, branchPath,
-				buildConfiguration.getEffectiveTimeSnomedFormat(), buildConfiguration.isDailyBuild(), buildConfiguration.isBetaRelease(), moduleIds);
+		String manifestXml = releaseManifestService.generateManifestXml(manifestConfig, releaseCenterKey, buildConfiguration, moduleIds);
 		return ResponseEntity.ok()
 				.contentType(MediaType.APPLICATION_XML)
 				.body(manifestXml);

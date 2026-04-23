@@ -5,7 +5,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import org.ihtsdo.buildcloud.core.dao.ReleaseCenterDAO;
+import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.ManifestConfig;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.manifest.generation.domain.ReleaseContext;
@@ -19,12 +23,14 @@ import org.ihtsdo.otf.rest.client.terminologyserver.Page;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.ConceptMiniPojo;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.RefsetMember;
+import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 
@@ -75,11 +81,18 @@ public class ReleaseManifestService {
     }
 
     @Transactional(readOnly = true)
-    public String generateManifestXml(ManifestConfig manifestConfig, String releaseCenterKey, String branchPath, String effectiveTime, boolean isDailyBuild, boolean betaRelease,
-                                      List<String> moduleIds) throws BusinessServiceException, RestClientException {
+    public String generateManifestXml(ManifestConfig manifestConfig, String releaseCenterKey, BuildConfiguration configuration, List<String> moduleIds) throws BusinessServiceException, RestClientException {
+        final String branchPath = StringUtils.hasLength(configuration.getBranchPath()) ? configuration.getBranchPath() : configuration.getDefaultBranchPath();
+        if (!StringUtils.hasLength(branchPath)) {
+            throw new BadConfigurationException("Build branch path or product default branch path must be set.");
+        }
+        final String effectiveTime = configuration.getEffectiveTimeSnomedFormat();
+        final boolean isDailyBuild = configuration.isDailyBuild();
+        final boolean betaRelease = configuration.isBetaRelease();
+        boolean validReleaseAdditionalInformationFields = validateReleaseAdditionalInformationFields(configuration.getAdditionalReleaseInformationFields());
 
         ManifestFilenameContext filenameContext = new ManifestFilenameContext(effectiveTime, manifestConfig.getProductNamespace(), betaRelease, isDailyBuild, manifestConfig.isDerivativeProduct());
-        InitialManifest initial = createInitialManifest(manifestConfig, filenameContext, isDailyBuild, betaRelease);
+        InitialManifest initial = createInitialManifest(manifestConfig, filenameContext, isDailyBuild, betaRelease, validReleaseAdditionalInformationFields);
         CodeSystem codeSystem = resolveCodeSystem(releaseCenterKey);
         addCoreComponents(codeSystem, initial.terminologyFolder(), filenameContext);
 
@@ -109,7 +122,25 @@ public class ReleaseManifestService {
         return writeManifestXml(initial.manifest(), codeSystem);
     }
 
-    private InitialManifest createInitialManifest(ManifestConfig manifestConfig, ManifestFilenameContext filenameContext, boolean isDailyBuild, boolean betaRelease) {
+    private boolean validateReleaseAdditionalInformationFields(String additionalReleaseInformationFields) {
+        if (!StringUtils.hasLength(additionalReleaseInformationFields)) {
+            return false;
+        }
+        try {
+            JsonElement jsonElement = JsonParser.parseString(additionalReleaseInformationFields);
+            if (jsonElement == null || jsonElement.isJsonNull()) {
+                return false;
+            }
+            if (jsonElement.isJsonObject() && jsonElement.getAsJsonObject().isEmpty()) {
+                return false;
+            }
+        } catch (JsonSyntaxException e) {
+            return false;
+        }
+        return true;
+    }
+
+    private InitialManifest createInitialManifest(ManifestConfig manifestConfig, ManifestFilenameContext filenameContext, boolean isDailyBuild, boolean betaRelease, boolean validReleaseAdditionalInformationFields) {
         String effectiveTime = filenameContext.effectiveTime();
         String formattedProductName = manifestConfig.getProductName().replace(" ", "");
         String preOrProductionType = betaRelease ? "PREPRODUCTION" : "PRODUCTION";
@@ -123,7 +154,7 @@ public class ReleaseManifestService {
         ReleaseManifestFolder rootFolder = new ReleaseManifestFolder(rootFolderName);
         ReleaseManifest manifest = new ReleaseManifest(rootFolder);
         rootFolder.getOrAddFile(format("Readme_en_%s.txt", effectiveTime)).clearSource();
-        if (!isDailyBuild && !betaRelease) {
+        if ((!isDailyBuild && !betaRelease) || (betaRelease && validReleaseAdditionalInformationFields)) {
             rootFolder.getOrAddFile("release_package_information.json").clearSource();
         }
 

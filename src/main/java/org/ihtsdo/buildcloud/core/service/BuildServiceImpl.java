@@ -284,7 +284,7 @@ public class BuildServiceImpl implements BuildService {
 	private String generateManifestXml(Build build, ManifestConfig manifestConfig) throws BusinessServiceException, RestClientException {
 		if (StringUtils.hasLength(build.getConfiguration().getBranchPath()) && manifestConfig != null && manifestConfig.isAutoGenerateManifest()) {
 			List<String> moduleIds = build.getConfiguration().getExtensionConfig() != null ? build.getConfiguration().getExtensionConfig().getModuleIdsAsList() : Collections.emptyList();
-			return releaseManifestService.generateManifestXml(manifestConfig, build.getReleaseCenterKey(), build.getConfiguration().getBranchPath(), build.getConfiguration().getEffectiveTimeSnomedFormat(), build.getConfiguration().isDailyBuild(), build.getConfiguration().isBetaRelease(), moduleIds);
+			return releaseManifestService.generateManifestXml(manifestConfig, build.getReleaseCenterKey(), build.getConfiguration(), moduleIds);
 		}
 		return null;
 	}
