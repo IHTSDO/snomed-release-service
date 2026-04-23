@@ -160,7 +160,7 @@ public class TermServerServiceImpl implements TermServerService {
 	@Override
 	public Map<String, ConceptMiniPojo> getRefsetsWithTypeInformation(String branchPath, String module) {
 		SnowstormRestClient snowstormRestClient = getSnowstormClient();
-		return snowstormRestClient.getRefsetsWithTypeInformation(branchPath, module);
+		return snowstormRestClient.getRefsetsWithTypeInformation(branchPath, false, module);
 	}
 
 	@Override

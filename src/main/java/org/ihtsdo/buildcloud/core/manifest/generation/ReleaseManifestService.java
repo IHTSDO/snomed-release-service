@@ -75,13 +75,12 @@ public class ReleaseManifestService {
     }
 
     @Transactional(readOnly = true)
-    public String generateManifestXml(ManifestConfig manifestConfig, String releaseCenterKey, String branchPath, String effectiveTime, boolean isDailyBuild, boolean betaRelease
-    ) throws BusinessServiceException, RestClientException {
+    public String generateManifestXml(ManifestConfig manifestConfig, String releaseCenterKey, String branchPath, String effectiveTime, boolean isDailyBuild, boolean betaRelease,
+                                      List<String> moduleIds) throws BusinessServiceException, RestClientException {
 
         ManifestFilenameContext filenameContext = new ManifestFilenameContext(effectiveTime, manifestConfig.getProductNamespace(), betaRelease, isDailyBuild, manifestConfig.isDerivativeProduct());
         InitialManifest initial = createInitialManifest(manifestConfig, filenameContext, isDailyBuild, betaRelease);
         CodeSystem codeSystem = resolveCodeSystem(releaseCenterKey);
-
         addCoreComponents(codeSystem, initial.terminologyFolder(), filenameContext);
 
         Map<String, ConceptMiniPojo> refsets = new HashMap<>(termServerService.getRefsetsWithTypeInformation(branchPath, null));
@@ -91,7 +90,7 @@ public class ReleaseManifestService {
 
         Set<String> refsetsWithMissingExportConfiguration = new HashSet<>();
         ReleaseContext releaseContext = new ReleaseContext(codeSystem, effectiveTime, termServerService);
-        ReleaseManifestFolder refsetFolder = addRefsets(releaseContext, initial.contentFolder(), refsets, filenameContext, refsetsWithMissingExportConfiguration);
+        ReleaseManifestFolder refsetFolder = addRefsets(releaseContext, initial.contentFolder(), refsets, filenameContext, refsetsWithMissingExportConfiguration, moduleIds, manifestConfig.isPackageSimpleRefsetsIndividually());
 
         addEmptyMemberAnnotationStringRefsetIfMissing(refsets, codeSystem, initial.contentFolder(), refsetFolder, filenameContext);
 
@@ -184,18 +183,27 @@ public class ReleaseManifestService {
     }
 
     private ReleaseManifestFolder addRefsets(ReleaseContext releaseContext, ReleaseManifestFolder snapshotFolder, Map<String, ConceptMiniPojo> refsets,
-                                             ManifestFilenameContext filenameContext, Set<String> refsetsWithMissingExportConfiguration) {
+                                             ManifestFilenameContext filenameContext, Set<String> refsetsWithMissingExportConfiguration, List<String> moduleIds, boolean packagingSimpleRefsetsIndividually) {
 
         ReleaseManifestFolder refsetFolder = snapshotFolder.getOrAddFolder("Refset");
+        RefsetGenerationContext generationContext = new RefsetGenerationContext(
+                snapshotFolder,
+                filenameContext,
+                refsetsWithMissingExportConfiguration,
+                refsetFolder,
+                moduleIds,
+                packagingSimpleRefsetsIndividually
+        );
         for (ConceptMiniPojo refset : refsets.values()) {
-            addRefset(releaseContext, snapshotFolder, filenameContext, refsetsWithMissingExportConfiguration, refset, refsetFolder);
+            if (Boolean.TRUE.equals(refset.getActive())) {
+                addRefset(releaseContext, generationContext, refset);
+            }
         }
         return refsetFolder;
     }
 
     @SuppressWarnings("unchecked")
-    private void addRefset(ReleaseContext releaseContext, ReleaseManifestFolder snapshotFolder, ManifestFilenameContext filenameContext,
-                           Set<String> refsetsWithMissingExportConfiguration, ConceptMiniPojo refset, ReleaseManifestFolder refsetFolder) {
+    private void addRefset(ReleaseContext releaseContext, RefsetGenerationContext generationContext, ConceptMiniPojo refset) {
 
         TermServerService snowstormClient = releaseContext.snowstormClient();
         CodeSystem codeSystem = releaseContext.codeSystem();
@@ -225,12 +233,16 @@ public class ReleaseManifestService {
                 fieldNameList = List.of("mapTarget");
             }
         }
+        if (generationContext.packagingSimpleRefsetsIndividually() && "Simple".equals(exportName) && generationContext.moduleIds().contains(refset.getModuleId())) {
+            exportName = refset.getConceptId() + exportName + "Refset";
+        }
+
         if (exportDir == null || fieldTypes == null) {
-            refsetsWithMissingExportConfiguration.add(refset.getConceptId());
+            generationContext.refsetsWithMissingExportConfiguration().add(refset.getConceptId());
             return;
         }
-        ReleaseManifestFolder outputFolder = getRefsetOutputFolder(exportDir, snapshotFolder, refsetFolder);
-        ReleaseManifestFile refsetFile = getRefsetFile(filenameContext, exportName, languageCode, fieldTypes, outputFolder);
+        ReleaseManifestFolder outputFolder = getRefsetOutputFolder(exportDir, generationContext.snapshotFolder(), generationContext.refsetFolder());
+        ReleaseManifestFile refsetFile = getRefsetFile(generationContext.filenameContext(), exportName, languageCode, fieldTypes, outputFolder);
         addRefsetAndFields(refset, refsetFile, fieldNameList);
     }
 
@@ -321,6 +333,16 @@ public class ReleaseManifestService {
     }
 
     private record ManifestFilenameContext(String effectiveTime, String productNamespace, boolean betaRelease, boolean isDailyBuild, boolean isDerivative) {
+    }
+
+    private record RefsetGenerationContext(
+            ReleaseManifestFolder snapshotFolder,
+            ManifestFilenameContext filenameContext,
+            Set<String> refsetsWithMissingExportConfiguration,
+            ReleaseManifestFolder refsetFolder,
+            List<String> moduleIds,
+            boolean packagingSimpleRefsetsIndividually
+    ) {
     }
 
     private record InitialManifest(ReleaseManifest manifest, ReleaseManifestFolder rootFolder, ReleaseManifestFolder contentFolder, ReleaseManifestFolder terminologyFolder) {

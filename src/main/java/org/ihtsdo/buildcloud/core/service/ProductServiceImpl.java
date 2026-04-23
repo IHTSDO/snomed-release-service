@@ -368,6 +368,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		setConfigurationValueIfPresent(newPropertyValues, AUTO_GENERATE_MANIFEST, manifestConfig, AUTO_GENERATE_MANIFEST, true);
 		setConfigurationValueIfPresent(newPropertyValues, DERIVATIVE_PRODUCT, manifestConfig, DERIVATIVE_PRODUCT, true);
 		setConfigurationValueIfPresent(newPropertyValues, INCLUDE_PRODUCT_NAMESPACE_IN_PACKAGE, manifestConfig, INCLUDE_PRODUCT_NAMESPACE_IN_PACKAGE, true);
+		setConfigurationValueIfPresent(newPropertyValues, PACKAGE_SIMPLE_REFSETS_INDIVIDUALLY, manifestConfig, PACKAGE_SIMPLE_REFSETS_INDIVIDUALLY, true);
 		setConfigurationValueIfPresent(newPropertyValues, PRODUCT_NAME, manifestConfig, PRODUCT_NAME, false);
 		setConfigurationValueIfPresent(newPropertyValues, PRODUCT_NAMESPACE, manifestConfig, PRODUCT_NAMESPACE, false);
 

@@ -37,6 +37,10 @@ public class ManifestConfig {
 	@Convert(converter = YesNoConverter.class)
 	private boolean includeProductNamespaceInPackage;
 
+	@Column(name="package_simple_refsets_individually")
+	@Convert(converter = YesNoConverter.class)
+	private boolean packageSimpleRefsetsIndividually;
+
 	@Column(name="package_effective_time")
 	private Date packageEffectiveTime;
 
@@ -81,6 +85,10 @@ public class ManifestConfig {
 		return includeProductNamespaceInPackage;
 	}
 
+	public boolean isPackageSimpleRefsetsIndividually() {
+		return packageSimpleRefsetsIndividually;
+	}
+
 	public void setPackageEffectiveTime(Date packageEffectiveTime) {
 		this.packageEffectiveTime = packageEffectiveTime;
 	}
@@ -102,6 +110,10 @@ public class ManifestConfig {
 
 	public void setIncludeProductNamespaceInPackage(boolean includeProductNamespaceInPackage) {
 		this.includeProductNamespaceInPackage = includeProductNamespaceInPackage;
+	}
+
+	public void setPackageSimpleRefsetsIndividually(boolean packageSimpleRefsetsIndividually) {
+		this.packageSimpleRefsetsIndividually = packageSimpleRefsetsIndividually;
 	}
 
 	public String getExcludedRefsets() {

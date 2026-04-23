@@ -8,6 +8,7 @@ import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.ManifestConfig;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.manifest.generation.ReleaseManifestService;
+import org.ihtsdo.buildcloud.core.releaseinformation.ConceptMini;
 import org.ihtsdo.buildcloud.core.service.ProductService;
 import org.ihtsdo.buildcloud.core.service.helper.FilterOption;
 import org.ihtsdo.buildcloud.rest.controller.helper.HypermediaGenerator;
@@ -20,6 +21,7 @@ import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -46,6 +48,9 @@ import static org.ihtsdo.buildcloud.core.service.ProductService.PRODUCT_LINKS;
 	private final HypermediaGenerator hypermediaGenerator;
 
 	private final ReleaseManifestService releaseManifestService;
+
+	@Value("${srs.manifest.optional-refsets}")
+	private String optionalManifestRefsetsConfig;
 
 
 	@Autowired
@@ -118,6 +123,30 @@ import static org.ihtsdo.buildcloud.core.service.ProductService.PRODUCT_LINKS;
 		}
 		
 		return hypermediaGenerator.getEntityHypermedia(product, true, request, PRODUCT_LINKS.toArray(String[]::new));
+	}
+
+	@GetMapping(value = "/manifest/optional-refsets")
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
+	@Operation(summary = "Returns optional manifest refsets",
+			description = "Returns the set of optional refsets available for manifest generation.")
+	public List<ConceptMini> getOptionalManifestRefsets() {
+		List<ConceptMini> optionalRefsets = new ArrayList<>();
+		if (!StringUtils.isBlank(optionalManifestRefsetsConfig)) {
+			for (String entry : optionalManifestRefsetsConfig.split(",")) {
+				String trimmedEntry = entry.trim();
+				if (trimmedEntry.isEmpty()) {
+					continue;
+				}
+				String[] parts = trimmedEntry.split("\\|", 2);
+				if (parts.length == 2 && !parts[0].isBlank() && !parts[1].isBlank()) {
+					ConceptMini conceptMini = new ConceptMini();
+					conceptMini.setId(parts[0].trim());
+					conceptMini.setTerm(parts[1].trim());
+					optionalRefsets.add(conceptMini);
+				}
+			}
+		}
+		return optionalRefsets;
 	}
 
 	@PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -204,9 +233,9 @@ import static org.ihtsdo.buildcloud.core.service.ProductService.PRODUCT_LINKS;
 		if (manifestConfig == null) {
 			throw new BadRequestException("Manifest configuration is required.");
 		}
-
+		List<String> moduleIds = buildConfiguration.getExtensionConfig() != null ? buildConfiguration.getExtensionConfig().getModuleIdsAsList() : Collections.emptyList();
 		String manifestXml = releaseManifestService.generateManifestXml(manifestConfig, releaseCenterKey, branchPath,
-				buildConfiguration.getEffectiveTimeSnomedFormat(), buildConfiguration.isDailyBuild(), buildConfiguration.isBetaRelease());
+				buildConfiguration.getEffectiveTimeSnomedFormat(), buildConfiguration.isDailyBuild(), buildConfiguration.isBetaRelease(), moduleIds);
 		return ResponseEntity.ok()
 				.contentType(MediaType.APPLICATION_XML)
 				.body(manifestXml);

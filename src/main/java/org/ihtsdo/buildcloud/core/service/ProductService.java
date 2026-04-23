@@ -62,6 +62,7 @@ public interface ProductService extends EntityService<Product> {
 	String AUTO_GENERATE_MANIFEST = "autoGenerateManifest";
 	String DERIVATIVE_PRODUCT = "derivativeProduct";
 	String INCLUDE_PRODUCT_NAMESPACE_IN_PACKAGE = "includeProductNamespaceInPackage";
+	String PACKAGE_SIMPLE_REFSETS_INDIVIDUALLY = "packageSimpleRefsetsIndividually";
 	String PRODUCT_NAME = "productName";
 	String PRODUCT_NAMESPACE = "productNamespace";
 	String EXCLUDED_REFSETS = "excludedRefsets";
