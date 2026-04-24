@@ -85,9 +85,6 @@ public class SRSWorkerService {
 		try {
 			final Build messageBuild = buildRequest.getBuild();
 
-			TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(messageBuild));
-			MDC.put(TRACKER_ID, messageBuild.getReleaseCenterKey() + "|" + messageBuild.getProductKey() + "|" + messageBuild.getId());
-
 			if (messageBuild.getId().equals(ReleaseBuildManager.EPOCH_TIME)) {
 				return;
 			}
@@ -107,6 +104,10 @@ public class SRSWorkerService {
 						messageBuild.getReleaseCenterKey(), messageBuild.getProductKey(), messageBuild.getId());
 				return;
 			}
+			// Start telemetry against the authoritative build so build_log.txt is uploaded
+			// to the correct storage root (default or regression).
+			TelemetryStream.start(LOGGER, buildDAO.getTelemetryBuildLogFilePath(build));
+			MDC.put(TRACKER_ID, build.getReleaseCenterKey() + "|" + build.getProductKey() + "|" + build.getId());
 
 			final Build.Status status = build.getStatus();
 			final int deliveryCount = getDeliveryCount(srsMessage);
