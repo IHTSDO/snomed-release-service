@@ -175,7 +175,9 @@ public class PublishServiceImpl implements PublishService {
 		try {
 			ReleaseFile releaseFiles = findAndValidateReleaseFiles(build, stepTracker);
 			if (releaseFiles.releaseFileName() != null) {
-				publishReleaseFile(build, isRegressionTestBuild, releaseFiles, publishComponentIds, stepTracker);
+				if (!isRegressionTestBuild) {
+					publishReleaseFile(build, releaseFiles, publishComponentIds, stepTracker);
+				}
 				performPostPublishingSteps(build, isRegressionTestBuild, releaseFiles, env, stepTracker);
 			}
 		} catch (Exception e) {
@@ -222,14 +224,14 @@ public class PublishServiceImpl implements PublishService {
 		return releaseFiles;
 	}
 
-	private void publishReleaseFile(Build build, boolean isRegressionTestBuild, ReleaseFile releaseFiles, boolean publishComponentIds,
+	private void publishReleaseFile(Build build, ReleaseFile releaseFiles, boolean publishComponentIds,
 									PublishStepTracker stepTracker)
 			throws BusinessServiceException, IOException{
 		String fileLock = releaseFiles.releaseFileName().intern();
 		synchronized (fileLock) {
 			String publishFilePath = s3PathHelper.getPublishJobFilePath(build.getReleaseCenterKey(), releaseFiles.releaseFileName());
 			validateReleaseFileWithTracking(build, publishFilePath, stepTracker);
-			if (isRegressionTestBuild) return;
+
 
 			publishComponentIdsIfNeededWithTracking(build, releaseFiles.releaseFileName(), publishComponentIds, stepTracker);
 			copyReleaseFileWithTracking(build, releaseFiles.releaseFileName(), publishFilePath, stepTracker);
