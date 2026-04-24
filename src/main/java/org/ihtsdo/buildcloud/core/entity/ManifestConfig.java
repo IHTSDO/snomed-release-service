@@ -7,6 +7,7 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.hibernate.type.YesNoConverter;
 import org.ihtsdo.buildcloud.core.entity.helper.CollectionConverter;
 
+import java.text.ParseException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -101,6 +102,15 @@ public class ManifestConfig {
 	@JsonProperty("packageEffectiveTime")
 	public String getPackageEffectiveTimeFormatted() {
 		return packageEffectiveTime != null ? DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.format(packageEffectiveTime) : null;
+	}
+
+	@JsonProperty("packageEffectiveTime")
+	public void setPackageEffectiveTimeFormatted(final String packageEffectiveTimeFormatted) throws ParseException {
+		if (packageEffectiveTimeFormatted == null || packageEffectiveTimeFormatted.isBlank()) {
+			this.packageEffectiveTime = null;
+		} else {
+			this.packageEffectiveTime = DateFormatUtils.ISO_8601_EXTENDED_DATE_FORMAT.parse(packageEffectiveTimeFormatted);
+		}
 	}
 
 	@JsonIgnore
