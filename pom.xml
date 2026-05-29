@@ -13,6 +13,7 @@
 	</parent>
 
 	<properties>
+		<java.version>25</java.version>
 		<packageName>${project.artifactId}</packageName>
 	</properties>
 
