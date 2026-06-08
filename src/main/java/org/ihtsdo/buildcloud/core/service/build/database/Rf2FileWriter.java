@@ -82,7 +82,7 @@ public class Rf2FileWriter {
 		}
 		// Use a delimiter that cannot appear in tab-separated RF2 ids to avoid collisions.
 		final int capacity = (int) (deltaKeysToDiscard.size() / 0.75f) + 1;
-		Set<String> ignoredKeys = new HashSet<>(capacity);
+		Set<String> ignoredKeys = HashSet.newHashSet(capacity);
 		for (Key key : deltaKeysToDiscard) {
 			if (key == null || key.getIdString() == null || key.getDate() == null) {
 				continue;
