@@ -29,4 +29,23 @@ class ManifestConfigTest {
 		assertTrue(manifestConfig.getExcludedRf2FilesAsList().isEmpty());
 	}
 
+	@Test
+	void getIncludedExternalSimpleRefsetsAsList_shouldParseCommaSeparatedValues() {
+		ManifestConfig manifestConfig = new ManifestConfig();
+		manifestConfig.setIncludedExternalSimpleRefsets("123456789, 987654321 ,");
+
+		List<String> includedRefsets = manifestConfig.getIncludedExternalSimpleRefsetsAsList();
+
+		assertEquals(2, includedRefsets.size());
+		assertEquals("123456789", includedRefsets.get(0));
+		assertEquals("987654321", includedRefsets.get(1));
+	}
+
+	@Test
+	void getIncludedExternalSimpleRefsetsAsList_shouldReturnEmptyListWhenUnset() {
+		ManifestConfig manifestConfig = new ManifestConfig();
+
+		assertTrue(manifestConfig.getIncludedExternalSimpleRefsetsAsList().isEmpty());
+	}
+
 }

@@ -12,10 +12,7 @@ import org.ihtsdo.buildcloud.core.dao.ReleaseCenterDAO;
 import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.ManifestConfig;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
-import org.ihtsdo.buildcloud.core.manifest.generation.domain.ReleaseContext;
-import org.ihtsdo.buildcloud.core.manifest.generation.domain.ReleaseManifest;
-import org.ihtsdo.buildcloud.core.manifest.generation.domain.ReleaseManifestFile;
-import org.ihtsdo.buildcloud.core.manifest.generation.domain.ReleaseManifestFolder;
+import org.ihtsdo.buildcloud.core.manifest.generation.domain.*;
 import org.ihtsdo.buildcloud.core.service.TermServerService;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.otf.rest.client.RestClientException;
@@ -33,6 +30,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static org.ihtsdo.buildcloud.core.manifest.generation.CollectionUtils.orEmpty;
@@ -46,6 +44,14 @@ import static org.ihtsdo.buildcloud.core.manifest.generation.CollectionUtils.orE
 public class ReleaseManifestService {
 
     private static final String MEMBER_ANNOTATION_STRING_REFSET_ID = "1292995002";
+
+    private static final String EXTERNALLY_MAINTAINED_SOURCE = "externally-maintained";
+
+    private static final String SIMPLE_REFSET_EXPORT_DIR = "Content";
+
+    private static final String SIMPLE_REFSET = "Simple";
+
+    private static final String REFSET = "Refset";
 
     private static final String[][] SNAPSHOT_TO_FULL_REPLACEMENTS = {
             {"_Snapshot", "_Full"},
@@ -101,9 +107,17 @@ public class ReleaseManifestService {
             manifestConfig.getExcludedRefsetsAsList().forEach(refsets::remove);
         }
 
+        Set<String> includedExternalSimpleRefsetIds = new HashSet<>(manifestConfig.getIncludedExternalSimpleRefsetsAsList());
         Set<String> refsetsWithMissingExportConfiguration = new HashSet<>();
         ReleaseContext releaseContext = new ReleaseContext(codeSystem, effectiveTime, termServerService);
-        ReleaseManifestFolder refsetFolder = addRefsets(releaseContext, initial.contentFolder(), refsets, filenameContext, refsetsWithMissingExportConfiguration, moduleIds, manifestConfig.isPackageSimpleRefsetsIndividually());
+        RefsetAdditionParams refsetParams = new RefsetAdditionParams(
+                filenameContext,
+                refsetsWithMissingExportConfiguration,
+                moduleIds,
+                manifestConfig.isPackageSimpleRefsetsIndividually(),
+                includedExternalSimpleRefsetIds
+        );
+        ReleaseManifestFolder refsetFolder = addRefsets(releaseContext, initial.contentFolder(), refsets, refsetParams);
 
         addEmptyMemberAnnotationStringRefsetIfMissing(refsets, codeSystem, initial.contentFolder(), refsetFolder, filenameContext);
 
@@ -218,22 +232,24 @@ public class ReleaseManifestService {
     }
 
     private ReleaseManifestFolder addRefsets(ReleaseContext releaseContext, ReleaseManifestFolder snapshotFolder, Map<String, ConceptMiniPojo> refsets,
-                                             ManifestFilenameContext filenameContext, Set<String> refsetsWithMissingExportConfiguration, List<String> moduleIds, boolean packagingSimpleRefsetsIndividually) {
+                                             RefsetAdditionParams refsetParams) {
 
-        ReleaseManifestFolder refsetFolder = snapshotFolder.getOrAddFolder("Refset");
+        ReleaseManifestFolder refsetFolder = snapshotFolder.getOrAddFolder(REFSET);
         RefsetGenerationContext generationContext = new RefsetGenerationContext(
                 snapshotFolder,
-                filenameContext,
-                refsetsWithMissingExportConfiguration,
+                refsetParams.filenameContext(),
+                refsetParams.refsetsWithMissingExportConfiguration(),
                 refsetFolder,
-                moduleIds,
-                packagingSimpleRefsetsIndividually
+                refsetParams.moduleIds(),
+                refsetParams.packagingSimpleRefsetsIndividually(),
+                refsetParams.includedExternalSimpleRefsetIds()
         );
         for (ConceptMiniPojo refset : refsets.values()) {
             if (Boolean.TRUE.equals(refset.getActive())) {
                 addRefset(releaseContext, generationContext, refset);
             }
         }
+        addExternalSimpleRefsets(generationContext);
         return refsetFolder;
     }
 
@@ -268,8 +284,9 @@ public class ReleaseManifestService {
                 fieldNameList = List.of("mapTarget");
             }
         }
-        if (generationContext.packagingSimpleRefsetsIndividually() && "Simple".equals(exportName) && generationContext.moduleIds().contains(refset.getModuleId())) {
-            exportName = refset.getConceptId() + exportName + "Refset";
+        boolean isSimpleRefset = SIMPLE_REFSET.equals(exportName);
+        if (generationContext.packagingSimpleRefsetsIndividually() && isSimpleRefset && generationContext.moduleIds().contains(refset.getModuleId())) {
+            exportName = refset.getConceptId() + exportName + REFSET;
         }
 
         if (exportDir == null || fieldTypes == null) {
@@ -279,6 +296,28 @@ public class ReleaseManifestService {
         ReleaseManifestFolder outputFolder = getRefsetOutputFolder(exportDir, generationContext.snapshotFolder(), generationContext.refsetFolder());
         ReleaseManifestFile refsetFile = getRefsetFile(generationContext.filenameContext(), exportName, languageCode, fieldTypes, outputFolder);
         addRefsetAndFields(refset, refsetFile, fieldNameList);
+    }
+
+    private void addExternalSimpleRefsets(RefsetGenerationContext generationContext) {
+        for (String refsetId : generationContext.includedExternalSimpleRefsetIds()) {
+            String exportName = SIMPLE_REFSET;
+            if (generationContext.packagingSimpleRefsetsIndividually()) {
+                exportName = refsetId + SIMPLE_REFSET + REFSET;
+            }
+            ReleaseManifestFolder outputFolder = getRefsetOutputFolder(SIMPLE_REFSET_EXPORT_DIR, generationContext.snapshotFolder(), generationContext.refsetFolder());
+            boolean fileExists = refsetFileExists(generationContext.filenameContext(), exportName, "", "", outputFolder);
+            ReleaseManifestFile refsetFile = getRefsetFile(generationContext.filenameContext(), exportName, "", "", outputFolder);
+            if (!fileExists) {
+                refsetFile.clearSource();
+                refsetFile.addRefset(refsetId, "");
+            } else {
+                Set<String> existingRefsets =  refsetFile.getRefset().stream().map(ReleaseRefset::getId).collect(Collectors.toSet());
+                if (!existingRefsets.contains(refsetId)) {
+                    refsetFile.addRefset(refsetId, "");
+                }
+            }
+            refsetFile.addSource(EXTERNALLY_MAINTAINED_SOURCE);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -314,6 +353,11 @@ public class ReleaseManifestService {
             }
         }
         refsetFile.addRefset(refset.getConceptId(), refset.getPt().getTerm());
+    }
+
+    private boolean refsetFileExists(ManifestFilenameContext filenameContext, String exportName, String languageCode, String fieldTypes, ReleaseManifestFolder outputFolder) {
+        String refsetFileName = getRefsetFilename(filenameContext, exportName, languageCode, fieldTypes);
+        return outputFolder.fileExists(refsetFileName);
     }
 
     private ReleaseManifestFile getRefsetFile(ManifestFilenameContext filenameContext, String exportName, String languageCode, String fieldTypes, ReleaseManifestFolder outputFolder) {
@@ -370,13 +414,23 @@ public class ReleaseManifestService {
     private record ManifestFilenameContext(String effectiveTime, String productNamespace, boolean betaRelease, boolean isDailyBuild, boolean isDerivative) {
     }
 
+    private record RefsetAdditionParams(
+            ManifestFilenameContext filenameContext,
+            Set<String> refsetsWithMissingExportConfiguration,
+            List<String> moduleIds,
+            boolean packagingSimpleRefsetsIndividually,
+            Set<String> includedExternalSimpleRefsetIds
+    ) {
+    }
+
     private record RefsetGenerationContext(
             ReleaseManifestFolder snapshotFolder,
             ManifestFilenameContext filenameContext,
             Set<String> refsetsWithMissingExportConfiguration,
             ReleaseManifestFolder refsetFolder,
             List<String> moduleIds,
-            boolean packagingSimpleRefsetsIndividually
+            boolean packagingSimpleRefsetsIndividually,
+            Set<String> includedExternalSimpleRefsetIds
     ) {
     }
 

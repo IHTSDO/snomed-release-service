@@ -28,6 +28,15 @@ public class ReleaseManifestFolder {
 		this.file.add(file);
 	}
 
+	public boolean fileExists(String name) {
+		for (ReleaseManifestFile existingFile : this.file) {
+			if (existingFile.getName().equals(name)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public ReleaseManifestFile getOrAddFile(String name) {
 		for (ReleaseManifestFile existingFile : this.file) {
 			if (existingFile.getName().equals(name)) {

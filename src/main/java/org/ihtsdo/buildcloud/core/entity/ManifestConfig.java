@@ -58,6 +58,11 @@ public class ManifestConfig {
 			+ "Use distinctive filename fragments rather than wildcards.")
 	private String excludedRf2Files;
 
+	@Column(name = "included_external_simple_refsets", columnDefinition = "TEXT DEFAULT NULL")
+	@Schema(description = "Comma-separated list of Simple refset concept IDs whose manifest source should be configured as "
+			+ "externally-maintained rather than terminology-server.")
+	private String includedExternalSimpleRefsets;
+
 	@Column(name="product_name")
 	private String productName;
 
@@ -164,6 +169,24 @@ public class ManifestConfig {
 
 	public void setExcludedRf2Files(String excludedRf2Files) {
 		this.excludedRf2Files = excludedRf2Files;
+	}
+
+	public String getIncludedExternalSimpleRefsets() {
+		return includedExternalSimpleRefsets;
+	}
+
+	public List<String> getIncludedExternalSimpleRefsetsAsList() {
+		if (includedExternalSimpleRefsets == null || includedExternalSimpleRefsets.isBlank()) {
+			return Collections.emptyList();
+		}
+		return CollectionConverter.convertToEntityAttribute(includedExternalSimpleRefsets).stream()
+				.map(String::trim)
+				.filter(s -> !s.isEmpty())
+				.toList();
+	}
+
+	public void setIncludedExternalSimpleRefsets(String includedExternalSimpleRefsets) {
+		this.includedExternalSimpleRefsets = includedExternalSimpleRefsets;
 	}
 
 	public String getProductName() {

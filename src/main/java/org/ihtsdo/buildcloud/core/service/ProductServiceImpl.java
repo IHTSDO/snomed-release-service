@@ -374,6 +374,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 
 		setExcludedRefsetsIfPresent(newPropertyValues, manifestConfig);
 		setConfigurationValueIfPresent(newPropertyValues, EXCLUDED_RF2_FILES, manifestConfig, EXCLUDED_RF2_FILES, false);
+		setIncludedExternalSimpleRefsetsIfPresent(newPropertyValues, manifestConfig);
 		setPackageEffectiveTimeIfPresent(newPropertyValues, manifestConfig);
 	}
 
@@ -400,6 +401,23 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 							.toList()));
 		} else {
 			manifestConfig.setExcludedRefsets(null);
+		}
+	}
+
+	private void setIncludedExternalSimpleRefsetsIfPresent(final Map<String, String> newPropertyValues, final ManifestConfig manifestConfig) {
+		if (!newPropertyValues.containsKey(INCLUDED_EXTERNAL_SIMPLE_REFSETS)) {
+			return;
+		}
+
+		String includedExternalSimpleRefsets = newPropertyValues.get(INCLUDED_EXTERNAL_SIMPLE_REFSETS);
+		if (StringUtils.hasLength(includedExternalSimpleRefsets)) {
+			manifestConfig.setIncludedExternalSimpleRefsets(CollectionConverter.convertToDatabaseColumn(
+					Arrays.stream(includedExternalSimpleRefsets.split(","))
+							.map(String::trim)
+							.filter(s -> !s.isEmpty())
+							.toList()));
+		} else {
+			manifestConfig.setIncludedExternalSimpleRefsets(null);
 		}
 	}
 
