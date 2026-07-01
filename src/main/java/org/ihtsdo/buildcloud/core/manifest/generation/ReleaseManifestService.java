@@ -119,6 +119,10 @@ public class ReleaseManifestService {
             cloneFolderTreeWithRenames(initial.contentFolder(), initial.rootFolder().getOrAddFolder(RF2Constants.FULL), SNAPSHOT_TO_FULL_REPLACEMENTS);
         }
 
+        if (!CollectionUtils.isEmpty(manifestConfig.getExcludedRf2FilesAsList())) {
+            initial.rootFolder().removeFilesMatching(manifestConfig.getExcludedRf2FilesAsList());
+        }
+
         return writeManifestXml(initial.manifest(), codeSystem);
     }
 

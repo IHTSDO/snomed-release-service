@@ -373,6 +373,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		setConfigurationValueIfPresent(newPropertyValues, PRODUCT_NAMESPACE, manifestConfig, PRODUCT_NAMESPACE, false);
 
 		setExcludedRefsetsIfPresent(newPropertyValues, manifestConfig);
+		setConfigurationValueIfPresent(newPropertyValues, EXCLUDED_RF2_FILES, manifestConfig, EXCLUDED_RF2_FILES, false);
 		setPackageEffectiveTimeIfPresent(newPropertyValues, manifestConfig);
 	}
 

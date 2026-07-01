@@ -66,6 +66,7 @@ public interface ProductService extends EntityService<Product> {
 	String PRODUCT_NAME = "productName";
 	String PRODUCT_NAMESPACE = "productNamespace";
 	String EXCLUDED_REFSETS = "excludedRefsets";
+	String EXCLUDED_RF2_FILES = "excludedRf2Files";
 	String PACKAGE_EFFECTIVE_TIME = "packageEffectiveTime";
 	Page<Product> findAll(String releaseCenterKey, Set<FilterOption> filterOptions, Pageable pageable, boolean includedLatestBuildStatusAndTags);
 

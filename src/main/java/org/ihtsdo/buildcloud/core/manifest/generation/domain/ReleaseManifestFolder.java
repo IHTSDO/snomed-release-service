@@ -4,6 +4,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class ReleaseManifestFolder {
@@ -60,5 +61,19 @@ public class ReleaseManifestFolder {
 
 	public List<ReleaseManifestFolder> getFolder() {
 		return folder;
+	}
+
+	public void removeFilesMatching(Collection<String> exclusionPatterns) {
+		if (exclusionPatterns == null || exclusionPatterns.isEmpty()) {
+			return;
+		}
+		if (file != null) {
+			file.removeIf(f -> exclusionPatterns.stream().anyMatch(pattern -> f.getName().contains(pattern)));
+		}
+		if (folder != null) {
+			for (ReleaseManifestFolder childFolder : folder) {
+				childFolder.removeFilesMatching(exclusionPatterns);
+			}
+		}
 	}
 }
