@@ -109,17 +109,17 @@ public class ReleaseManifestService {
 
         Set<String> includedExternalSimpleRefsetIds = new HashSet<>(manifestConfig.getIncludedExternalSimpleRefsetsAsList());
         Set<String> refsetsWithMissingExportConfiguration = new HashSet<>();
-        ReleaseContext releaseContext = new ReleaseContext(codeSystem, effectiveTime, termServerService);
         RefsetAdditionParams refsetParams = new RefsetAdditionParams(
+                branchPath,
                 filenameContext,
                 refsetsWithMissingExportConfiguration,
                 moduleIds,
                 manifestConfig.isPackageSimpleRefsetsIndividually(),
                 includedExternalSimpleRefsetIds
         );
-        ReleaseManifestFolder refsetFolder = addRefsets(releaseContext, initial.contentFolder(), refsets, refsetParams);
+        ReleaseManifestFolder refsetFolder = addRefsets(initial.contentFolder(), refsets, refsetParams);
 
-        addEmptyMemberAnnotationStringRefsetIfMissing(refsets, codeSystem, initial.contentFolder(), refsetFolder, filenameContext);
+        addEmptyMemberAnnotationStringRefsetIfMissing(refsets, branchPath, initial.contentFolder(), refsetFolder, filenameContext);
 
         if (!refsetsWithMissingExportConfiguration.isEmpty()) {
             throw new BusinessServiceException(format("Unable to generate build manifest file because the following refsets do not have an export configuration: %s",
@@ -137,7 +137,7 @@ public class ReleaseManifestService {
             initial.rootFolder().removeFilesMatching(manifestConfig.getExcludedRf2FilesAsList());
         }
 
-        return writeManifestXml(initial.manifest(), codeSystem);
+        return writeManifestXml(initial.manifest(), codeSystem.getShortName());
     }
 
     private boolean validateReleaseAdditionalInformationFields(String additionalReleaseInformationFields) {
@@ -152,7 +152,7 @@ public class ReleaseManifestService {
             if (jsonElement.isJsonObject() && jsonElement.getAsJsonObject().isEmpty()) {
                 return false;
             }
-        } catch (JsonSyntaxException e) {
+        } catch (JsonSyntaxException _) {
             return false;
         }
         return true;
@@ -192,25 +192,25 @@ public class ReleaseManifestService {
                 .orElseThrow(() -> new BusinessServiceException("No code system found for branch release center " + releaseCenterKey));
     }
 
-    private void addEmptyMemberAnnotationStringRefsetIfMissing(Map<String, ConceptMiniPojo> refsets, CodeSystem codeSystem, ReleaseManifestFolder contentFolder,
+    private void addEmptyMemberAnnotationStringRefsetIfMissing(Map<String, ConceptMiniPojo> refsets, String branchPath, ReleaseManifestFolder contentFolder,
                                                                ReleaseManifestFolder refsetFolder, ManifestFilenameContext filenameContext) throws RestClientException {
         if (refsets.containsKey(MEMBER_ANNOTATION_STRING_REFSET_ID)) {
             return;
         }
-        ConceptMiniPojo annotationRefset = termServerService.getConcepts(MEMBER_ANNOTATION_STRING_REFSET_ID, codeSystem.getBranchPath(), null).getItems().iterator().next();
+        ConceptMiniPojo annotationRefset = termServerService.getConcepts(MEMBER_ANNOTATION_STRING_REFSET_ID, branchPath, null).getItems().iterator().next();
         ReleaseManifestFolder outputFolder = getRefsetOutputFolder("Metadata", contentFolder, refsetFolder);
         ReleaseManifestFile refsetFile = getRefsetFile(filenameContext, "MemberAnnotationStringValue", "", "sscs", outputFolder);
         addRefsetAndFields(annotationRefset, refsetFile, List.of("referencedMemberId", "languageDialectCode", "typeId", "value"));
     }
 
-    private String writeManifestXml(ReleaseManifest manifest, CodeSystem codeSystem) throws BusinessServiceException {
+    private String writeManifestXml(ReleaseManifest manifest, String codeSystemShortName) throws BusinessServiceException {
         ObjectMapper objectMapper = xmlConverter.getObjectMapper()
                 .configure(SerializationFeature.INDENT_OUTPUT, true);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
         try {
             return objectMapper.writeValueAsString(manifest).replace(" xmlns=\"\"", "");
         } catch (JsonProcessingException e) {
-            throw new BusinessServiceException(format("Failed to write release manifest as XML for code system %s.", codeSystem.getShortName()), e);
+            throw new BusinessServiceException(format("Failed to write release manifest as XML for code system %s.", codeSystemShortName), e);
         }
     }
 
@@ -231,11 +231,12 @@ public class ReleaseManifestService {
         // OWLExpression file is added by the refset logic
     }
 
-    private ReleaseManifestFolder addRefsets(ReleaseContext releaseContext, ReleaseManifestFolder snapshotFolder, Map<String, ConceptMiniPojo> refsets,
+    private ReleaseManifestFolder addRefsets(ReleaseManifestFolder snapshotFolder, Map<String, ConceptMiniPojo> refsets,
                                              RefsetAdditionParams refsetParams) {
 
         ReleaseManifestFolder refsetFolder = snapshotFolder.getOrAddFolder(REFSET);
         RefsetGenerationContext generationContext = new RefsetGenerationContext(
+                refsetParams.branchPath(),
                 snapshotFolder,
                 refsetParams.filenameContext(),
                 refsetParams.refsetsWithMissingExportConfiguration(),
@@ -246,7 +247,7 @@ public class ReleaseManifestService {
         );
         for (ConceptMiniPojo refset : refsets.values()) {
             if (Boolean.TRUE.equals(refset.getActive())) {
-                addRefset(releaseContext, generationContext, refset);
+                addRefset(generationContext, refset);
             }
         }
         addExternalSimpleRefsets(generationContext);
@@ -254,10 +255,7 @@ public class ReleaseManifestService {
     }
 
     @SuppressWarnings("unchecked")
-    private void addRefset(ReleaseContext releaseContext, RefsetGenerationContext generationContext, ConceptMiniPojo refset) {
-
-        TermServerService snowstormClient = releaseContext.snowstormClient();
-        CodeSystem codeSystem = releaseContext.codeSystem();
+    private void addRefset(RefsetGenerationContext generationContext, ConceptMiniPojo refset) {
 
         String exportDir = null;
         String exportName = null;
@@ -273,7 +271,7 @@ public class ReleaseManifestService {
             fieldNameList = (List<String>) fileConfiguration.get("fieldNameList");
 
             if ("Language".equals(exportName)) {
-                languageCode = getLangRefsetLanguageCode(codeSystem, snowstormClient, refset);
+                languageCode = getLangRefsetLanguageCode(generationContext.branchPath(), refset);
             } else {
                 languageCode = "";
             }
@@ -332,9 +330,9 @@ public class ReleaseManifestService {
         return Collections.emptyMap();
     }
 
-    private String getLangRefsetLanguageCode(CodeSystem codeSystem, TermServerService snowstormClient, ConceptMiniPojo refset) {
+    private String getLangRefsetLanguageCode(String branchPath, ConceptMiniPojo refset) {
         String languageCode = "-en";
-        Page<RefsetMember> refsetMembers = snowstormClient.getRefsetMembers(refset.getConceptId(), codeSystem.getBranchPath(), true, 5, null);
+        Page<RefsetMember> refsetMembers = this.termServerService.getRefsetMembers(refset.getConceptId(), branchPath, true, 5, null);
         if (refsetMembers.getTotal() > 0) {
             RefsetMember firstLanguageRefsetMember = refsetMembers.getItems().get(0);
             Object referencedComponent = firstLanguageRefsetMember.getReferencedComponent();
@@ -415,6 +413,7 @@ public class ReleaseManifestService {
     }
 
     private record RefsetAdditionParams(
+            String branchPath,
             ManifestFilenameContext filenameContext,
             Set<String> refsetsWithMissingExportConfiguration,
             List<String> moduleIds,
@@ -424,6 +423,7 @@ public class ReleaseManifestService {
     }
 
     private record RefsetGenerationContext(
+            String branchPath,
             ReleaseManifestFolder snapshotFolder,
             ManifestFilenameContext filenameContext,
             Set<String> refsetsWithMissingExportConfiguration,
