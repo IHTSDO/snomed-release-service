@@ -62,6 +62,7 @@ public class ExtensionConfig implements Serializable {
 		this.defaultModuleId = defaultModuleId;
 	}
 
+	@JsonIgnore
 	public List<String> getModuleIdsAsList() {
 		return moduleIds == null ? Collections.emptyList() : CollectionConverter.convertToEntityAttribute(moduleIds);
 	}

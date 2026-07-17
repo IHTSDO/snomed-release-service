@@ -145,6 +145,7 @@ public class ManifestConfig {
 		return excludedRefsets;
 	}
 
+	@JsonIgnore
 	public List<String> getExcludedRefsetsAsList() {
 		return excludedRefsets == null ? Collections.emptyList() : CollectionConverter.convertToEntityAttribute(excludedRefsets);
 	}
@@ -157,6 +158,7 @@ public class ManifestConfig {
 		return excludedRf2Files;
 	}
 
+	@JsonIgnore
 	public List<String> getExcludedRf2FilesAsList() {
 		if (excludedRf2Files == null || excludedRf2Files.isBlank()) {
 			return Collections.emptyList();
@@ -175,6 +177,7 @@ public class ManifestConfig {
 		return includedExternalSimpleRefsets;
 	}
 
+	@JsonIgnore
 	public List<String> getIncludedExternalSimpleRefsetsAsList() {
 		if (includedExternalSimpleRefsets == null || includedExternalSimpleRefsets.isBlank()) {
 			return Collections.emptyList();
