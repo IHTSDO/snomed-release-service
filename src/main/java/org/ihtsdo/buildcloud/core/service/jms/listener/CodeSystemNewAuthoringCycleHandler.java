@@ -115,7 +115,7 @@ public class CodeSystemNewAuthoringCycleHandler {
         return null;
     }
 
-    private void updateExtensionConfig(Product product, String previousPackage) throws ModuleStorageCoordinatorException.OperationFailedException, ModuleStorageCoordinatorException.ResourceNotFoundException, ModuleStorageCoordinatorException.InvalidArgumentsException, ParseException {
+    private void updateExtensionConfig(Product product, String previousPackage) throws ModuleStorageCoordinatorException, ParseException {
         ExtensionConfig extensionConfig = product.getBuildConfiguration().getExtensionConfig();
         if (extensionConfig != null && extensionConfig.isReleaseAsAnEdition()) {
             Map<String, List<ModuleMetadata>> allReleasesMap = moduleStorageCoordinatorCache.getAllReleases();

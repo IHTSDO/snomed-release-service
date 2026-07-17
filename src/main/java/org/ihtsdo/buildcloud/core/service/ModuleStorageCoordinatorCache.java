@@ -18,7 +18,7 @@ public class ModuleStorageCoordinatorCache {
     private ModuleStorageCoordinator moduleStorageCoordinator;
 
     @Cacheable(value = "published-releases")
-    public Map<String, List<ModuleMetadata>> getAllReleases() throws ModuleStorageCoordinatorException.OperationFailedException, ModuleStorageCoordinatorException.ResourceNotFoundException, ModuleStorageCoordinatorException.InvalidArgumentsException {
+    public Map<String, List<ModuleMetadata>> getAllReleases() throws ModuleStorageCoordinatorException {
         return moduleStorageCoordinator.getAllReleases();
     }
 

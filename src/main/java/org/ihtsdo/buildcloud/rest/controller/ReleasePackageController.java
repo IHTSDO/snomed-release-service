@@ -30,11 +30,11 @@ public class ReleasePackageController {
     public Map<String, List<ModuleMetadata>> getAllReleases(
             @RequestParam(value = "page", required = false) String page,
             @RequestParam(value = "size", required = false) String size
-    ) throws ModuleStorageCoordinatorException.OperationFailedException, ModuleStorageCoordinatorException.ResourceNotFoundException, ModuleStorageCoordinatorException.InvalidArgumentsException {
+    ) throws ModuleStorageCoordinatorException {
         return this.getAllReleases(asIntegerOrFallback(page, 1), asIntegerOrFallback(size, 6));
     }
 
-    private Map<String, List<ModuleMetadata>> getAllReleases(int page, int size) throws ModuleStorageCoordinatorException.OperationFailedException, ModuleStorageCoordinatorException.ResourceNotFoundException, ModuleStorageCoordinatorException.InvalidArgumentsException {
+    private Map<String, List<ModuleMetadata>> getAllReleases(int page, int size) throws ModuleStorageCoordinatorException {
         Map<String, List<ModuleMetadata>> releases = new HashMap<>( moduleStorageCoordinatorCache.getAllReleases());
         boolean paging = page >= 1 && size >= 1;
         if (paging) {
