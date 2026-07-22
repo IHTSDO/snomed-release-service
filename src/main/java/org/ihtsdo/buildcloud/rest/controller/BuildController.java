@@ -592,6 +592,17 @@ public class BuildController {
 		response.setStatus(HttpStatus.OK.value());
 	}
 
+	@PostMapping(value = "/builds/{buildId}/rvf")
+	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
+	@Operation(summary = "Re-run RVF validation for a build",
+			description = "Re-submit the existing release package for RVF post-condition validation without rebuilding. "
+					+ "Allowed when the build status is BUILT, RVF_FAILED, RELEASE_COMPLETE, or RELEASE_COMPLETE_WITH_WARNINGS.")
+	public ResponseEntity<Build> rerunRVF(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
+										  @PathVariable final String buildId) throws BusinessServiceException, IOException {
+		final Build build = buildService.rerunRVF(releaseCenterKey, productKey, buildId);
+		return new ResponseEntity<>(build, HttpStatus.OK);
+	}
+
 	@GetMapping(value = "/builds/{buildId}/buildLogs")
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLead
 	@Operation(summary = "Get the full logs of the build process")

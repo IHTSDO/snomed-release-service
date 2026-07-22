@@ -73,6 +73,12 @@ public interface BuildService {
 
 	void requestCancelBuild(String releaseCenterKey, String productKey, String buildId) throws ResourceNotFoundException, BadConfigurationException, IOException;
 
+	/**
+	 * Re-run RVF post-condition validation against the existing release package for a build.
+	 * Does not rebuild the package.
+	 */
+	Build rerunRVF(String releaseCenterKey, String productKey, String buildId) throws BusinessServiceException, IOException;
+
 	InputStream getBuildInputGatherReport(String releaseCenterKey, String productKey, String buildId);
 
 	InputStream getPreConditionChecksReport(String releaseCenterKey, String productKey, String buildId);

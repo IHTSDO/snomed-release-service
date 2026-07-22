@@ -1623,6 +1623,58 @@ public class BuildServiceImpl implements BuildService {
 	}
 
 	@Override
+	public Build rerunRVF(String releaseCenterKey, String productKey, String buildId) throws BusinessServiceException, IOException {
+		if (Boolean.TRUE.equals(offlineMode)) {
+			throw new BadConfigurationException("RVF validation cannot be re-run when offline mode is enabled.");
+		}
+
+		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId, true, true, null, null);
+		final String zipFileName = dao.listOutputFilePaths(build).stream()
+				.filter(fileName -> fileName != null && fileName.endsWith(RF2Constants.ZIP_FILE_EXTENSION))
+				.findFirst()
+				.orElseThrow(() -> new BadConfigurationException("No zip file found for build: " + build.getUniqueId()));
+
+		final QATestConfig qaTestConfig = build.getQaTestConfig();
+		if (qaTestConfig == null) {
+			throw new BadConfigurationException("No QA test configuration found for build: " + build.getUniqueId());
+		}
+
+		LOGGER.info("Re-running RVF for build {} using package {}", build.getUniqueId(), zipFileName);
+		final String s3ZipFilePath = dao.getOutputFilePath(build, zipFileName);
+		final String rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), qaTestConfig.getMaxFailureExport());
+
+		final String rvfStatus = rvfResultMsg == null ? "Failed to run" : "Completed";
+		BuildReport report = loadBuildReport(build);
+		if (report == null) {
+			report = BuildReport.getDummyReport();
+		}
+		build.setBuildReport(report);
+		report.add("post_validation_status", rvfStatus);
+		report.add("rvf_response", rvfResultMsg);
+		if (rvfResultMsg != null) {
+			build.setRvfURL(rvfResultMsg);
+		}
+		dao.persistReport(build);
+		LOGGER.info("RVF re-run result for build {}: {}", build.getUniqueId(), rvfResultMsg);
+
+		if (rvfResultMsg == null) {
+			throw new BusinessServiceException("Failed to re-run RVF validation for build: " + build.getUniqueId());
+		}
+		return build;
+	}
+
+	private BuildReport loadBuildReport(final Build build) {
+		try (InputStream reportStream = dao.getBuildReportFileStream(build)) {
+			if (reportStream != null) {
+				return new ObjectMapper().readValue(reportStream, BuildReport.class);
+			}
+		} catch (IOException e) {
+			LOGGER.warn("Unable to load existing build report for {}. A new report will be created.", build.getUniqueId(), e);
+		}
+		return null;
+	}
+
+	@Override
 	public InputStream getBuildInputGatherReport(String releaseCenterKey, String productKey, String buildId) {
 		final Build build = getBuildOrThrow(releaseCenterKey, productKey, buildId);
 		return dao.getBuildInputGatherReportStream(build);
