@@ -38,6 +38,7 @@ import org.ihtsdo.buildcloud.core.service.validation.rvf.RVFClient;
 import org.ihtsdo.buildcloud.core.service.validation.rvf.ValidationRequest;
 import org.ihtsdo.buildcloud.rest.pojo.BuildPage;
 import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
+import org.ihtsdo.buildcloud.telemetry.client.TelemetryStream;
 import org.ihtsdo.otf.jms.MessagingHelper;
 import org.ihtsdo.otf.resourcemanager.ResourceManager;
 import org.ihtsdo.otf.rest.client.RestClientException;
@@ -1641,28 +1642,39 @@ public class BuildServiceImpl implements BuildService {
 			throw new BadConfigurationException("No QA test configuration found for build: " + build.getUniqueId());
 		}
 
-		LOGGER.info("Re-running RVF for build {} using package {}", build.getUniqueId(), zipFileName);
-		final String s3ZipFilePath = dao.getOutputFilePath(build, zipFileName);
-		final String rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), qaTestConfig.getMaxFailureExport());
+		try {
+			// Capture re-run logging in the existing build_log.txt (appends via TelemetryProcessor).
+			TelemetryStream.start(LOGGER, dao.getTelemetryBuildLogFilePath(build));
+			MDC.put(MDC_BUILD_KEY, build.getUniqueId());
 
-		final String rvfStatus = rvfResultMsg == null ? "Failed to run" : "Completed";
-		BuildReport report = loadBuildReport(build);
-		if (report == null) {
-			report = BuildReport.getDummyReport();
-		}
-		build.setBuildReport(report);
-		report.add("post_validation_status", rvfStatus);
-		report.add("rvf_response", rvfResultMsg);
-		if (rvfResultMsg != null) {
-			build.setRvfURL(rvfResultMsg);
-		}
-		dao.persistReport(build);
-		LOGGER.info("RVF re-run result for build {}: {}", build.getUniqueId(), rvfResultMsg);
+			LOGGER.info("===== RVF RE-RUN STARTED =====");
+			LOGGER.info("Re-running RVF for build {} using package {}", build.getUniqueId(), zipFileName);
+			final String s3ZipFilePath = dao.getOutputFilePath(build, zipFileName);
+			final String rvfResultMsg = runRVFPostConditionCheck(build, s3ZipFilePath, dao.getManifestFilePath(build), qaTestConfig.getMaxFailureExport());
 
-		if (rvfResultMsg == null) {
-			throw new BusinessServiceException("Failed to re-run RVF validation for build: " + build.getUniqueId());
+			final String rvfStatus = rvfResultMsg == null ? "Failed to run" : "Completed";
+			BuildReport report = loadBuildReport(build);
+			if (report == null) {
+				report = BuildReport.getDummyReport();
+			}
+			build.setBuildReport(report);
+			report.add("post_validation_status", rvfStatus);
+			report.add("rvf_response", rvfResultMsg);
+			if (rvfResultMsg != null) {
+				build.setRvfURL(rvfResultMsg);
+			}
+			dao.persistReport(build);
+			LOGGER.info("RVF re-run result for build {}: {}", build.getUniqueId(), rvfResultMsg);
+			LOGGER.info("===== RVF RE-RUN FINISHED =====");
+
+			if (rvfResultMsg == null) {
+				throw new BusinessServiceException("Failed to re-run RVF validation for build: " + build.getUniqueId());
+			}
+			return build;
+		} finally {
+			MDC.remove(MDC_BUILD_KEY);
+			TelemetryStream.finish(LOGGER);
 		}
-		return build;
 	}
 
 	private BuildReport loadBuildReport(final Build build) {
