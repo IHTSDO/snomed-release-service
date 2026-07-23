@@ -91,7 +91,7 @@ public class BuildStatusListenerService {
 		final Long runId = (Long) message.get(RUN_ID_KEY);
 		final String storageLocation = (String) message.get(STORAGE_LOCATION);
 		String[] split = storageLocation.split("/");
-		String buildId = split.length == 3 ? split[2] : null;
+		String buildId = split.length >= 3 ? split[2] : null;
 		LOGGER.info("RVF status response message: {} for run ID: {}", message, runId);
 		BuildStatusTracker tracker = trackerService.findByRvfRunIdAndBuildId(String.valueOf(runId), buildId);
 		if (tracker == null) {

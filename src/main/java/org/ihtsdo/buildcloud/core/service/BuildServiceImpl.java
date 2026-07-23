@@ -1387,12 +1387,15 @@ public class BuildServiceImpl implements BuildService {
 		LOGGER.info("Initiating RVF post-condition check for zip file {} with failureExportMax param value {}", s3ZipFilePath, failureExportMax);
 		String rvfResponse = null;
 		try (RVFClient rvfClient = new RVFClient(releaseValidationFrameworkUrl)) {
+			String runId = Long.toString(System.currentTimeMillis());
+
 			final QATestConfig qaTestConfig = build.getQaTestConfig();
 			// Has the client told us where to tell the RVF to store the results? Set if not
 			if (qaTestConfig.getStorageLocation() == null || qaTestConfig.getStorageLocation().isEmpty()) {
 				final String storageLocation = build.getReleaseCenterKey()
 						+ "/" + build.getProductKey()
-						+ "/" + build.getId();
+						+ "/" + build.getId()
+						+ "/" + runId;
 				qaTestConfig.setStorageLocation(storageLocation);
 			}
 			BuildConfiguration buildConfiguration = build.getConfiguration();
@@ -1417,7 +1420,6 @@ public class BuildServiceImpl implements BuildService {
 				}
 			}
 
-			String runId = Long.toString(System.currentTimeMillis());
 			ValidationRequest request = new ValidationRequest(runId);
 			request.setBuildBucketName(buildBucketName);
 			request.setReleaseZipFileS3Path(s3ZipFilePath);
