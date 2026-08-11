@@ -18,6 +18,7 @@ import org.ihtsdo.buildcloud.core.service.helper.PublishStep;
 import org.ihtsdo.buildcloud.core.service.helper.PublishStepTracker;
 import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.core.service.identifier.client.SchemeIdType;
+import org.ihtsdo.buildcloud.telemetry.client.TelemetryStream;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.rest.client.RestClientException;
@@ -164,15 +165,25 @@ public class PublishServiceImpl implements PublishService {
 
 	@Override
 	public void publishBuild(final Build build, boolean isRegressionTestBuild, boolean publishComponentIds, String env) throws BusinessServiceException, IOException {
-		MDC.put(BuildService.MDC_BUILD_KEY, build.getUniqueId());
-		LOGGER.info("Start publishing for build {}", build.getUniqueId());
 		String buildKey = getBuildUniqueKey(build);
 		if (isPublishAlreadyRunning(buildKey)) {
+			LOGGER.warn("Publish already running for build {}", build.getUniqueId());
 			return;
 		}
-		
-		PublishStepTracker stepTracker = initializePublishStepTracker(buildKey);
+
+		boolean telemetryStarted = false;
+		PublishStepTracker stepTracker = null;
 		try {
+			// Capture publish step logging in the existing build_log.txt (appends via TelemetryProcessor).
+			TelemetryStream.start(LOGGER, buildDao.getTelemetryBuildLogFilePath(build));
+			telemetryStarted = true;
+			MDC.put(BuildService.MDC_BUILD_KEY, build.getUniqueId());
+
+			LOGGER.info("===== PUBLISH STARTED =====");
+			LOGGER.info("Start publishing for build {} (regressionTest={}, publishComponentIds={}, env={})",
+					build.getUniqueId(), isRegressionTestBuild, publishComponentIds, env);
+
+			stepTracker = initializePublishStepTracker(buildKey);
 			ReleaseFile releaseFiles = findAndValidateReleaseFiles(build, stepTracker);
 			if (releaseFiles.releaseFileName() != null) {
 				if (!isRegressionTestBuild) {
@@ -180,11 +191,18 @@ public class PublishServiceImpl implements PublishService {
 				}
 				performPostPublishingSteps(build, isRegressionTestBuild, releaseFiles, env, stepTracker);
 			}
+			LOGGER.info("===== PUBLISH {} =====", stepTracker.getOverallStatus());
 		} catch (Exception e) {
 			LOGGER.error("Failed to publish the build {}. Error: {}", build.getUniqueId(), e.getMessage(), e);
 			throw e;
 		} finally {
+			if (stepTracker != null) {
+				stepTracker.logSummary();
+			}
 			MDC.remove(BuildService.MDC_BUILD_KEY);
+			if (telemetryStarted) {
+				TelemetryStream.finish(LOGGER);
+			}
 		}
 	}
 

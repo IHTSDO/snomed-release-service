@@ -9,6 +9,7 @@ import java.util.List;
 
 /**
  * Tracks all steps, status, and error messages during the publish build process.
+ * Step lifecycle events are logged so they appear in the SRS build log when a telemetry stream is open.
  */
 public class PublishStepTracker {
 
@@ -31,6 +32,7 @@ public class PublishStepTracker {
 		PublishStep step = new PublishStep(stepName, nextStepNumber);
 		steps.add(step);
 		nextStepNumber++;
+		LOGGER.info("Starting publish step {}: {}", step.getStepNumber(), step.getStepName());
 		return step;
 	}
 
@@ -43,6 +45,8 @@ public class PublishStepTracker {
 		if (step != null) {
 			step.finishTiming();
 			step.setStatus(PublishStep.StepStatus.SUCCESS);
+			LOGGER.info("Completed publish step {}: {} - SUCCESS ({} ms)",
+					step.getStepNumber(), step.getStepName(), step.getTimeTakenMillis());
 		}
 	}
 
@@ -58,6 +62,8 @@ public class PublishStepTracker {
 			step.setStatus(PublishStep.StepStatus.FAILED);
 			step.setErrorMessage(errorMessage);
 			step.setErrorDetails(errorDetails);
+			LOGGER.error("Completed publish step {}: {} - FAILED ({} ms): {}",
+					step.getStepNumber(), step.getStepName(), step.getTimeTakenMillis(), errorMessage);
 		}
 	}
 
@@ -72,6 +78,9 @@ public class PublishStepTracker {
 			step.finishTiming();
 			step.setSkipComment(comment);
 			step.setStatus(PublishStep.StepStatus.SKIPPED);
+			LOGGER.info("Completed publish step {}: {} - SKIPPED ({} ms){}",
+					step.getStepNumber(), step.getStepName(), step.getTimeTakenMillis(),
+					comment != null && !comment.isEmpty() ? ": " + comment : "");
 		}
 	}
 
@@ -96,6 +105,16 @@ public class PublishStepTracker {
 		return new ArrayList<>(steps);
 	}
 
+	/**
+	 * Writes a summary of every publish step to the SRS log.
+	 */
+	public void logSummary() {
+		LOGGER.info("===== PUBLISH STEP SUMMARY ({}) =====", getOverallStatus());
+		for (PublishStep step : steps) {
+			LOGGER.info("  {}", step);
+		}
+		LOGGER.info("===== END PUBLISH STEP SUMMARY =====");
+	}
 
 	/**
 	 * Gets the overall status based on steps and errors.
@@ -108,7 +127,6 @@ public class PublishStepTracker {
 		// Check if any step is still running
 		for (PublishStep step : steps) {
 			if (step.getStatus() == PublishStep.StepStatus.RUNNING) {
-                LOGGER.info("Running step: {} - {}", step.getStepNumber(), step.getStepName());
 				return "RUNNING";
 			}
 		}
