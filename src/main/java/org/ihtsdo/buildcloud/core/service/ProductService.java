@@ -52,7 +52,6 @@ public interface ProductService extends EntityService<Product> {
 	String CLASSIFY_OUTPUT_FILES = "classifyOutputFiles";
 	String LICENSE_STATEMENT = "licenseStatement";
 	String LICENCE_STATEMENT = "licenceStatement";
-	String RELEASE_INFORMATION_FIELDS = "releaseInformationFields";
 	String ADDITIONAL_RELEASE_INFORMATION_FIELDS = "additionalReleaseInformationFields";
 	String USE_CLASSIFIER_PRECONDITION_CHECKS = "useClassifierPreConditionChecks";
 	String CONCEPT_PREFERRED_TERMS = "conceptPreferredTerms";

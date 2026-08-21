@@ -165,7 +165,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			propertyValues.put(CLASSIFY_OUTPUT_FILES, TRUE);
 			propertyValues.put(ENABLE_DROOLS, TRUE);
 			propertyValues.put(ENABLE_MRCM, TRUE);
-			propertyValues.put(RELEASE_INFORMATION_FIELDS, "effectiveTime,deltaFromDate,deltaToDate,includedModules,languageRefsets,licenceStatement");
 			propertyValues.put(README_END_DATE, String.valueOf(Calendar.getInstance().get(Calendar.YEAR)));
 			if (INTERNATIONAL.equals(releaseCenter.getBusinessKey())) {
 				propertyValues.put(CREATE_LEGACY_IDS, TRUE);
@@ -344,7 +343,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		setConfigurationValueIfPresent(newPropertyValues, CLASSIFY_OUTPUT_FILES, configuration, CLASSIFY_OUTPUT_FILES, true);
 		setConfigurationValueIfPresent(newPropertyValues, LICENSE_STATEMENT, configuration, LICENCE_STATEMENT, false);
 		setConfigurationValueIfPresent(newPropertyValues, CONCEPT_PREFERRED_TERMS, configuration, CONCEPT_PREFERRED_TERMS, false);
-		setConfigurationValueIfPresent(newPropertyValues, RELEASE_INFORMATION_FIELDS, configuration, RELEASE_INFORMATION_FIELDS, false);
 		setAdditionalReleaseInformationFields(newPropertyValues, configuration);
 		setConfigurationValueIfPresent(newPropertyValues, USE_CLASSIFIER_PRECONDITION_CHECKS, configuration, USE_CLASSIFIER_PRECONDITION_CHECKS, true);
 		setDefaultBranch(newPropertyValues, product, configuration);
