@@ -22,6 +22,7 @@ public interface ProductService extends EntityService<Product> {
 	String FIRST_TIME_RELEASE = "firstTimeRelease";
 	String BETA_RELEASE = "betaRelease";
 	String DAILY_BUILD = "dailyBuild";
+	String NON_RF2_RELEASE = "nonRf2Release";
 	String PREVIOUS_PACKAGE = "previousPackage";
 	String PREVIOUS_PUBLISHED_PACKAGE = "previousPublishedPackage";
 	String README_END_DATE = "readmeEndDate";

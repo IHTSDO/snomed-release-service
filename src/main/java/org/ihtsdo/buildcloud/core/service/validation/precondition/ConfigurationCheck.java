@@ -49,7 +49,7 @@ public class ConfigurationCheck extends PreconditionCheck {
 			errorList.add(NO_EFFECTIVE_TIME);
 		}
 		// check the published release date is in the past
-		if (configuration.getPreviousPublishedPackage() != null && effectiveTime != null) {
+		if (!configuration.isNonRf2Release() && configuration.getPreviousPublishedPackage() != null && effectiveTime != null) {
 			String[] tokens = configuration.getPreviousPublishedPackage().split(RF2Constants.FILE_NAME_SEPARATOR);
 			if (tokens.length > 0) {
 				String releaseDateStr = tokens[tokens.length - 1].replace(RF2Constants.ZIP_FILE_EXTENSION, "");

@@ -91,6 +91,10 @@ public class BuildConfiguration {
 	private boolean dailyBuild;
 
 	@Convert(converter = YesNoConverter.class)
+	@Column(name = "non_rf2_release")
+	private boolean nonRf2Release;
+
+	@Convert(converter = YesNoConverter.class)
 	@Column(name = "classify_output_files")
 	private boolean classifyOutputFiles;
 
@@ -474,6 +478,7 @@ public class BuildConfiguration {
 				", excludeRefsetDescriptorMembers='" + excludeRefsetDescriptorMembers + '\'' +
 				", excludeLanguageRefsetIds='" + excludeLanguageRefsetIds + '\'' +
 				", dailyBuild=" + dailyBuild +
+				", nonRf2Release=" + nonRf2Release +
 				", classifyOutputFiles=" + classifyOutputFiles +
 				", licenceStatement='" + licenceStatement + '\'' +
 				", additionalReleaseInformationFields='" + additionalReleaseInformationFields + '\'' +
@@ -573,6 +578,18 @@ public class BuildConfiguration {
 
 	public boolean isDailyBuild() {
 		return dailyBuild;
+	}
+
+	public boolean isNonRf2Release() {
+		return nonRf2Release;
+	}
+
+	public void setNonRf2Release(boolean nonRf2Release) {
+		this.nonRf2Release = nonRf2Release;
+	}
+
+	public boolean requiresReleasePackageInformation() {
+		return !dailyBuild && !betaRelease && !nonRf2Release;
 	}
 
 	public void setLoadExternalRefsetData(boolean loadExternalRefsetData) {

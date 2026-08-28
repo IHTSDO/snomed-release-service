@@ -42,7 +42,7 @@ public class ReleasePackageCheck extends PostconditionCheck implements NetworkRe
         }
 
         // Validate presence and correctness of release_package_information.json
-        if (!build.getConfiguration().isDailyBuild() && !build.getConfiguration().isBetaRelease()) {
+        if (build.getConfiguration().requiresReleasePackageInformation()) {
             errorMsg = validateReleaseAdditionalInformationFile(build);
             if (errorMsg != null) {
                 fatalError(errorMsg);
@@ -50,7 +50,7 @@ public class ReleasePackageCheck extends PostconditionCheck implements NetworkRe
             }
         }
 
-        if (build.getConfiguration() != null && build.getConfiguration().isBetaRelease()) {
+        if (build.getConfiguration() != null && build.getConfiguration().isBetaRelease() && !build.getConfiguration().isNonRf2Release()) {
             try {
                 errorMsg = validateBetaReleasePackage(build);
                 if (errorMsg != null) {

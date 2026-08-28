@@ -216,7 +216,7 @@ public class ReleaseBuildManager {
 				}
 			}
 
-			if (!configuration.isDailyBuild() && !configuration.isBetaRelease()) {
+			if (configuration.requiresReleasePackageInformation()) {
 				validateReleaseAdditionalInformationFields(configuration.getAdditionalReleaseInformationFields());
 			}
 		} else {
