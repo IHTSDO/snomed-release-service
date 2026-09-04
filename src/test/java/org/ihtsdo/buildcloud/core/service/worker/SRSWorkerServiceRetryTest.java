@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.worker;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.easymock.EasyMock;
 import org.easymock.MockType;
@@ -20,6 +18,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -51,8 +52,9 @@ class SRSWorkerServiceRetryTest {
 	@Test
 	void consumeSRSJob_redelivery_midFlight_retriesByCleaningArtifactsAndRunningBuildAgain() throws Exception {
 		// Match application ObjectMapper behaviour (see Config#createObjectMapper): ignore unknown fields.
-		final ObjectMapper objectMapper = new ObjectMapper()
-				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		final ObjectMapper objectMapper = JsonMapper.builder()
+				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+				.build();
 		final MocksControl mocks = new MocksControl(MockType.DEFAULT);
 
 		final ReleaseService releaseService = mocks.createMock(ReleaseService.class);
@@ -113,8 +115,9 @@ class SRSWorkerServiceRetryTest {
 	@Test
 	void consumeSRSJob_redelivery_exceedsMaxRetries_marksBuildFailedAndDoesNotRetry() throws Exception {
 		// Match application ObjectMapper behaviour (see Config#createObjectMapper): ignore unknown fields.
-		final ObjectMapper objectMapper = new ObjectMapper()
-				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		final ObjectMapper objectMapper = JsonMapper.builder()
+				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+				.build();
 		final MocksControl mocks = new MocksControl(MockType.DEFAULT);
 
 		final ReleaseService releaseService = mocks.createMock(ReleaseService.class);

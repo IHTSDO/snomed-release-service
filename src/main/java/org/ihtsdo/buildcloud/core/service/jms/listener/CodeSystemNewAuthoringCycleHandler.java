@@ -1,9 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.jms.listener;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import jakarta.jms.JMSException;
 import jakarta.jms.TextMessage;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -23,6 +19,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.text.ParseException;
 import java.util.*;
@@ -52,10 +52,12 @@ public class CodeSystemNewAuthoringCycleHandler {
     }
 
     @JmsListener(destination = "${snowstorm.jms.queue.prefix}.code-system.new-authoring-cycle", containerFactory = "topicJmsListenerContainerFactory")
-    void messageConsumer(TextMessage textMessage) throws JMSException, JsonProcessingException, ParseException {
+    void messageConsumer(TextMessage textMessage) throws JMSException, ParseException {
         logger.info("receiveCodeSystemNewAuthoringCycleEvent {}", textMessage);
-        ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        ObjectMapper objectMapper = JsonMapper.builder()
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .build();
         final Map<String, String> message = objectMapper.readValue(textMessage.getText(), Map.class);
 
         final String codeSystemShortName = message.get("codeSystemShortName");

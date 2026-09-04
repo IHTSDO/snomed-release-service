@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.core.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ihtsdo.buildcloud.core.dao.NotificationDao;
 import org.ihtsdo.buildcloud.core.entity.Notification;
 import org.ihtsdo.sso.integration.SecurityUtil;
@@ -14,6 +12,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -71,7 +71,7 @@ public class NotificationServiceImpl implements NotificationService {
 			Map<String, Object> message = new HashMap<>();
 			message.put("event", "DELETE_NOTIFICATIONS");
 			simpMessagingTemplate.convertAndSend("/topic/user/" + currentUser + "/notification", objectMapper.writeValueAsString(message));
-		} catch (JsonProcessingException e) {
+		} catch (JacksonException e) {
 			logger.error("Failed to send message through web-socket", e);
 		}
 		return removedNotificationIds;
@@ -91,7 +91,7 @@ public class NotificationServiceImpl implements NotificationService {
 			Map<String, Object> message = new HashMap<>();
 			message.put("event", "MARK_NOTIFICATIONS_AS_READ");
 			simpMessagingTemplate.convertAndSend("/topic/user/" + currentUser + "/notification", objectMapper.writeValueAsString(message));
-		} catch (JsonProcessingException e) {
+		} catch (JacksonException e) {
 			logger.error("Failed to send message through web-socket", e);
 		}
 		return readNotifications;

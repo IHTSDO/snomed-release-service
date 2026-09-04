@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.manager;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
@@ -24,6 +22,8 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.jms.JMSException;
@@ -145,7 +145,7 @@ public class ReleaseBuildManager {
 		try {
 			jmsTemplate.convertAndSend(srsQueue, objectMapper.writeValueAsString(buildRequest));
 			LOGGER.info("Build {} has been sent to the {}.", buildRequest, srsQueue.getQueueName());
-		} catch (JmsException | JsonProcessingException | JMSException e) {
+		} catch (JmsException | JacksonException | JMSException e) {
 			LOGGER.error("Failed to send serialized build. Message: {}", e.getMessage());
 			LOGGER.error("Error occurred while trying to send the build to the srs queue: {}", srsQueue);
 			buildDAO.updateStatus(buildRequest.getBuild(), Build.Status.FAILED);

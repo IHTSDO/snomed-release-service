@@ -1,10 +1,9 @@
 package org.ihtsdo.buildcloud.core.entity;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -20,14 +19,13 @@ public class BuildConfigurationTest {
 
 	private StringWriter stringWriter;
 	private JsonGenerator jsonGenerator;
-	private JsonFactory jsonFactory;
+	private ObjectMapper objectMapper;
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper = new ObjectMapper();
 		stringWriter = new StringWriter();
-		jsonFactory = objectMapper.getFactory();
-		jsonGenerator = jsonFactory.createGenerator(stringWriter);
+		jsonGenerator = objectMapper.createGenerator(stringWriter);
 	}
 
 	@Test
@@ -48,11 +46,12 @@ public class BuildConfigurationTest {
 		extensionConfig.setPreviousEditionDependencyEffectiveDate("2021-07-31");
 		configuration.setExtensionConfig(extensionConfig);
 
-		jsonGenerator.writeObject(configuration);
+		jsonGenerator.writePOJO(configuration);
+		jsonGenerator.close();
 		String actual = stringWriter.toString();
 		System.out.println(actual.replaceAll(",", ",\n"));
 
-		BuildConfiguration buildConfigurationFromJson = jsonFactory.createParser(new StringReader(actual)).readValueAs(BuildConfiguration.class);
+		BuildConfiguration buildConfigurationFromJson = objectMapper.createParser(new StringReader(actual)).readValueAs(BuildConfiguration.class);
 
 		assertEquals(2, buildConfigurationFromJson.getRefsetCompositeKeys().size());
 		assertEquals(effectiveTime, buildConfigurationFromJson.getEffectiveTime());

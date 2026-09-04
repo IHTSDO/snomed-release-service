@@ -9,7 +9,6 @@ import java.util.Map;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.easymock.EasyMock;
 import org.easymock.MockType;
 import org.easymock.internal.MocksControl;
@@ -29,6 +28,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.util.FileCopyUtils;
+import tools.jackson.databind.ObjectMapper;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.ihtsdo.buildcloud.core.service.ProductService.PRODUCT_LINKS;

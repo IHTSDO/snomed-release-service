@@ -1,10 +1,6 @@
 package org.ihtsdo.buildcloud.core.manifest.generation;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
@@ -23,11 +19,15 @@ import org.ihtsdo.otf.rest.client.terminologyserver.pojo.RefsetMember;
 import org.ihtsdo.otf.rest.exception.BadConfigurationException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.dataformat.xml.XmlMapper;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -73,7 +73,10 @@ public class ReleaseManifestService {
 
     private static final ObjectMapper JSON_TREE_MAPPER = new ObjectMapper();
 
-    private final MappingJackson2XmlHttpMessageConverter xmlConverter = new MappingJackson2XmlHttpMessageConverter();
+    private final ObjectMapper xmlMapper = XmlMapper.builder()
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .changeDefaultPropertyInclusion(v -> v.withValueInclusion(JsonInclude.Include.NON_EMPTY))
+            .build();
 
     private final TermServerService termServerService;
 
@@ -204,12 +207,9 @@ public class ReleaseManifestService {
     }
 
     private String writeManifestXml(ReleaseManifest manifest, String codeSystemShortName) throws BusinessServiceException {
-        ObjectMapper objectMapper = xmlConverter.getObjectMapper()
-                .configure(SerializationFeature.INDENT_OUTPUT, true);
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
         try {
-            return objectMapper.writeValueAsString(manifest).replace(" xmlns=\"\"", "");
-        } catch (JsonProcessingException e) {
+            return xmlMapper.writeValueAsString(manifest).replace(" xmlns=\"\"", "");
+        } catch (JacksonException e) {
             throw new BusinessServiceException(format("Failed to write release manifest as XML for code system %s.", codeSystemShortName), e);
         }
     }

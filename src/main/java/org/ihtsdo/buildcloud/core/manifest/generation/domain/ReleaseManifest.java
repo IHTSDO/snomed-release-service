@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.core.manifest.generation.domain;
 
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
+import tools.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import tools.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 @JacksonXmlRootElement(namespace = "http://release.ihtsdo.org/manifest/1.0.0", localName = "listing")
 public class ReleaseManifest {

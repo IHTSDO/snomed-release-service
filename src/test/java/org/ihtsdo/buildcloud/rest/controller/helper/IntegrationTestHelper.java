@@ -1,8 +1,9 @@
 package org.ihtsdo.buildcloud.rest.controller.helper;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectWriter;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 import com.jayway.jsonpath.JsonPath;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
@@ -358,8 +359,7 @@ public class IntegrationTestHelper {
 		buildRequest.setEffectiveDate(effectiveDate);
 		buildRequest.setReplaceExistingEffectiveTime(true);
 
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.configure(SerializationFeature.WRAP_ROOT_VALUE, false);
+		ObjectMapper mapper = JsonMapper.builder().configure(SerializationFeature.WRAP_ROOT_VALUE, false).build();
 		ObjectWriter ow = mapper.writer().withDefaultPrettyPrinter();
 		String requestJson = ow.writeValueAsString(buildRequest);
 

@@ -1,9 +1,8 @@
 package org.ihtsdo.buildcloud.rest.controller.helper;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -78,7 +77,6 @@ public class HypermediaGenerator {
 	}
 
 	private Map<String, Object> getEntityHypermedia(Object entity, boolean currentResource, String url, String apiRootUrl, String... entityLinks) {
-		objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
 		@SuppressWarnings("unchecked")
 		Map<String,Object> entityMap = objectMapper.convertValue(entity, Map.class);
 		if (!currentResource && entityMap != null) {

@@ -1,11 +1,5 @@
 package org.ihtsdo.buildcloud.core.dao;
 
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import io.awspring.cloud.s3.ObjectMetadata;
 import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
@@ -18,6 +12,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 import software.amazon.awssdk.services.s3.model.S3Exception;
+import tools.jackson.core.JsonEncoding;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -124,7 +123,7 @@ public class RegressionTestReportDAOImpl implements RegressionTestReportDAO {
 		try (final InputStream s3Object = s3Client.getObject(buildBucketName, filePath)) {
 			if (s3Object != null) {
 				final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));
-				try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+				try (JsonParser jsonParser = objectMapper.createParser(reportJson)) {
 					return jsonParser.readValueAs(BuildComparisonReport.class);
 				}
 			}
@@ -141,7 +140,7 @@ public class RegressionTestReportDAOImpl implements RegressionTestReportDAO {
 		try (final InputStream s3Object = s3Client.getObject(buildBucketName, filePath)) {
 			if (s3Object != null) {
 				final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));
-				try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+				try (JsonParser jsonParser = objectMapper.createParser(reportJson)) {
 					return jsonParser.readValueAs(FileDiffReport.class);
 				}
 			}
@@ -156,10 +155,9 @@ public class RegressionTestReportDAOImpl implements RegressionTestReportDAO {
 
 	private File toJson(final Object obj) throws IOException {
 		final File temp = File.createTempFile("tempJson", ".tmp");
-		objectMapper.disable(SerializationFeature.INDENT_OUTPUT);
-		final JsonFactory jsonFactory = objectMapper.getFactory();
-		try (JsonGenerator jsonGenerator = jsonFactory.createGenerator(temp, JsonEncoding.UTF8)) {
-			jsonGenerator.writeObject(obj);
+		final ObjectMapper nonIndentingMapper = objectMapper.rebuild().disable(SerializationFeature.INDENT_OUTPUT).build();
+		try (JsonGenerator jsonGenerator = nonIndentingMapper.createGenerator(temp, JsonEncoding.UTF8)) {
+			jsonGenerator.writePOJO(obj);
 		}
 		return temp;
 	}

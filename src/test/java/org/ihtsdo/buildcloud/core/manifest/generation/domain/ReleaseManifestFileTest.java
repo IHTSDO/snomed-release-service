@@ -1,9 +1,10 @@
 package org.ihtsdo.buildcloud.core.manifest.generation.domain;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.dataformat.xml.XmlMapper;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -16,9 +17,10 @@ class ReleaseManifestFileTest {
 		file.addSource("externally-maintained");
 		file.addRefset("123456789", "123456789");
 
-		XmlMapper xmlMapper = new XmlMapper();
-		xmlMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-		xmlMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+		ObjectMapper xmlMapper = XmlMapper.builder()
+				.enable(SerializationFeature.INDENT_OUTPUT)
+				.changeDefaultPropertyInclusion(v -> v.withValueInclusion(JsonInclude.Include.NON_EMPTY))
+				.build();
 		String xml = xmlMapper.writeValueAsString(file);
 
 		assertTrue(xml.contains("externally-maintained"));
@@ -33,9 +35,10 @@ class ReleaseManifestFileTest {
 		file.addSource("externally-maintained");
 		file.addRefset("123456789", "Test refset");
 
-		XmlMapper xmlMapper = new XmlMapper();
-		xmlMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-		xmlMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+		ObjectMapper xmlMapper = XmlMapper.builder()
+				.enable(SerializationFeature.INDENT_OUTPUT)
+				.changeDefaultPropertyInclusion(v -> v.withValueInclusion(JsonInclude.Include.NON_EMPTY))
+				.build();
 		String xml = xmlMapper.writeValueAsString(file);
 
 		assertTrue(xml.contains("externally-maintained"));

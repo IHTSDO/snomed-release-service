@@ -1,6 +1,6 @@
 package org.ihtsdo.buildcloud.core.manifest.generation.domain;
 
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import tools.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
 public class ReleaseField {
 

@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.core.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.*;
 import jakarta.annotation.PostConstruct;
@@ -465,7 +465,7 @@ public class BuildServiceImpl implements BuildService {
 			} else {
 				LOGGER.warn("No source file prepare report found.");
 			}
-		} catch (IOException e) {
+		} catch (IOException | JacksonException e) {
 			updateStatusWithChecks(build, Status.FAILED_PRE_CONDITIONS);
 			LOGGER.error("Failed to read source file processing report", e);
 			isAbandoned = true;
@@ -505,7 +505,7 @@ public class BuildServiceImpl implements BuildService {
 		final Status newStatus = runPreconditionChecks(build);
 		try {
 			dao.updatePreConditionCheckReport(build);
-		} catch (IOException e) {
+		} catch (IOException | JacksonException e) {
 			throw new BusinessServiceException("Failed to update Pre condition Check Report.", e);
 		}
 		if (newStatus != preStatus) {
@@ -1682,7 +1682,7 @@ public class BuildServiceImpl implements BuildService {
 			if (reportStream != null) {
 				return new ObjectMapper().readValue(reportStream, BuildReport.class);
 			}
-		} catch (IOException e) {
+		} catch (IOException | JacksonException e) {
 			LOGGER.warn("Unable to load existing build report for {}. A new report will be created.", build.getUniqueId(), e);
 		}
 		return null;

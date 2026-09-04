@@ -23,6 +23,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import tools.jackson.core.JacksonException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -108,7 +109,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 						if (buildComparisonReport != null) {
 							reports.add(buildComparisonReport);
 						}
-					} catch (IOException e) {
+					} catch (IOException | JacksonException e) {
 						LOGGER.error(e.getMessage(), e);
 					}
 				});
@@ -122,7 +123,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 	public BuildComparisonReport getTestReport(String releaseCenterKey, String productKey, String compareId) {
 		try {
 			return regressionTestReportDAO.getBuildComparisonReport(releaseCenterKey, productKey, compareId);
-		} catch (IOException e) {
+		} catch (IOException | JacksonException e) {
 			throw new ResourceNotFoundException("Unable to find report for key: %s", compareId);
 		}
 	}
@@ -231,7 +232,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 			fileComparisonBlockingQueue.put(new FileComparisonQueue(compareId, fileName, leftBuild, rightBuild, report, ignoreIdComparison));
 			regressionTestReportDAO.saveFileComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), compareId, ignoreIdComparison, report);
 			processFileComparisonJobs();
-		} catch (InterruptedException | IOException e) {
+		} catch (InterruptedException | IOException | JacksonException e) {
 			LOGGER.error(e.getMessage(), e);
 		}
 	}
@@ -279,7 +280,7 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 					report.setMessage(String.format("Failed to compare for id %s. Error message: %s", automatePromoteProcess.getCompareId(), e.getMessage()));
 					try {
 						regressionTestReportDAO.saveBuildComparisonReport(automatePromoteProcess.getLeftBuild().getReleaseCenterKey(), automatePromoteProcess.getLeftBuild().getProductKey(), automatePromoteProcess.getCompareId(), report);
-					} catch (IOException ioe) {
+					} catch (IOException | JacksonException ioe) {
 						LOGGER.error(ioe.getMessage(), ioe);
 					}
 				}

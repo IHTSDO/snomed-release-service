@@ -1,10 +1,10 @@
 package org.ihtsdo.buildcloud.core.service.inputfile.gather;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -79,7 +79,7 @@ public class InputGatherReport {
         ObjectMapper mapper = new ObjectMapper();
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             return "Unable to persist Sources Gathering Report due to " + e.getLocalizedMessage();
         }
     }

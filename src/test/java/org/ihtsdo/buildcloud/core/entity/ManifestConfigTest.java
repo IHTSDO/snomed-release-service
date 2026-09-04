@@ -1,8 +1,9 @@
 package org.ihtsdo.buildcloud.core.entity;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
 
@@ -53,8 +54,9 @@ class ManifestConfigTest {
 
 	@Test
 	void jacksonRoundTrip_shouldDeserializeIncludedExternalSimpleRefsetsWithoutMutatingImmutableList() throws Exception {
-		ObjectMapper objectMapper = new ObjectMapper()
-				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		ObjectMapper objectMapper = JsonMapper.builder()
+				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+				.build();
 
 		ManifestConfig original = new ManifestConfig();
 		original.setIncludedExternalSimpleRefsets("1,2,3,4,5,6,7,8,9,10");

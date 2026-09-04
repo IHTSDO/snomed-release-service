@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.build.compare.type;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.service.PublishService;
@@ -15,10 +13,12 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.net.URI;
@@ -73,7 +73,7 @@ public class RVFReportComparison extends ComponentComparison {
         if (StringUtils.hasLength(leftBuild.getRvfURL()) && StringUtils.hasLength(rightBuild.getRvfURL())) {
             try {
                 String validationComparisonReportString = getValidationComparisonReport(leftBuild.getRvfURL(), rightBuild.getRvfURL());
-                ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().failOnUnknownProperties(false).build();
+                ObjectMapper objectMapper = JsonMapper.builder().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).build();
                 final ValidationComparisonReport highLevelValidationReport = objectMapper.readValue(validationComparisonReportString, ValidationComparisonReport.class);
                 if (ValidationComparisonReport.Status.PASS.equals(highLevelValidationReport.getStatus())) {
                     pass(validationComparisonReportString);
@@ -102,7 +102,7 @@ public class RVFReportComparison extends ComponentComparison {
         return new RVFReportComparison(releaseValidationFrameworkUrl, authenticationToken);
     }
 
-    private String getValidationComparisonReport(String leftUrl, String rightUrl) throws InterruptedException, BusinessServiceException, JsonProcessingException {
+    private String getValidationComparisonReport(String leftUrl, String rightUrl) throws InterruptedException, BusinessServiceException {
         RestTemplate rvfRestTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.add("Cookie", this.authenticationToken);
@@ -122,7 +122,7 @@ public class RVFReportComparison extends ComponentComparison {
             ResponseEntity<String> response = rvfRestTemplate.exchange(uri, HttpMethod.GET, new HttpEntity<>(headers), String.class);
             String validationReportString = response.getBody();
             if (StringUtils.hasLength(validationReportString)) {
-                ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().failOnUnknownProperties(false).build();
+                ObjectMapper objectMapper = JsonMapper.builder().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).build();
                 final ValidationComparisonReport highLevelValidationReport = objectMapper.readValue(validationReportString, ValidationComparisonReport.class);
                 if (!ValidationComparisonReport.Status.RUNNING.equals(highLevelValidationReport.getStatus())) {
                     return validationReportString;

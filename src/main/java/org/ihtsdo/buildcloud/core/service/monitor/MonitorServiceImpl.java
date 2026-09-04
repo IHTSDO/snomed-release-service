@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.monitor;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
 import org.ihtsdo.buildcloud.core.entity.Notification;
@@ -14,6 +12,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -92,7 +92,7 @@ public class MonitorServiceImpl implements MonitorService {
 										Map<String, Object> message = new HashMap<>();
 										message.put("event", "NEW_NOTIFICATION");
 										simpMessagingTemplate.convertAndSend("/topic/user/" + notification.getRecipient() + "/notification",  objectMapper.writeValueAsString(message));
-									} catch (JsonProcessingException e) {
+									} catch (JacksonException e) {
 										logger.error("Failed to send message through web-socket", e);
 									}
 								}

@@ -1,8 +1,5 @@
 package org.ihtsdo.buildcloud.config;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.JMSException;
 import jakarta.jms.Queue;
@@ -34,7 +31,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 import org.springframework.jms.core.JmsTemplate;
-import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
+import org.springframework.jms.support.converter.JacksonJsonMessageConverter;
 import org.springframework.jms.support.converter.MessageConverter;
 import org.springframework.jms.support.converter.MessageType;
 import org.springframework.orm.jpa.hibernate.HibernateTransactionManager;
@@ -47,6 +44,10 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.task.DelegatingSecurityContextAsyncTaskExecutor;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -68,10 +69,21 @@ public abstract class Config extends BaseConfiguration {
 
 	private S3ClientFactory s3ClientFactory;
 
+	@Primary
 	@Bean
-	public ObjectMapper createObjectMapper() {
-		return new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
-				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+	public JsonMapper createObjectMapper() {
+		return JsonMapper.builder()
+				.enable(SerializationFeature.INDENT_OUTPUT)
+				.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+				// Jackson 3 defaults this to false (Jackson 2 defaulted to true); several entities/reports
+				// expose a final Map/Collection field only via its getter, relying on deserialization
+				// populating that existing instance in place rather than via a setter.
+				.enable(MapperFeature.USE_GETTERS_AS_SETTERS)
+				// Jackson 3 defaults this to true (Jackson 2 defaulted to false), which would reorder every
+				// JSON response's fields alphabetically. Disabled to preserve declaration-order output for
+				// existing API consumers.
+				.disable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
+				.build();
 	}
 
 	@Bean
@@ -180,7 +192,7 @@ public abstract class Config extends BaseConfiguration {
 
 	@Bean
 	public MessageConverter jacksonJmsMessageConverter() {
-		MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
+		JacksonJsonMessageConverter converter = new JacksonJsonMessageConverter();
 		converter.setTargetType(MessageType.TEXT);
 		converter.setTypeIdPropertyName("_type");
 		return converter;

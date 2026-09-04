@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.core.dao;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ihtsdo.buildcloud.TestConfig;
 import org.ihtsdo.buildcloud.core.entity.Notification;
 import org.junit.jupiter.api.Test;
@@ -10,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +27,7 @@ public class NotificationDaoImplTest {
 	private ObjectMapper objectMapper;
 
 	@Test
-	public void testCRUD() throws JsonProcessingException {
+	public void testCRUD() {
 		Notification notification = new Notification();
 		notification.setRecipient("test");
 		notification.setNotificationType(Notification.NotificationType.BUILD_RUN_OUT_OF_TIME.name());

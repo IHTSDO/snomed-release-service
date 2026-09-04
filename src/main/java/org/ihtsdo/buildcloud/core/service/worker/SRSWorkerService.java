@@ -1,7 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.worker;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.jms.JMSException;
 import jakarta.jms.TextMessage;
 import org.apache.commons.io.IOUtils;
@@ -24,6 +22,8 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -79,7 +79,7 @@ public class SRSWorkerService {
 		CreateReleasePackageBuildRequest buildRequest;
 		try {
 			buildRequest = objectMapper.readValue(srsMessage.getText(), CreateReleasePackageBuildRequest.class);
-		} catch (JMSException | JsonProcessingException e) {
+		} catch (JMSException | JacksonException e) {
 			throw new IllegalStateException("Error occurred while trying to consume the SRS build request message.", e);
 		}
 		try {
@@ -321,7 +321,7 @@ public class SRSWorkerService {
             } else {
                 LOGGER.warn("No build report file.");
             }
-        } catch (IOException e) {
+        } catch (IOException | JacksonException e) {
             LOGGER.error("Error occurred while trying to get the build report file.", e);
         }
         return null;

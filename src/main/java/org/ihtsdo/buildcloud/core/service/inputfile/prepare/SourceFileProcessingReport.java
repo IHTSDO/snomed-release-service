@@ -1,10 +1,10 @@
 package org.ihtsdo.buildcloud.core.service.inputfile.prepare;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FilenameUtils;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import java.io.IOException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -29,7 +29,7 @@ public class SourceFileProcessingReport {
         this.sourceFiles = new HashMap<>();
     }
 
-    public Map<ReportType, List<FileProcessingReportDetail>> getDetails() {
+    public SortedMap<ReportType, List<FileProcessingReportDetail>> getDetails() {
         return details;
     }
 
@@ -88,7 +88,7 @@ public class SourceFileProcessingReport {
         ObjectMapper mapper = new ObjectMapper();
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             return "Unable to persist Build Report due to " + e.getLocalizedMessage();
         }
     }

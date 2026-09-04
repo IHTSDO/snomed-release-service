@@ -1,6 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.manager;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.ihtsdo.buildcloud.TestConfig;
 import org.ihtsdo.buildcloud.core.dao.BuildStatusTrackerDao;
@@ -24,6 +23,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;

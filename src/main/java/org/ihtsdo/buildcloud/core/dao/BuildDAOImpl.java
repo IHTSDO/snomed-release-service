@@ -1,12 +1,5 @@
 package org.ihtsdo.buildcloud.core.dao;
 
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import io.awspring.cloud.s3.ObjectMetadata;
 import org.apache.activemq.command.ActiveMQTextMessage;
@@ -41,6 +34,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.FileCopyUtils;
 import software.amazon.awssdk.services.s3.model.*;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonEncoding;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -266,10 +266,9 @@ public class BuildDAOImpl implements BuildDAO {
 
 	protected File toJson(final Object obj) throws IOException {
 		final File temp = File.createTempFile("tempJson", ".tmp");
-		objectMapper.disable(SerializationFeature.INDENT_OUTPUT);
-		final JsonFactory jsonFactory = objectMapper.getFactory();
-		try (JsonGenerator jsonGenerator = jsonFactory.createGenerator(temp, JsonEncoding.UTF8)) {
-			jsonGenerator.writeObject(obj);
+		final ObjectMapper nonIndentingMapper = objectMapper.rebuild().disable(SerializationFeature.INDENT_OUTPUT).build();
+		try (JsonGenerator jsonGenerator = nonIndentingMapper.createGenerator(temp, JsonEncoding.UTF8)) {
+			jsonGenerator.writePOJO(obj);
 		}
 		return temp;
 	}
@@ -332,7 +331,7 @@ public class BuildDAOImpl implements BuildDAO {
 		final String configFilePath = pathHelper.getBuildConfigFilePath(build);
 		try (final InputStream inputStream = s3Client.getObject(buildBucketName, configFilePath)){
 			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(inputStream, RF2Constants.UTF_8));// Closes stream
-			try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
+			try (JsonParser jsonParser = objectMapper.createParser(configurationJson)) {
 				final BuildConfiguration buildConfiguration = jsonParser.readValueAs(BuildConfiguration.class);
 				build.setConfiguration(buildConfiguration);
 			}
@@ -351,7 +350,7 @@ public class BuildDAOImpl implements BuildDAO {
 		final String configFilePath = pathHelper.getQATestConfigFilePath(build);
 		try (final InputStream inputStream = s3Client.getObject(buildBucketName, configFilePath)){
 			final String configurationJson = FileCopyUtils.copyToString(new InputStreamReader(inputStream, RF2Constants.UTF_8));// Closes stream
-			try (JsonParser jsonParser = objectMapper.getFactory().createParser(configurationJson)) {
+			try (JsonParser jsonParser = objectMapper.createParser(configurationJson)) {
 				final QATestConfig qaTestConfig = jsonParser.readValueAs(QATestConfig.class);
 				build.setQaTestConfig(qaTestConfig);
 			}
@@ -959,7 +958,7 @@ public class BuildDAOImpl implements BuildDAO {
 		builds.forEach(build -> {
 			try {
 				this.loadBuildConfiguration(build);
-			} catch (IOException e) {
+			} catch (IOException | JacksonException e) {
 				LOGGER.error("Error retrieving Build Configuration for build {}", build.getId());
 			}
 		});
@@ -969,7 +968,7 @@ public class BuildDAOImpl implements BuildDAO {
 		builds.forEach(build -> {
 			try {
 				this.loadQaTestConfig(build);
-			} catch (IOException e) {
+			} catch (IOException | JacksonException e) {
 				LOGGER.error("Error retrieving QA Configuration for build {}", build.getId());
 			}
 		});
@@ -1093,14 +1092,14 @@ public class BuildDAOImpl implements BuildDAO {
 		if (Boolean.TRUE.equals(requestParameter.includeBuildConfiguration)) {
 			try {
 				this.loadBuildConfiguration(build);
-			} catch (IOException e) {
+			} catch (IOException | JacksonException e) {
 				LOGGER.error("Error retrieving Build Configuration for build {}", build.getId());
 			}
 		}
 		if (Boolean.TRUE.equals(requestParameter.includeQAConfiguration)) {
 			try {
 				this.loadQaTestConfig(build);
-			} catch (IOException e) {
+			} catch (IOException | JacksonException e) {
 				LOGGER.error("Error retrieving QA Configuration for build {}", build.getId());
 			}
 		}
@@ -1498,7 +1497,7 @@ public class BuildDAOImpl implements BuildDAO {
 		try (final InputStream s3Object = s3Client.getObject(bucketName, reportPath)) {
 			if (s3Object != null) {
 				final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
-				try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+				try (JsonParser jsonParser = objectMapper.createParser(reportJson)) {
 					reports = jsonParser.readValueAs(new TypeReference <List <PreConditionCheckReport>>() {
 					});
 				}
@@ -1531,7 +1530,7 @@ public class BuildDAOImpl implements BuildDAO {
 		try (final InputStream s3Object = s3Client.getObject(bucketName, reportPath)) {
 			if (s3Object != null) {
 				final String reportJson = FileCopyUtils.copyToString(new InputStreamReader(s3Object, RF2Constants.UTF_8));// Closes stream
-				try (JsonParser jsonParser = objectMapper.getFactory().createParser(reportJson)) {
+				try (JsonParser jsonParser = objectMapper.createParser(reportJson)) {
 					reports = jsonParser.readValueAs(new TypeReference <List <PostConditionCheckReport>>() {
 					});
 				}

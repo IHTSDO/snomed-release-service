@@ -3,9 +3,9 @@ package org.ihtsdo.buildcloud.core.entity;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -78,7 +78,7 @@ public class BuildReport {
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(report);
-		} catch (IOException e) {
+		} catch (JacksonException e) {
 			return "Unable to persist Build Report due to " + e.getLocalizedMessage();
 		}
 	}

@@ -1,8 +1,5 @@
 package org.ihtsdo.buildcloud.core.service.manager;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ihtsdo.buildcloud.core.entity.*;
 import org.ihtsdo.buildcloud.core.service.BuildService;
 import org.ihtsdo.buildcloud.core.service.BuildServiceImpl;
@@ -17,6 +14,9 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 import jakarta.jms.JMSException;
 import jakarta.jms.TextMessage;
@@ -78,7 +78,7 @@ public class BuildStatusListenerService {
 					updateStatus(message);
 				}
 			}
-		} catch (JMSException | IOException | BadConfigurationException e) {
+		} catch (JMSException | IOException | JacksonException | BadConfigurationException e) {
 			LOGGER.error("Error occurred while trying to obtain the build status.", e);
 		}
     }
@@ -141,7 +141,7 @@ public class BuildStatusListenerService {
 			} else {
 				LOGGER.warn("No build report file.");
 			}
-		} catch (IOException e) {
+		} catch (IOException | JacksonException e) {
 			LOGGER.error("Error occurred while trying to get the build report file.", e);
 		}
 		return null;
@@ -170,7 +170,7 @@ public class BuildStatusListenerService {
 			} else {
 				LOGGER.warn("No pre-condition checks report found.");
 			}
-		} catch (IOException e) {
+		} catch (IOException | JacksonException e) {
 			LOGGER.error("Error occurred while trying to get the pre-condition checks report.", e);
 		}
 		return Collections.emptyList();
@@ -181,7 +181,7 @@ public class BuildStatusListenerService {
 	 *
 	 * @param message Being sent to the web socket.
 	 */
-	private void updateStatus(final Map<String, Object> message) throws JsonProcessingException {
+	private void updateStatus(final Map<String, Object> message) {
 		LOGGER.info("Build status tracker update {}", message);
 		final String productBusinessKey = (String) message.get(PRODUCT_KEY);
 		final String buildId = (String) message.get(BUILD_ID_KEY);
