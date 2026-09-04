@@ -468,7 +468,7 @@ public class BuildController {
 		if (tracker != null) {
 			return new ResponseEntity<>(tracker, HttpStatus.OK);
 		} else {
-			return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+			return new ResponseEntity<>((PublishStepTracker) null, HttpStatus.NOT_FOUND);
 		}
 	}
 

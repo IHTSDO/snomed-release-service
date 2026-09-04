@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.core.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.*;
 import jakarta.annotation.PostConstruct;
@@ -67,9 +67,9 @@ import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 
 import javax.naming.ConfigurationException;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -1463,7 +1463,7 @@ public class BuildServiceImpl implements BuildService {
 		try {
 			messagingHelper.send(new ActiveMQQueue(dailyBuildRvfResponseQueue), ImmutableMap.of("rvfURL",rvfURL,
 					"branchPath", branchPath));
-		} catch (JsonProcessingException | JMSException e) {
+		} catch (JacksonException | JMSException e) {
 			LOGGER.error("Failed to send daily build RVF response notification for {}.", branchPath, e);
 		}
 	}

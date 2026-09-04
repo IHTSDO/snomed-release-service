@@ -19,7 +19,7 @@ import java.text.Normalizer.Form;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 
 
 public class Zipper {

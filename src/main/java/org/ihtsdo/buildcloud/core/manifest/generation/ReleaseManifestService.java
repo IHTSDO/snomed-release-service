@@ -73,15 +73,14 @@ public class ReleaseManifestService {
 
     private static final ObjectMapper JSON_TREE_MAPPER = new ObjectMapper();
 
-    private final MappingJackson2XmlHttpMessageConverter xmlConverter;
+    private final MappingJackson2XmlHttpMessageConverter xmlConverter = new MappingJackson2XmlHttpMessageConverter();
 
     private final TermServerService termServerService;
 
     private final ReleaseCenterDAO releaseCenterDAO;
 
     @Autowired
-    public ReleaseManifestService(MappingJackson2XmlHttpMessageConverter xmlConverter, TermServerService termServerService, ReleaseCenterDAO releaseCenterDAO) {
-        this.xmlConverter = xmlConverter;
+    public ReleaseManifestService(TermServerService termServerService, ReleaseCenterDAO releaseCenterDAO) {
         this.termServerService = termServerService;
         this.releaseCenterDAO = releaseCenterDAO;
     }

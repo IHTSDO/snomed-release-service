@@ -1,7 +1,7 @@
 package org.ihtsdo.buildcloud.config;
 
 import org.apache.commons.dbcp2.BasicDataSource;
-import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
+import org.springframework.orm.jpa.hibernate.LocalSessionFactoryBean;
 
 import java.util.Properties;
 

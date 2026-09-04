@@ -8,7 +8,7 @@
 
 package org.ihtsdo.buildcloud.core.manifest;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 
 
 /**

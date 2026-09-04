@@ -5,5 +5,5 @@
 // Generated on: 2017.09.28 at 02:15:54 PM BST 
 //
 
-@javax.xml.bind.annotation.XmlSchema(namespace = "http://release.ihtsdo.org/manifest/1.0.0", elementFormDefault = javax.xml.bind.annotation.XmlNsForm.QUALIFIED)
+@jakarta.xml.bind.annotation.XmlSchema(namespace = "http://release.ihtsdo.org/manifest/1.0.0", elementFormDefault = jakarta.xml.bind.annotation.XmlNsForm.QUALIFIED)
 package org.ihtsdo.buildcloud.core.manifest;
