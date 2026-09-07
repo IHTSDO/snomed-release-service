@@ -27,7 +27,7 @@ public class NotificationDaoImplTest {
 	private ObjectMapper objectMapper;
 
 	@Test
-	public void testCRUD() {
+	void testCRUD() {
 		Notification notification = new Notification();
 		notification.setRecipient("test");
 		notification.setNotificationType(Notification.NotificationType.BUILD_RUN_OUT_OF_TIME.name());

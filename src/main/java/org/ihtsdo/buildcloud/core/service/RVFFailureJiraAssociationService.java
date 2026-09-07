@@ -273,7 +273,7 @@ public class RVFFailureJiraAssociationService {
 		return message;
 	}
 
-	private ValidationReport getRVFReport(String url) throws IOException {
+	private ValidationReport getRVFReport(String url) {
 		RestTemplate rvfRestTemplate = new RestTemplate();
 		HttpHeaders headers = new HttpHeaders();
 		headers.add("Cookie", SecurityUtil.getAuthenticationToken());

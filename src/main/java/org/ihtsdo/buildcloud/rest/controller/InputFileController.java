@@ -75,7 +75,7 @@ public class InputFileController {
 			if (validationStatus == null) {
 				return new ResponseEntity<>(HttpStatus.CREATED);
 			} else {
-				return new ResponseEntity<>(validationStatus, HttpStatus.UNPROCESSABLE_ENTITY);
+				return new ResponseEntity<>(validationStatus, HttpStatus.UNPROCESSABLE_CONTENT);
 			}
 		}
 	}

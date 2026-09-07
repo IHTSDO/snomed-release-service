@@ -39,7 +39,7 @@ public class ClassificationServiceRestClient {
 	public ClassificationServiceRestClient(@Value("${classification-service.url}") final String serviceUrl,
 			@Value("${classification-service.username}") final String username, @Value("${classification-service.password}") final String password) {
 		restTemplate = new RestTemplateBuilder()
-				.rootUri(serviceUrl)
+				.baseUri(serviceUrl)
 				.basicAuthentication(username, password)
 				.build();
 	}

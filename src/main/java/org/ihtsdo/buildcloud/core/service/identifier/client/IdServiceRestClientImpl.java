@@ -103,7 +103,7 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
 
 		restTemplate = new RestTemplateBuilder()
-				.rootUri(idServiceUrl)
+				.baseUri(idServiceUrl)
 				.additionalMessageConverters(new GsonHttpMessageConverter(gson))
 				.additionalMessageConverters(new FormHttpMessageConverter())
 				.errorHandler(new ExpressiveErrorHandler())

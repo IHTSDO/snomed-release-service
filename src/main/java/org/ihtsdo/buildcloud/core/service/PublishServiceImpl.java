@@ -1010,7 +1010,7 @@ public class PublishServiceImpl implements PublishService {
 			JsonNode root = OBJECT_MAPPER.readTree(trimmed);
 			JsonNode messageNode = root.get("message");
 			if (messageNode != null && !messageNode.isNull()) {
-				return messageNode.asText();
+				return messageNode.asString();
 			}
 		} catch (Exception e) {
 			return rawMessage;

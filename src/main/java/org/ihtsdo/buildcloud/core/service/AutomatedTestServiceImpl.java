@@ -232,7 +232,10 @@ public class AutomatedTestServiceImpl implements AutomatedTestService {
 			fileComparisonBlockingQueue.put(new FileComparisonQueue(compareId, fileName, leftBuild, rightBuild, report, ignoreIdComparison));
 			regressionTestReportDAO.saveFileComparisonReport(leftBuild.getReleaseCenterKey(), leftBuild.getProductKey(), compareId, ignoreIdComparison, report);
 			processFileComparisonJobs();
-		} catch (InterruptedException | IOException | JacksonException e) {
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			LOGGER.error(e.getMessage(), e);
+		} catch (IOException | JacksonException e) {
 			LOGGER.error(e.getMessage(), e);
 		}
 	}
