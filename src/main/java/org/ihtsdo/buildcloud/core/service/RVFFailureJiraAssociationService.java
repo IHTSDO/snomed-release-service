@@ -2,8 +2,6 @@ package org.ihtsdo.buildcloud.core.service;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import net.rcarz.jiraclient.Field;
 import net.sf.json.JSONObject;
 import org.ihtsdo.buildcloud.core.dao.RVFFailureJiraAssociationDAO;
@@ -151,7 +149,7 @@ public class RVFFailureJiraAssociationService {
 			associations.add(association);
 
 			// Add attachment and update JIRA custom fields
-			jiraCloudClient.addAttachment(issueKey, found.getAssertionUuid() + ".json", getPrettyString(found.toString()).getBytes());
+			jiraCloudClient.addAttachment(issueKey, found.getAssertionUuid() + ".json", getPrettyString(found).getBytes());
 			updateJiraIssue(product, build.getConfiguration().getEffectiveTimeFormatted(), issueKey);
 		}
 		Map<String, List<RVFFailureJiraAssociation>> result = new HashMap<>();
@@ -179,10 +177,9 @@ public class RVFFailureJiraAssociationService {
 		return result.toString();
 	}
 
-	private String getPrettyString(String input) {
+	private String getPrettyString(Object input) {
 		Gson gson = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
-		JsonElement je = JsonParser.parseString(input);
-		return gson.toJson(je);
+		return gson.toJson(input);
 	}
 
 	private List<ValidationReport.RvfValidationResult.TestResult.TestRunItem.FailureDetail> getFirstNInstances(List<ValidationReport.RvfValidationResult.TestResult.TestRunItem.FailureDetail> instances, int numberOfItem) {
@@ -366,21 +363,13 @@ public class RVFFailureJiraAssociationService {
 						return firstNInstances;
 					}
 
-					@Override
-					public String toString() {
-						return "{" +
-								"\"testType\": \"" + testType + '\"' +
-								", \"assertionUuid\": \"" + assertionUuid + '\"' +
-								", \"assertionText\": \"" + assertionText + '\"' +
-								", \"severity\": " + (severity != null ? "\"" + severity + "\"" : null) +
-								", \"failureCount\": " + failureCount +
-								", \"failureMessage\": " + (failureMessage != null ? "\"" + failureMessage + "\"" : null) +
-								", \"firstNInstances\": " + firstNInstances +
-								'}';
-					}
-
 					private static final class FailureDetail {
 						private static final int FULL_COMPONENT_MAX_LENGTH = 1000;
+						private static final Gson GSON = new GsonBuilder()
+								.disableHtmlEscaping()
+								.serializeNulls()
+								.setPrettyPrinting()
+								.create();
 						private String conceptId;
 						private String conceptFsn;
 						private String detail;
@@ -409,23 +398,21 @@ public class RVFFailureJiraAssociationService {
 
 						@Override
 						public String toString() {
-							return "{\n\t" +
-									"\"conceptId\": " + (conceptId != null ? '\"' + conceptId + '\"' : null) + ",\n\t" +
-									"\"conceptFsn\": " + (conceptFsn != null ? '\"' + conceptFsn + '\"' : null) + ",\n\t" +
-									"\"detail\": " + (detail != null ? '\"' + detail + '\"' : null) + ",\n\t" +
-									"\"componentId\": " + (componentId != null ? '\"' + componentId + '\"' : null) + ",\n\t" +
-									"\"fullComponent\": " + (fullComponent != null ? '\"' + fullComponent + '\"' : null) + "\n" +
-									"}";
+							return GSON.toJson(this);
 						}
 
 						public String toStringAndTruncateIfTextTooLong() {
-							return "{\n\t" +
-									"\"conceptId\": " + (conceptId != null ? '\"' + conceptId + '\"' : null) + ",\n\t" +
-									"\"conceptFsn\": " + (conceptFsn != null ? '\"' + conceptFsn + '\"' : null) + ",\n\t" +
-									"\"detail\": " + (detail != null ? '\"' + detail + '\"' : null) + ",\n\t" +
-									"\"componentId\": " + (componentId != null ? '\"' + componentId + '\"' : null) + ",\n\t" +
-									"\"fullComponent\": " + (fullComponent != null ? '\"' + (fullComponent.length() <= FULL_COMPONENT_MAX_LENGTH ? fullComponent : fullComponent.substring(0, FULL_COMPONENT_MAX_LENGTH)) + "..." + '\"' : null) + "\n" +
-									"}";
+							String truncatedFullComponent = fullComponent;
+							if (fullComponent != null && fullComponent.length() > FULL_COMPONENT_MAX_LENGTH) {
+								truncatedFullComponent = fullComponent.substring(0, FULL_COMPONENT_MAX_LENGTH) + "...";
+							}
+							Map<String, String> payload = new LinkedHashMap<>();
+							payload.put("conceptId", conceptId);
+							payload.put("conceptFsn", conceptFsn);
+							payload.put("detail", detail);
+							payload.put("componentId", componentId);
+							payload.put("fullComponent", truncatedFullComponent);
+							return GSON.toJson(payload);
 						}
 					}
 				}
