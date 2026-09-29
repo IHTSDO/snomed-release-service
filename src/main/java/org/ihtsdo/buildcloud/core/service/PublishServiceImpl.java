@@ -826,10 +826,10 @@ public class PublishServiceImpl implements PublishService {
 					}
 					if (!availableOrReservedIds.isEmpty()) {
 						int firstNCount = Math.min(availableOrReservedIds.size(), MAX_FAILURE);
-						String warning = String.format("Total sctIds %s in file %s that are available or reserved but cannot be moved to published. For example: %s", availableOrReservedIds.size(), filename, availableOrReservedIds.subList(0, firstNCount).stream().map(String::valueOf).collect(Collectors.joining(",")));
-						LOGGER.warn(warning);
+						String message = String.format("Total sctIds %s in file %s that are available or reserved but cannot be moved to published. For example: %s", availableOrReservedIds.size(), filename, availableOrReservedIds.subList(0, firstNCount).stream().map(String::valueOf).collect(Collectors.joining(",")));
+						LOGGER.error(message);
 						if (stepTracker != null && step != null) {
-							stepTracker.addStepWarning(step, warning);
+							stepTracker.addStepWarning(step, message);
 						}
 					}
 				}
@@ -841,10 +841,10 @@ public class PublishServiceImpl implements PublishService {
 				sctIds.size(), filename, availableStatusCounter, deprecatedStatusCounter, assignedStatusCounter, publishedAlreadyCounter, otherStatusIds.size());
 		if (!otherStatusIds.isEmpty()) {
 			int firstNCount = Math.min(otherStatusIds.size(), MAX_FAILURE);
-            String warning = String.format("Total sctIds %s in file %s that are not available or assigned or published or deprecated. Therefore they can not be published. For example: %s", otherStatusIds.size(), filename, otherStatusIds.subList(0, firstNCount).stream().map(String::valueOf).collect(Collectors.joining(",")));
-			LOGGER.warn(warning);
+            String message = String.format("Total sctIds %s in file %s that are not available or assigned or published or deprecated. Therefore they can not be published. For example: %s", otherStatusIds.size(), filename, otherStatusIds.subList(0, firstNCount).stream().map(String::valueOf).collect(Collectors.joining(",")));
+			LOGGER.error(message);
 			if (stepTracker != null && step != null) {
-				stepTracker.addStepWarning(step, warning);
+				stepTracker.addStepWarning(step, message);
 			}
 		}
 		
