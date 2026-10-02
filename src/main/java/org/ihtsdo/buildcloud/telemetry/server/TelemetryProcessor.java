@@ -196,21 +196,26 @@ public class TelemetryProcessor {
 		final String[] split1 = path.split("/", 2);
 		final String bucketName = split1[0];
 		final String objectKey = split1[1];
+		// Spring Cloud AWS 4 keeps a trailing "/" in S3 keys, so the object key must be passed as the
+		// relative path under its parent folder rather than as the folder itself with an empty relative path.
+		final int lastSlash = objectKey.lastIndexOf('/');
+		final String parentPath = lastSlash == -1 ? "" : objectKey.substring(0, lastSlash);
+		final String fileName = objectKey.substring(lastSlash + 1);
 
 		final ResourceManager resourceManager =
 				new ResourceManager(new ManualResourceConfiguration(false, true,
-				new ResourceConfiguration.Local(), new ResourceConfiguration.Cloud(bucketName, objectKey)),
+				new ResourceConfiguration.Local(), new ResourceConfiguration.Cloud(bucketName, parentPath)),
 				resourceLoader);
 
 		final File temporaryFile = new File(TEMP_DIRECTORY_PATH + Constants.SLASH + correlationID);
 		prepareTemporaryS3FileForAppend(bucketName, objectKey, temporaryFile);
 
-		activeS3UploadTasks.put(correlationID, () -> uploadTemporaryFile(resourceManager, temporaryFile, false));
+		activeS3UploadTasks.put(correlationID, () -> uploadTemporaryFile(resourceManager, fileName, temporaryFile, false));
 		activeS3LastUploadMillis.put(correlationID, System.currentTimeMillis());
 
 		return new BufferedWriterTaskOnClose(new FileWriter(temporaryFile, true), () -> {
 			if (!isOffline) {
-				uploadTemporaryFile(resourceManager, temporaryFile, true);
+				uploadTemporaryFile(resourceManager, fileName, temporaryFile, true);
 			}
 		});
 	}
@@ -243,9 +248,9 @@ public class TelemetryProcessor {
 		activeS3LastUploadMillis.put(correlationID, now);
 	}
 
-	private void uploadTemporaryFile(final ResourceManager resourceManager, final File temporaryFile, final boolean deleteAfterUpload) {
+	private void uploadTemporaryFile(final ResourceManager resourceManager, final String fileName, final File temporaryFile, final boolean deleteAfterUpload) {
 		try {
-			resourceManager.writeResource("", temporaryFile.toURI().toURL().openStream());
+			resourceManager.writeResource(fileName, temporaryFile.toURI().toURL().openStream());
 			if (deleteAfterUpload) {
 				Files.deleteIfExists(temporaryFile.toPath());
 			}
