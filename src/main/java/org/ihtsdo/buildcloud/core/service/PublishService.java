@@ -24,6 +24,12 @@ public interface PublishService {
 
 	Map<String, String> getPublishedBuildPathMap(String releaseCenterKey, String productKey);
 
+	/**
+	 * Rejects builds that must never be published, i.e. PreProduction, Beta and Alpha builds
+	 * which have either Export Type set to Unpublished or Beta Release enabled.
+	 */
+	void validateBuildIsPublishable(Build build) throws BusinessServiceException;
+
 	void publishBuild(Build build, boolean isRegressionTestBuild, boolean publishComponentIds, String env) throws BusinessServiceException, IOException, DecoderException;
 
 	void publishBuildAsync(Build build, boolean publishComponentIds, String env);

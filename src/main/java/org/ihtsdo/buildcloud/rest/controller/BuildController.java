@@ -449,10 +449,11 @@ public class BuildController {
 	@Operation(summary = "Publish a release for given build id",
 			description = "Publish release for given build id to make it available in repository for wider usages")
 	public void publishBuild(@PathVariable final String releaseCenterKey, @PathVariable final String productKey,
-			@PathVariable final String buildId, @RequestParam(required = false) String environment) {
+			@PathVariable final String buildId, @RequestParam(required = false) String environment) throws BusinessServiceException {
 
 		final Build build = buildService.find(releaseCenterKey, productKey, buildId, true, null, null, null);
 		ifBuildIsNullThrow(productKey, buildId, build);
+		publishService.validateBuildIsPublishable(build);
 		publishService.publishBuildAsync(build, true, environment);
 	}
 

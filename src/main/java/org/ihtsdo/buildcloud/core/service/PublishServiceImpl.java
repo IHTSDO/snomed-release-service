@@ -12,6 +12,7 @@ import org.ihtsdo.buildcloud.core.dao.BuildDAO;
 import org.ihtsdo.buildcloud.core.dao.ReleaseCenterDAO;
 import org.ihtsdo.buildcloud.core.dao.helper.S3PathHelper;
 import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.helper.PublishStep;
@@ -22,6 +23,7 @@ import org.ihtsdo.buildcloud.telemetry.client.TelemetryStream;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.helper.FileHelper;
 import org.ihtsdo.otf.rest.client.RestClientException;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
 import org.ihtsdo.otf.rest.exception.BadRequestException;
@@ -164,7 +166,30 @@ public class PublishServiceImpl implements PublishService {
     }
 
 	@Override
+	public void validateBuildIsPublishable(Build build) throws BusinessServiceException {
+		BuildConfiguration configuration = build.getConfiguration();
+		if (configuration == null) {
+			return;
+		}
+		List<String> reasons = new ArrayList<>();
+		if (configuration.isLoadTermServerData()
+				&& SnowstormRestClient.ExportCategory.UNPUBLISHED.name().equals(configuration.getExportType())) {
+			reasons.add("Export Type is Unpublished");
+		}
+		if (configuration.isBetaRelease()) {
+			reasons.add("Beta Release is enabled");
+		}
+		if (!reasons.isEmpty()) {
+			throw new BadRequestException("Build " + build.getId() + " cannot be published because it is a PreProduction, Beta or Alpha build ("
+					+ String.join(" and ", reasons) + ").");
+		}
+	}
+
+	@Override
 	public void publishBuild(final Build build, boolean isRegressionTestBuild, boolean publishComponentIds, String env) throws BusinessServiceException, IOException {
+		if (!isRegressionTestBuild) {
+			validateBuildIsPublishable(build);
+		}
 		String buildKey = getBuildUniqueKey(build);
 		if (isPublishAlreadyRunning(buildKey)) {
 			LOGGER.warn("Publish already running for build {}", build.getUniqueId());

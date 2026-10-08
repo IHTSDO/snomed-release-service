@@ -5,11 +5,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.function.Consumer;
 
 import org.apache.commons.codec.DecoderException;
 import org.ihtsdo.buildcloud.core.dao.BuildDAOImpl;
 import org.ihtsdo.buildcloud.core.dao.ProductDAO;
 import org.ihtsdo.buildcloud.core.entity.Build;
+import org.ihtsdo.buildcloud.core.entity.BuildConfiguration;
 import org.ihtsdo.buildcloud.core.entity.Product;
 import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.entity.helper.EntityHelper;
@@ -19,6 +21,8 @@ import org.ihtsdo.buildcloud.rest.pojo.BuildRequestPojo;
 import org.ihtsdo.buildcloud.test.AbstractTest;
 import org.ihtsdo.otf.dao.s3.S3Client;
 import org.ihtsdo.otf.dao.s3.TestS3Client;
+import org.ihtsdo.otf.rest.client.terminologyserver.SnowstormRestClient;
+import org.ihtsdo.otf.rest.exception.BadRequestException;
 import org.ihtsdo.otf.rest.exception.BusinessServiceException;
 import org.ihtsdo.otf.rest.exception.EntityAlreadyExistsException;
 import org.junit.jupiter.api.AfterEach;
@@ -123,6 +127,60 @@ public class PublishServiceImpl2Test extends AbstractTest {
 
 		assertTrue(expectedExceptionThrown, "Expected EntityAlreadyExistsException to have been thrown");
 
+	}
+
+	@Test
+	void testPublishingBetaReleaseBuildIsRejected() {
+		Build build = createBuildToPublish(configuration -> configuration.setBetaRelease(true));
+
+		BadRequestException exception = assertThrows(BadRequestException.class, () -> publishService.publishBuild(build, false, true, null));
+		assertTrue(exception.getMessage().contains("Beta Release is enabled"));
+		assertThrows(BadRequestException.class, () -> publishService.validateBuildIsPublishable(build));
+	}
+
+	@Test
+	void testPublishingUnpublishedExportBuildIsRejected() {
+		Build build = createBuildToPublish(configuration -> {
+			configuration.setLoadTermServerData(true);
+			configuration.setExportType(SnowstormRestClient.ExportCategory.UNPUBLISHED.name());
+		});
+
+		BadRequestException exception = assertThrows(BadRequestException.class, () -> publishService.publishBuild(build, false, true, null));
+		assertTrue(exception.getMessage().contains("Export Type is Unpublished"));
+		assertThrows(BadRequestException.class, () -> publishService.validateBuildIsPublishable(build));
+	}
+
+	@Test
+	void testLocalInputFilesBuildIgnoresExportType() {
+		Build build = createBuildToPublish(configuration -> {
+			configuration.setLoadTermServerData(false);
+			configuration.setExportType(SnowstormRestClient.ExportCategory.UNPUBLISHED.name());
+		});
+
+		assertDoesNotThrow(() -> publishService.validateBuildIsPublishable(build));
+	}
+
+	@Test
+	void testLocalInputFilesBetaReleaseBuildIsRejected() {
+		Build build = createBuildToPublish(configuration -> {
+			configuration.setLoadTermServerData(false);
+			configuration.setBetaRelease(true);
+		});
+
+		assertThrows(BadRequestException.class, () -> publishService.validateBuildIsPublishable(build));
+	}
+
+	@Test
+	void testProductionBuildIsPublishable() {
+		Build build = createBuildToPublish(configuration -> configuration.setExportType(SnowstormRestClient.ExportCategory.PUBLISHED.name()));
+
+		assertDoesNotThrow(() -> publishService.validateBuildIsPublishable(build));
+	}
+
+	private Build createBuildToPublish(Consumer<BuildConfiguration> configurationCustomizer) {
+		BuildConfiguration configuration = new BuildConfiguration();
+		configurationCustomizer.accept(configuration);
+		return new Build(new Date(), releaseCenterName, "test_product", configuration, null);
 	}
 
 	private static Thread runThread(final String threadName, final PublishService service, final Build build,
