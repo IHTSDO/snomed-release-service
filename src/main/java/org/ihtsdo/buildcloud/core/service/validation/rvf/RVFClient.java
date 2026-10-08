@@ -63,8 +63,6 @@ public class RVFClient implements Closeable {
 
 	private static final String RUN_ID = "runId";
 
-	private static final String DEPENDENCY_RELEASE = "dependencyRelease";
-
 	private static final String PREVIOUS_RELEASE = "previousRelease";
 
 	private static final String RELEASE_AS_AN_EDITION = "releaseAsAnEdition";
@@ -242,10 +240,6 @@ public class RVFClient implements Closeable {
 		String previousPublishedPackage = request.getPreviousPublishedPackage();
 		if (previousPublishedPackage != null && !previousPublishedPackage.isEmpty()) {
 			multiPartBuilder.addTextBody(PREVIOUS_RELEASE, previousPublishedPackage);
-		}
-		String extensionDependencyRelease = request.getExtensionDependencyRelease();
-		if (extensionDependencyRelease != null && !extensionDependencyRelease.isEmpty()) {
-			multiPartBuilder.addTextBody(DEPENDENCY_RELEASE, extensionDependencyRelease);
 		}
 		if (qaTestConfig.isEnableTraceabilityValidation() && !StringUtils.isEmpty(request.getBranchPath())) {
 			multiPartBuilder.addTextBody(ENABLE_TRACEABILITY_VALIDATION, Boolean.toString(qaTestConfig.isEnableTraceabilityValidation()));

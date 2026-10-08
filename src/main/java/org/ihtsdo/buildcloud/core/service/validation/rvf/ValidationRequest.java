@@ -14,8 +14,6 @@ public class ValidationRequest {
 
 	private String previousPublishedPackage;
 
-	private String extensionDependencyRelease;
-
 	private String previousExtensionDependencyEffectiveTime;
 	
 	private boolean releaseAsAnEdition;
@@ -92,14 +90,6 @@ public class ValidationRequest {
 
 	public void setPreviousPublishedPackage(String previousPublishedPackage) {
 		this.previousPublishedPackage = previousPublishedPackage;
-	}
-
-	public String getExtensionDependencyRelease() {
-		return extensionDependencyRelease;
-	}
-
-	public void setExtensionDependencyRelease(String extensionDependencyRelease) {
-		this.extensionDependencyRelease = extensionDependencyRelease;
 	}
 
 	public String getPreviousExtensionDependencyEffectiveTime() {

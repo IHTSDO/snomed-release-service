@@ -82,6 +82,4 @@ public interface ProductService extends EntityService<Product> {
 	Product update(String releaseCenterKey, String productKey, Map<String, String> newPropertyValues) throws BusinessServiceException;
 
     void updateVisibility(String releaseCenterKey, String productKey, boolean visibility) throws IOException;
-
-    void upgradeDependantVersion(String releaseCenterKey, String productKey) throws BusinessServiceException;
 }

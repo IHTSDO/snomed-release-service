@@ -15,7 +15,6 @@ import org.ihtsdo.buildcloud.rest.controller.helper.PageRequestHelper;
 import org.ihtsdo.otf.rest.client.RestClientException;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.Branch;
 import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystem;
-import org.ihtsdo.otf.rest.client.terminologyserver.pojo.CodeSystemVersion;
 import org.ihtsdo.otf.rest.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -278,37 +277,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		for (Build build : builds) {
 			buildService.updateVisibility(build, visibility);
 		}
-	}
-
-	@Override
-	public void upgradeDependantVersion(String releaseCenterKey, String productKey)throws BusinessServiceException {
-		Product product = find(releaseCenterKey, productKey, false);
-		if (product == null) {
-			throw new BusinessServiceException("The product with key " + productKey + " not found");
-		} else if (!product.getBuildConfiguration().isDailyBuild()) {
-			throw new BusinessServiceException("The product with key " + productKey + " is not a daily product");
-		}
-
-		List<CodeSystem> codeSystems = termServerService.getCodeSystems();
-		CodeSystem codeSystem = codeSystems.stream().filter(cs -> cs.getShortName().equalsIgnoreCase(product.getReleaseCenter().getCodeSystem())).findAny().orElse(null);
-		if (codeSystem == null) {
-			throw new BusinessServiceException("Code System with name " + product.getReleaseCenter().getCodeSystem() + " not found");
-		}
-
-		List<CodeSystemVersion> intCodeSystemVersions = termServerService.getCodeSystemVersions(RF2Constants.SNOMEDCT, false, false);
-		CodeSystemVersion newDependantVersion = intCodeSystemVersions.stream().filter(cv -> cv.getEffectiveDate().compareTo(codeSystem.getDependantVersionEffectiveTime()) == 0).findAny().orElse(null);
-		if (newDependantVersion == null) {
-			throw new ResourceNotFoundException("Could not find any dependant version with effectiveTime " + codeSystem.getDependantVersionEffectiveTime());
-		} else if (!StringUtils.hasLength(newDependantVersion.getReleasePackage())) {
-			throw new ResourceNotFoundException("Could not find release package from International versions with effectiveTime " + codeSystem.getDependantVersionEffectiveTime());
-		}
-
-		String newDependantReleasePackage = newDependantVersion.getReleasePackage();
-		if (product.getBuildConfiguration().getExtensionConfig() != null) {
-			product.getBuildConfiguration().getExtensionConfig().setDependencyRelease(newDependantReleasePackage);
-		}
-
-		update(product);
 	}
 
 	private void updateProductQaTestConfig(final Map<String, String> newPropertyValues, final Product product) throws NoSuchFieldException {
@@ -602,7 +570,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 					extConfig.setBuildConfiguration(configuration);
 				}
 
-				setExtensionDependencyPackage(newPropertyValues, configuration, dependencyPackageRelease);
 				setConfigurationValueIfPresent(newPropertyValues, MODULE_IDS, configuration.getExtensionConfig(), MODULE_IDS, false);
 				setConfigurationValueIfPresent(newPropertyValues, DEFAULT_MODULE_ID, configuration.getExtensionConfig(), DEFAULT_MODULE_ID, false);
 				setConfigurationValueIfPresent(newPropertyValues, NAMESPACE_ID, configuration.getExtensionConfig(), NAMESPACE_ID, false);
@@ -625,33 +592,6 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 			} catch (ParseException e) {
 				throw new BadRequestException("Invalid " + previousEditionDependencyEffectiveDate + " format." +
 						" Expecting format in either" + ISO_DATE_FORMAT.getPattern() + " or " + RF2Constants.DATE_FORMAT.getPattern(), e);
-			}
-		}
-	}
-
-	private void setExtensionDependencyPackage(Map<String, String> newPropertyValues, BuildConfiguration configuration, String dependencyPackageRelease) {
-		if (newPropertyValues.containsKey(EXTENSION_DEPENDENCY_RELEASE)) {
-			if (!StringUtils.hasLength(dependencyPackageRelease)) {
-				configuration.getExtensionConfig().setDependencyRelease(null);
-			} else {
-				final ReleaseCenter releaseCenter = new ReleaseCenter();
-				releaseCenter.setShortName(INTERNATIONAL);
-				//Validate that a file of that name actually exists
-				boolean pppExists = false;
-				Exception rootCause = new Exception("No further information");
-				try {
-					pppExists = publishService.isReleaseFileExistInMSC(dependencyPackageRelease);
-					if (!pppExists) {
-						pppExists = publishService.exists(releaseCenter, dependencyPackageRelease);
-					}
-				} catch (final Exception e) {
-					rootCause = e;
-				}
-				if (pppExists) {
-					configuration.getExtensionConfig().setDependencyRelease(dependencyPackageRelease);
-				} else {
-					throw new ResourceNotFoundException("Could not find dependency release package: " + dependencyPackageRelease, rootCause);
-				}
 			}
 		}
 	}

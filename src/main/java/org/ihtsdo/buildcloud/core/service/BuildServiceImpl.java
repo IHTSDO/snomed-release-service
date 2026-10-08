@@ -1426,7 +1426,6 @@ public class BuildServiceImpl implements BuildService {
 			request.setReleaseZipFileS3Path(s3ZipFilePath);
 			request.setEffectiveTime(effectiveTime);
 			request.setPreviousPublishedPackage(buildConfiguration.getPreviousPublishedPackage());
-			request.setExtensionDependencyRelease(buildConfiguration.getExtensionConfig() != null ? buildConfiguration.getExtensionConfig().getDependencyRelease() : null);
 			request.setPreviousExtensionDependencyEffectiveTime(buildConfiguration.getExtensionConfig() != null ? buildConfiguration.getExtensionConfig().getPreviousEditionDependencyEffectiveDateFormatted() : null);
 			request.setFailureExportMax(failureExportMax);
 			request.setManifestFileS3Path(manifestFileS3Path);
