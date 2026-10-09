@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -27,6 +28,22 @@ public class GlobalControllerExceptionHandler {
 	public Map<String, String> handleAuthenticationError(Exception exception, HttpServletRequest request) {
 		logError(request, exception);
 		return getErrorPayload(exception, HttpStatus.UNAUTHORIZED);
+	}
+
+	@ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+	@ResponseStatus(HttpStatus.UNAUTHORIZED)
+	@ResponseBody
+	public Map<String, String> handleSecurityAuthenticationError(Exception exception, HttpServletRequest request) {
+		logWarning(request, exception);
+		return getErrorPayload(exception, HttpStatus.UNAUTHORIZED);
+	}
+
+	@ExceptionHandler({AccessDeniedException.class, SecurityException.class})
+	@ResponseStatus(HttpStatus.FORBIDDEN)
+	@ResponseBody
+	public Map<String, String> handleAccessDeniedError(Exception exception, HttpServletRequest request) {
+		logWarning(request, exception);
+		return getErrorPayload(exception, HttpStatus.FORBIDDEN);
 	}
 
 	@ExceptionHandler({BadRequestException.class, MissingServletRequestParameterException.class, TypeMismatchException.class})
@@ -86,6 +103,10 @@ public class GlobalControllerExceptionHandler {
 
 	private void logError(HttpServletRequest request, Exception exception) {
 		LOGGER.error("Request '{}' raised: " + exception.getMessage(), request.getRequestURL(), exception);
+	}
+
+	private void logWarning(HttpServletRequest request, Exception exception) {
+		LOGGER.warn("Request '{}' raised: {}", request.getRequestURL(), exception.getMessage());
 	}
 
 }
