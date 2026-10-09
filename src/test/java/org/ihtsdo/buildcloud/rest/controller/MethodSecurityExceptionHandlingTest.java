@@ -12,12 +12,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-public class MethodSecurityExceptionHandlingTest extends AbstractControllerTest {
+class MethodSecurityExceptionHandlingTest extends AbstractControllerTest {
 
 	private static final String CENTER_URL = "/centers/international";
 
 	@Test
-	public void returnsForbiddenWhenUserHasNoRoleOnReleaseCenter() throws Exception {
+	void returnsForbiddenWhenUserHasNoRoleOnReleaseCenter() throws Exception {
 		when(permissionServiceCache.getGlobalRoles(any())).thenReturn(Collections.emptySet());
 		when(permissionServiceCache.getCodeSystemRoles(any())).thenReturn(Collections.emptyMap());
 
@@ -27,7 +27,7 @@ public class MethodSecurityExceptionHandlingTest extends AbstractControllerTest 
 	}
 
 	@Test
-	public void returnsUnauthorizedWhenNotAuthenticated() throws Exception {
+	void returnsUnauthorizedWhenNotAuthenticated() throws Exception {
 		SecurityContextHolder.clearContext();
 
 		mockMvc.perform(get(CENTER_URL))
