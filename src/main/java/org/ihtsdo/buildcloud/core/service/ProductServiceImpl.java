@@ -55,6 +55,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	private PublishService publishService;
 
 	@Autowired
+	private VersionedContentReleaseSource versionedContentReleaseSource;
+
+	@Autowired
    private BuildService buildService;
 
 	@Autowired
@@ -508,6 +511,9 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 					pppExists = publishService.isReleaseFileExistInMSC(pPP);
 					if (!pppExists) {
 						pppExists = publishService.exists(releaseCenter, pPP);
+					}
+					if (!pppExists && !emptyRf2Filename.equals(pPP)) {
+						pppExists = versionedContentReleaseSource.exists(pPP);
 					}
 				} catch (final Exception e) {
 					rootCause = e;

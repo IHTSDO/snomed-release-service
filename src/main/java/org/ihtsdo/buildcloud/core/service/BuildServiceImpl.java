@@ -172,6 +172,9 @@ public class BuildServiceImpl implements BuildService {
 	private ModuleStorageCoordinator moduleStorageCoordinator;
 
 	@Autowired
+	private VersionedContentReleaseSource versionedContentReleaseSource;
+
+	@Autowired
 	private ReleaseManifestService releaseManifestService;
 
 	@PostConstruct
@@ -704,13 +707,12 @@ public class BuildServiceImpl implements BuildService {
 			final Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(build);
 			if (dao.isBuildCancelRequested(build)) return;
 
-			File previousReleaseDirectory = getReleaseFileFromMscOrNull(configuration.getPreviousPublishedPackage());
+			File previousReleaseDirectory = getPreviousReleaseDirectory(configuration.getPreviousPublishedPackage());
 			File dependencyReleaseDirectory = getDependencyFileFromModuleStorageCoordinatorOrNull(build);
-			if (org.springframework.util.StringUtils.hasLength(configuration.getPreviousPublishedPackage())
-				&& !emptyRf2Filename.equals(configuration.getPreviousPublishedPackage())
+			if (isPreviousReleaseRequired(configuration.getPreviousPublishedPackage())
 				&& previousReleaseDirectory == null
 				&& !Boolean.TRUE.equals(offlineMode)) {
-				throw new BusinessServiceException("No previous package found from MSC for " + configuration.getPreviousPublishedPackage());
+				throw new BusinessServiceException("No previous package found from the Module Storage Coordinator or the versioned content folder for " + configuration.getPreviousPublishedPackage());
 			}
 			try {
 				transformationService.transformFiles(build, inputFileSchemaMap, previousReleaseDirectory);
@@ -746,7 +748,7 @@ public class BuildServiceImpl implements BuildService {
 		// Generate release package information
 		String releaseInformationFilename = getReleaseInformationFilename(build);
 		if (StringUtils.hasLength(releaseInformationFilename) && StringUtils.hasLength(configuration.getAdditionalReleaseInformationFields())) {
-			generateReleasePackageFile(build, releaseInformationFilename);
+			generateReleaseInformationFile(build, releaseInformationFilename);
 		}
 		// Generate readme file
 		generateReadmeFile(build);
@@ -810,6 +812,18 @@ public class BuildServiceImpl implements BuildService {
 		dao.persistReport(build);
 	}
 
+	private File getPreviousReleaseDirectory(String releasePackageFilename) {
+		File previousReleaseDirectory = getReleaseFileFromMscOrNull(releasePackageFilename);
+		if (previousReleaseDirectory == null && isPreviousReleaseRequired(releasePackageFilename)) {
+			previousReleaseDirectory = getReleaseFileFromFallbackSource(releasePackageFilename);
+		}
+		return previousReleaseDirectory;
+	}
+
+	private boolean isPreviousReleaseRequired(String releasePackageFilename) {
+		return StringUtils.hasLength(releasePackageFilename) && !emptyRf2Filename.equals(releasePackageFilename);
+	}
+
 	private File getReleaseFileFromMscOrNull(String releasePackageFilename) {
 		if (org.springframework.util.StringUtils.hasLength(releasePackageFilename)) {
 			try {
@@ -834,6 +848,11 @@ public class BuildServiceImpl implements BuildService {
 			}
 		}
 		return null;
+	}
+
+	private File getReleaseFileFromFallbackSource(String releasePackageFilename) {
+		LOGGER.warn("Previous release {} not found from Module Storage Coordinator", releasePackageFilename);
+		return versionedContentReleaseSource.readExtractedReleaseOrNull(releasePackageFilename);
 	}
 
 	private File getDependencyFileFromModuleStorageCoordinatorOrNull(Build build) throws IOException, ProcessingException {
@@ -914,7 +933,7 @@ public class BuildServiceImpl implements BuildService {
 		return rf2DeltaZipFile;
 	}
 
-	private void generateReleasePackageFile(Build build, String releaseFilename) throws BusinessServiceException {
+	private void generateReleaseInformationFile(Build build, String releaseFilename) throws BusinessServiceException {
 		try {
 			LOGGER.info("Generating release package information file for build {}", build.getUniqueId());
 			Map<String, Object> releasePackageInformationMap = getReleasePackageInformationMap(build);
