@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class VersionedContentReleaseSourceTest {
+class VersionedContentReleaseSourceTest {
 
 	private static final String BUCKET = "local.snomed.international.bucket";
 	private static final String VERSIONED_CONTENT_PATH = "authoring/version-content/";
@@ -34,7 +34,7 @@ public class VersionedContentReleaseSourceTest {
 	private File extractedDirectory;
 
 	@BeforeEach
-	public void setup() throws Exception {
+	void setup() throws Exception {
 		storageDirectory = Files.createTempDirectory("versioned-content");
 		OfflineS3ClientImpl s3Client = new OfflineS3ClientImpl(storageDirectory.toFile());
 		File releaseZip = zipFile(CONCEPT_FILE, "id\tactive\n");
@@ -45,7 +45,7 @@ public class VersionedContentReleaseSourceTest {
 	}
 
 	@AfterEach
-	public void cleanup() throws Exception {
+	void cleanup() throws Exception {
 		if (extractedDirectory != null) {
 			FileUtils.deleteDirectory(extractedDirectory);
 		}
@@ -53,22 +53,22 @@ public class VersionedContentReleaseSourceTest {
 	}
 
 	@Test
-	public void existsWhenPackageIsStoredByFilename() {
+	void existsWhenPackageIsStoredByFilename() {
 		assertTrue(releaseSource.exists(RELEASE_FILENAME));
 	}
 
 	@Test
-	public void existsWhenPackageIsStoredWithEnvironmentPrefix() {
+	void existsWhenPackageIsStoredWithEnvironmentPrefix() {
 		assertTrue(releaseSource.exists(PREFIXED_RELEASE_FILENAME));
 	}
 
 	@Test
-	public void missingPackageDoesNotExist() {
+	void missingPackageDoesNotExist() {
 		assertFalse(releaseSource.exists("SnomedCT_Release_INT_20190131.zip"));
 	}
 
 	@Test
-	public void readsAndExtractsPackageFromVersionedContent() throws Exception {
+	void readsAndExtractsPackageFromVersionedContent() throws Exception {
 		extractedDirectory = releaseSource.readExtractedReleaseOrNull(RELEASE_FILENAME);
 
 		assertNotNull(extractedDirectory);
@@ -78,7 +78,7 @@ public class VersionedContentReleaseSourceTest {
 	}
 
 	@Test
-	public void returnsNullWhenPackageIsMissing() {
+	void returnsNullWhenPackageIsMissing() {
 		assertNull(releaseSource.readExtractedReleaseOrNull("SnomedCT_Release_INT_20190131.zip"));
 	}
 

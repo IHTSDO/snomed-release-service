@@ -498,34 +498,40 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 	}
 
 	private void setPreviousPublishedPackage(Map<String, String> newPropertyValues, Product product, BuildConfiguration configuration) {
-		if (newPropertyValues.containsKey(PREVIOUS_PUBLISHED_PACKAGE)) {
-			final ReleaseCenter releaseCenter = product.getReleaseCenter();
-			final String pPP = newPropertyValues.get(PREVIOUS_PUBLISHED_PACKAGE);
-			if (!StringUtils.hasLength(pPP)) {
-				configuration.setPreviousPublishedPackage(null);
-			} else {
-				//Validate that a file of that name actually exists
-				boolean pppExists = false;
-				Exception rootCause = new Exception("No further information");
-				try {
-					pppExists = publishService.isReleaseFileExistInMSC(pPP);
-					if (!pppExists) {
-						pppExists = publishService.exists(releaseCenter, pPP);
-					}
-					if (!pppExists && !emptyRf2Filename.equals(pPP)) {
-						pppExists = versionedContentReleaseSource.exists(pPP);
-					}
-				} catch (final Exception e) {
-					rootCause = e;
-				}
-
-				if (pppExists) {
-					configuration.setPreviousPublishedPackage(pPP);
-				} else {
-					throw new ResourceNotFoundException("Could not find previously published package: " + pPP, rootCause);
-				}
-			}
+		if (!newPropertyValues.containsKey(PREVIOUS_PUBLISHED_PACKAGE)) {
+			return;
 		}
+		final String pPP = newPropertyValues.get(PREVIOUS_PUBLISHED_PACKAGE);
+		if (!StringUtils.hasLength(pPP)) {
+			configuration.setPreviousPublishedPackage(null);
+			return;
+		}
+		assignPreviousPublishedPackage(product.getReleaseCenter(), configuration, pPP);
+	}
+
+	private void assignPreviousPublishedPackage(ReleaseCenter releaseCenter, BuildConfiguration configuration, String previousPublishedPackage) {
+		boolean packageExists = false;
+		Exception rootCause = new Exception("No further information");
+		try {
+			packageExists = isPreviousPublishedPackageFound(releaseCenter, previousPublishedPackage);
+		} catch (final Exception e) {
+			rootCause = e;
+		}
+		if (packageExists) {
+			configuration.setPreviousPublishedPackage(previousPublishedPackage);
+			return;
+		}
+		throw new ResourceNotFoundException("Could not find previously published package: " + previousPublishedPackage, rootCause);
+	}
+
+	private boolean isPreviousPublishedPackageFound(ReleaseCenter releaseCenter, String previousPublishedPackage) {
+		if (publishService.isReleaseFileExistInMSC(previousPublishedPackage)) {
+			return true;
+		}
+		if (publishService.exists(releaseCenter, previousPublishedPackage)) {
+			return true;
+		}
+		return !emptyRf2Filename.equals(previousPublishedPackage) && versionedContentReleaseSource.exists(previousPublishedPackage);
 	}
 
 	private void setConfigurationValueIfPresent(final Map<String, String> newPropertyValues, String propertyName, Object configuration, String fieldName, boolean isBooleanField) throws NoSuchFieldException {
