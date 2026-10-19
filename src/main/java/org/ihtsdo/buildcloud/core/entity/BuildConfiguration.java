@@ -95,6 +95,10 @@ public class BuildConfiguration {
 	private boolean nonRf2Release;
 
 	@Convert(converter = YesNoConverter.class)
+	@Column(name = "frequent_release")
+	private boolean frequentRelease;
+
+	@Convert(converter = YesNoConverter.class)
 	@Column(name = "classify_output_files")
 	private boolean classifyOutputFiles;
 
@@ -479,6 +483,7 @@ public class BuildConfiguration {
 				", excludeLanguageRefsetIds='" + excludeLanguageRefsetIds + '\'' +
 				", dailyBuild=" + dailyBuild +
 				", nonRf2Release=" + nonRf2Release +
+				", frequentRelease=" + frequentRelease +
 				", classifyOutputFiles=" + classifyOutputFiles +
 				", licenceStatement='" + licenceStatement + '\'' +
 				", additionalReleaseInformationFields='" + additionalReleaseInformationFields + '\'' +
@@ -586,6 +591,14 @@ public class BuildConfiguration {
 
 	public void setNonRf2Release(boolean nonRf2Release) {
 		this.nonRf2Release = nonRf2Release;
+	}
+
+	public boolean isFrequentRelease() {
+		return frequentRelease;
+	}
+
+	public void setFrequentRelease(boolean frequentRelease) {
+		this.frequentRelease = frequentRelease;
 	}
 
 	public boolean requiresReleasePackageInformation() {
