@@ -4,6 +4,7 @@ import org.hibernate.query.Query;
 import org.ihtsdo.buildcloud.core.entity.BuildStatusTracker;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -66,6 +67,20 @@ public class BuildStatusTrackerDaoImpl extends EntityDAOImpl<BuildStatusTracker>
 				BuildStatusTracker.class);
 		query.setParameter(PRODUCT_KEY, productKey);
 		query.setParameter("buildId", buildId);
+		return query.list();
+	}
+
+	@Override
+	public List<BuildStatusTracker> findAllByProductKeyAndBuildIds(String productKey, Collection<String> buildIds) {
+		Query<BuildStatusTracker> query = getCurrentSession().createQuery(
+				"select statusTracker " +
+						"from BuildStatusTracker statusTracker " +
+						"where statusTracker.productKey = :productKey " +
+						" and statusTracker.buildId in (:buildIds) " +
+						"order by statusTracker.startTime desc",
+				BuildStatusTracker.class);
+		query.setParameter(PRODUCT_KEY, productKey);
+		query.setParameterList("buildIds", buildIds);
 		return query.list();
 	}
 
