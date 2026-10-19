@@ -306,6 +306,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		setConfigurationValueIfPresent(newPropertyValues, BETA_RELEASE, configuration, BETA_RELEASE, true);
 		setConfigurationValueIfPresent(newPropertyValues, DAILY_BUILD, configuration, DAILY_BUILD, true);
 		setConfigurationValueIfPresent(newPropertyValues, NON_RF2_RELEASE, configuration, NON_RF2_RELEASE, true);
+		setConfigurationValueIfPresent(newPropertyValues, FREQUENT_RELEASE, configuration, FREQUENT_RELEASE, true);
 		setConfigurationValueIfPresent(newPropertyValues, WORKBENCH_DATA_FIXES_REQUIRED, configuration, WORKBENCH_DATA_FIXES_REQUIRED, true);
 		setConfigurationValueIfPresent(newPropertyValues, INPUT_FILES_FIXES_REQUIRED, configuration, INPUT_FILES_FIXES_REQUIRED, true);
 		setConfigurationValueIfPresent(newPropertyValues, CREATE_LEGACY_IDS, configuration, CREATE_LEGACY_IDS, true);
