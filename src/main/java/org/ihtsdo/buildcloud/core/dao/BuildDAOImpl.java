@@ -1,6 +1,7 @@
 package org.ihtsdo.buildcloud.core.dao;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import io.awspring.cloud.s3.ObjectMetadata;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.apache.commons.codec.DecoderException;
@@ -99,17 +100,24 @@ public class BuildDAOImpl implements BuildDAO {
 
 	private final InputFileDAO inputFileDAO;
 
+	private final BuildStatusTrackerDao buildStatusTrackerDao;
+
 	@Value("${srs.published.releases.storage.path}")
 	private String publishedReleasesStoragePath;
 
 	@Value("${srs.publish.job.storage.path}")
 	private String publishJobStoragePath;
 
+	@Value("${rvf.url}")
+	private String releaseValidationFrameworkUrl;
+
 	private final Map<String, Set<String>> buildIdsToProductMap = new ConcurrentHashMap<>();
 
 	private static final List<String> requiredFileExtensions = Arrays.asList("status:", "tag:", "user:", "user-roles:", "visibility:", "retry-count:", S3PathHelper.MARK_AS_DELETED);
 
 	private static final String RVF_RESPONSE_KEY = "rvf_response";
+
+	private static final int RVF_RUN_ID_LOOKUP_BATCH_SIZE = 500;
 
 	private static final String SORT_PROPERTY_BUILD_NAME = "buildName";
 
@@ -163,7 +171,8 @@ public class BuildDAOImpl implements BuildDAO {
 						final ObjectMapper objectMapper,
 						final S3PathHelper pathHelper,
 						final InputFileDAO inputFileDAO,
-						final ActiveMQTextMessage buildStatusTextMessage) throws IOException {
+						final ActiveMQTextMessage buildStatusTextMessage,
+						final BuildStatusTrackerDao buildStatusTrackerDao) throws IOException {
 		executorService = Executors.newCachedThreadPool();
 		buildBucketName = storageBucketName;
 		srsFileHelper = new FileHelper(storageBucketName, s3Client);
@@ -175,6 +184,7 @@ public class BuildDAOImpl implements BuildDAO {
         this.pathHelper = pathHelper;
         this.inputFileDAO = inputFileDAO;
         this.buildStatusTextMessage = buildStatusTextMessage;
+        this.buildStatusTrackerDao = buildStatusTrackerDao;
 	}
 
 	@Override
@@ -975,7 +985,32 @@ public class BuildDAOImpl implements BuildDAO {
 	}
 
 	private void joinRvfUrls(List<Build> builds) {
-		builds.forEach(this::populateRvfUrlIfPresent);
+		if (builds.isEmpty()) {
+			return;
+		}
+		final Map<String, String> rvfRunIdByBuildId = findLatestRvfRunIdByBuildId(builds);
+		builds.forEach(build -> populateRvfUrlIfPresent(build, rvfRunIdByBuildId.get(build.getId())));
+	}
+
+	/**
+	 * Uses the latest tracker attempt of each build only, so a retried build does not show the RVF run of a previous attempt.
+	 */
+	private Map<String, String> findLatestRvfRunIdByBuildId(final List<Build> builds) {
+		final Map<String, String> rvfRunIdByBuildId = new HashMap<>();
+		final Map<String, List<String>> buildIdsByProductKey = builds.stream()
+				.filter(build -> isRvfRelevantStatus(build.getStatus()))
+				.collect(Collectors.groupingBy(Build::getProductKey, Collectors.mapping(Build::getId, Collectors.toList())));
+		buildIdsByProductKey.forEach((productKey, buildIds) -> {
+			for (List<String> batch : Lists.partition(buildIds, RVF_RUN_ID_LOOKUP_BATCH_SIZE)) {
+				final Set<String> buildIdsSeen = new HashSet<>();
+				for (BuildStatusTracker tracker : buildStatusTrackerDao.findAllByProductKeyAndBuildIds(productKey, batch)) {
+					if (buildIdsSeen.add(tracker.getBuildId()) && StringUtils.isNotBlank(tracker.getRvfRunId())) {
+						rvfRunIdByBuildId.put(tracker.getBuildId(), tracker.getRvfRunId());
+					}
+				}
+			}
+		});
+		return rvfRunIdByBuildId;
 	}
 
 	private void addDataToBuilds(List<Build> builds, List<String> userPaths, List<String> userRolesPaths, List<String> tagPaths, List<String> retryCountPaths, BuildRequestParameter requestParameter) {
@@ -985,9 +1020,11 @@ public class BuildDAOImpl implements BuildDAO {
 			builds.forEach(build -> {
 				enrichBuildWithUserAndTags(build, userPaths, userRolesPaths, tagPaths);
 				enrichBuildWithRetryCount(build, retryCountByBuildId);
-				enrichBuildWithRvfIfRequested(build, requestParameter);
 				enrichBuildWithConfigurationsIfRequested(build, requestParameter);
 			});
+			if (Boolean.TRUE.equals(requestParameter.includeRvfURL)) {
+				joinRvfUrls(builds);
+			}
 		}
 	}
 
@@ -1082,12 +1119,6 @@ public class BuildDAOImpl implements BuildDAO {
 		build.setTags(getTags(build, tagPaths));
 	}
 
-	private void enrichBuildWithRvfIfRequested(final Build build, final BuildRequestParameter requestParameter) {
-		if (Boolean.TRUE.equals(requestParameter.includeRvfURL)) {
-			populateRvfUrlIfPresent(build);
-		}
-	}
-
 	private void enrichBuildWithConfigurationsIfRequested(final Build build, final BuildRequestParameter requestParameter) {
 		if (Boolean.TRUE.equals(requestParameter.includeBuildConfiguration)) {
 			try {
@@ -1109,15 +1140,41 @@ public class BuildDAOImpl implements BuildDAO {
 		return Build.Status.BUILT.equals(status)
 				|| Build.Status.RVF_QUEUED.equals(status)
 				|| Build.Status.RVF_RUNNING.equals(status)
+				|| Build.Status.RVF_FAILED.equals(status)
 				|| Build.Status.RELEASE_COMPLETE.equals(status)
 				|| Build.Status.RELEASE_COMPLETE_WITH_WARNINGS.equals(status);
 	}
 
-	private void populateRvfUrlIfPresent(final Build build) {
+	private void populateRvfUrlIfPresent(final Build build, final String rvfRunId) {
 		if (!isRvfRelevantStatus(build.getStatus())) {
 			return;
 		}
+		if (StringUtils.isNotBlank(rvfRunId)) {
+			build.setRvfURL(buildRvfUrl(build, rvfRunId));
+			return;
+		}
+		populateRvfUrlFromBuildReport(build);
+	}
 
+	/**
+	 * Must match the result location returned by RVF for the request sent in BuildServiceImpl.runRVFPostConditionCheck.
+	 */
+	private String buildRvfUrl(final Build build, final String rvfRunId) {
+		final QATestConfig qaTestConfig = build.getQaTestConfig();
+		final String storageLocation = qaTestConfig != null && StringUtils.isNotBlank(qaTestConfig.getStorageLocation())
+				? qaTestConfig.getStorageLocation()
+				: build.getReleaseCenterKey() + S3PathHelper.SEPARATOR + build.getProductKey()
+						+ S3PathHelper.SEPARATOR + build.getId() + S3PathHelper.SEPARATOR + rvfRunId;
+		final String rvfUrl = releaseValidationFrameworkUrl.endsWith(S3PathHelper.SEPARATOR)
+				? releaseValidationFrameworkUrl.substring(0, releaseValidationFrameworkUrl.length() - 1)
+				: releaseValidationFrameworkUrl;
+		return rvfUrl + "/result/" + rvfRunId + "?storageLocation=" + storageLocation;
+	}
+
+	/**
+	 * Fallback for builds without an RVF run ID in the database.
+	 */
+	private void populateRvfUrlFromBuildReport(final Build build) {
 		InputStream buildReportStream = getBuildReportFileStream(build);
 		if (buildReportStream == null) {
 			return;
