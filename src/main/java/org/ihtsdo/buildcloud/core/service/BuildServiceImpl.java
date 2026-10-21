@@ -701,7 +701,7 @@ public class BuildServiceImpl implements BuildService {
 
 		final BuildConfiguration configuration = build.getConfiguration();
 		if (dao.isBuildCancelRequested(build)) return;
-		if (configuration.isJustPackage() || configuration.isNonRf2Release()) {
+		if (configuration.isJustPackage()) {
 			copyFilesForJustPackaging(build);
 		} else {
 			final Map<String, TableSchema> inputFileSchemaMap = getInputFileSchemaMap(build);
