@@ -50,7 +50,7 @@ public class ReleasePackageCheck extends PostconditionCheck implements NetworkRe
             }
         }
 
-        if (build.getConfiguration() != null && build.getConfiguration().isBetaRelease() && !build.getConfiguration().isNonRf2Release()) {
+        if (build.getConfiguration() != null && build.getConfiguration().isBetaRelease()) {
             try {
                 errorMsg = validateBetaReleasePackage(build);
                 if (errorMsg != null) {

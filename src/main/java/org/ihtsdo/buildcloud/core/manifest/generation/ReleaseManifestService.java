@@ -97,11 +97,11 @@ public class ReleaseManifestService {
         final String effectiveTime = configuration.getEffectiveTimeSnomedFormat();
         final boolean isDailyBuild = configuration.isDailyBuild();
         final boolean betaRelease = configuration.isBetaRelease();
-        final boolean nonRf2Release = configuration.isNonRf2Release();
+        final boolean justPackage = configuration.isJustPackage();
         boolean validReleaseAdditionalInformationFields = validateReleaseAdditionalInformationFields(configuration.getAdditionalReleaseInformationFields());
 
         ManifestFilenameContext filenameContext = new ManifestFilenameContext(effectiveTime, manifestConfig.getProductNamespace(), betaRelease, isDailyBuild, manifestConfig.isDerivativeProduct());
-        InitialManifest initial = createInitialManifest(manifestConfig, filenameContext, isDailyBuild, betaRelease, nonRf2Release, validReleaseAdditionalInformationFields);
+        InitialManifest initial = createInitialManifest(manifestConfig, filenameContext, isDailyBuild, betaRelease, justPackage, validReleaseAdditionalInformationFields);
         CodeSystem codeSystem = resolveCodeSystem(releaseCenterKey);
         addCoreComponents(codeSystem, initial.terminologyFolder(), filenameContext);
 
@@ -161,7 +161,7 @@ public class ReleaseManifestService {
         return true;
     }
 
-    private InitialManifest createInitialManifest(ManifestConfig manifestConfig, ManifestFilenameContext filenameContext, boolean isDailyBuild, boolean betaRelease, boolean nonRf2Release, boolean validReleaseAdditionalInformationFields) {
+    private InitialManifest createInitialManifest(ManifestConfig manifestConfig, ManifestFilenameContext filenameContext, boolean isDailyBuild, boolean betaRelease, boolean justPackage, boolean validReleaseAdditionalInformationFields) {
         String effectiveTime = filenameContext.effectiveTime();
         String formattedProductName = manifestConfig.getProductName().replace(" ", "");
         String preOrProductionType = betaRelease ? "PREPRODUCTION" : "PRODUCTION";
@@ -175,7 +175,7 @@ public class ReleaseManifestService {
         ReleaseManifestFolder rootFolder = new ReleaseManifestFolder(rootFolderName);
         ReleaseManifest manifest = new ReleaseManifest(rootFolder);
         rootFolder.getOrAddFile(format("Readme_en_%s.txt", effectiveTime)).clearSource();
-        if ((!isDailyBuild && !betaRelease && !nonRf2Release) || (betaRelease && validReleaseAdditionalInformationFields)) {
+        if ((!isDailyBuild && !betaRelease && !justPackage) || (betaRelease && validReleaseAdditionalInformationFields)) {
             rootFolder.getOrAddFile("release_package_information.json").clearSource();
         }
 
