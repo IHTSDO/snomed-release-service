@@ -803,8 +803,8 @@ public class PublishServiceImpl implements PublishService {
 		int counter = 0;
 		int publishedAlreadyCounter = 0;
 		int assignedStatusCounter = 0;
-		int deprecatedStatusCounter = 0;
 		int availableStatusCounter = 0;
+		List<Long> deprecatedStatusIds = new ArrayList<>();
 		List<Long> otherStatusIds = new ArrayList<>();
 		for (Long id : sctIds) {
 			if (batchJob == null) {
@@ -831,7 +831,7 @@ public class PublishServiceImpl implements PublishService {
 						availableStatusCounter++;
 						availableOrReservedIds.add(sctId);
 					} else if (IdServiceRestClient.ID_STATUS.DEPRECATED.getName().equalsIgnoreCase(status)) {
-						deprecatedStatusCounter++;
+						deprecatedStatusIds.add(sctId);
 					} else {
 						otherStatusIds.add(sctId);
 					}
@@ -863,7 +863,15 @@ public class PublishServiceImpl implements PublishService {
 		}
 
 		LOGGER.info("Found total sctIds {} in file {} with available status {}, deprecated status {},  assigned status {} , published status {} and other status {}",
-				sctIds.size(), filename, availableStatusCounter, deprecatedStatusCounter, assignedStatusCounter, publishedAlreadyCounter, otherStatusIds.size());
+				sctIds.size(), filename, availableStatusCounter, deprecatedStatusIds.size(), assignedStatusCounter, publishedAlreadyCounter, otherStatusIds.size());
+		if (!deprecatedStatusIds.isEmpty()) {
+			int firstNCount = Math.min(deprecatedStatusIds.size(), MAX_FAILURE);
+			String message = String.format("Total sctIds %s in file %s that are deprecated. Therefore they can not be published. For example: %s", deprecatedStatusIds.size(), filename, deprecatedStatusIds.subList(0, firstNCount).stream().map(String::valueOf).collect(Collectors.joining(",")));
+			LOGGER.error(message);
+			if (stepTracker != null && step != null) {
+				stepTracker.addStepWarning(step, message);
+			}
+		}
 		if (!otherStatusIds.isEmpty()) {
 			int firstNCount = Math.min(otherStatusIds.size(), MAX_FAILURE);
             String message = String.format("Total sctIds %s in file %s that are not available or assigned or published or deprecated. Therefore they can not be published. For example: %s", otherStatusIds.size(), filename, otherStatusIds.subList(0, firstNCount).stream().map(String::valueOf).collect(Collectors.joining(",")));
