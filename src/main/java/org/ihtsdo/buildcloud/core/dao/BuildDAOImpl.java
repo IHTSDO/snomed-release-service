@@ -1183,8 +1183,9 @@ public class BuildDAOImpl implements BuildDAO {
 		JSONParser jsonParser = new JSONParser();
 		try {
 			JSONObject jsonObject = (org.json.simple.JSONObject) jsonParser.parse(new InputStreamReader(buildReportStream, StandardCharsets.UTF_8));
-			if (jsonObject.containsKey(RVF_RESPONSE_KEY)) {
-				build.setRvfURL(jsonObject.get(RVF_RESPONSE_KEY).toString());
+			final Object rvfResponse = jsonObject.get(RVF_RESPONSE_KEY);
+			if (rvfResponse != null) {
+				build.setRvfURL(rvfResponse.toString());
 			}
 		} catch (IOException e) {
 			LOGGER.error("Error reading rvf_url from build_report file. Error: {}", e.getMessage());
