@@ -129,7 +129,7 @@ import static org.ihtsdo.buildcloud.core.service.ProductService.PRODUCT_LINKS;
 	@IsAuthenticatedAsAdminOrReleaseManagerOrReleaseLeadOrUser
 	@Operation(summary = "Returns optional manifest refsets",
 			description = "Returns the set of optional refsets available for manifest generation.")
-	public List<ConceptMini> getOptionalManifestRefsets() {
+	public List<ConceptMini> getOptionalManifestRefsets(@PathVariable String releaseCenterKey) {
 		List<ConceptMini> optionalRefsets = new ArrayList<>();
 		if (!StringUtils.isBlank(optionalManifestRefsetsConfig)) {
 			for (String entry : optionalManifestRefsetsConfig.split(",")) {
