@@ -590,20 +590,10 @@ public class PublishServiceImpl implements PublishService {
 				
 				LOGGER.debug("Reading stream to temp file");
 				tempZipFile = Files.createTempFile(getClass().getCanonicalName(), ".zip").toFile();
-				try (InputStream in = inputStream; OutputStream out = new FileOutputStream(tempZipFile)) {
-					StreamUtils.copy(in, out);
-				}
+				copyToTempZip(inputStream, tempZipFile);
 
 				if (publishComponentIds && !offlineMode) {
-					try {
-						boolean isBetaRelease = originalFilename.startsWith(RF2Constants.BETA_RELEASE_PREFIX);
-						Set<String> requiredNamespaces = collectExtensionNamespacesFromZip(tempZipFile, isBetaRelease);
-						assertExtensionNamespacesPermitted(requiredNamespaces);
-					} catch (BusinessServiceException e) {
-						throw e;
-					} catch (IOException | FileRecognitionException e) {
-						throw new BusinessServiceException("Failed to verify permissions to publish to namespaces.", e);
-					}
+					verifyAdHocNamespacePermissions(tempZipFile, originalFilename);
 				}
 
 				// Upload file
@@ -702,11 +692,7 @@ public class PublishServiceImpl implements PublishService {
 	
 	private void publishComponentIds(FileHelper fileHelper, String fileRootPath, boolean isBetaRelease, String releaseFileName, PublishStepTracker stepTracker, PublishStep step) throws BusinessServiceException {
 		try {
-			try {
-				idRestClient.logIn();
-			} catch (RestClientException e) {
-				throw new BusinessServiceException("Failed to logIn to the id service", e);
-			}
+			logInToIdService();
 			List<String> filesFound = fileHelper.listFiles(fileRootPath);
 			LOGGER.info("Total files found {} from file path {}", filesFound.size(), fileRootPath);
 			LOGGER.info("isBetaRelease flag is set to {}", isBetaRelease);
@@ -715,29 +701,58 @@ public class PublishServiceImpl implements PublishService {
 					if (fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION) && fileName.contains(RF2Constants.DELTA)) {
 						String filenameToCheck = resolvedDeltaFileName(fileName, isBetaRelease);
 						if (filenameToCheck.startsWith(RF2Constants.SCT2)) {
-							try {
-								if (isSctComponentDeltaFile(filenameToCheck)) {
-									publishSctIds(fileHelper.getFileStream(fileRootPath + fileName), fileName, releaseFileName, stepTracker, step);
-								}
-							} catch (IOException | RestClientException | FileRecognitionException e) {
-								throw new BusinessServiceException("Failed to publish SctIDs for file:" + fileName , e);
-							}
+							publishSctComponentIds(fileHelper, fileRootPath, fileName, filenameToCheck, releaseFileName, stepTracker, step);
 						}
 						if (filenameToCheck.startsWith(RF2Constants.DER2) && filenameToCheck.contains(RF2Constants.SIMPLE_MAP_FILE_IDENTIFIER)) {
-							try {
-								publishLegacyIds(fileHelper.getFileStream(fileRootPath + fileName), fileName, releaseFileName);
-							} catch (IOException | RestClientException e) {
-								throw new BusinessServiceException("Failed to publish LegacyIds for file:" + fileName, e);
-							}
+							publishLegacyComponentIds(fileHelper, fileRootPath, fileName, releaseFileName);
 						}
 					}
 			}
 		} finally {
-			try {
-				idRestClient.logOut();
-			} catch (RestClientException e) {
-				LOGGER.warn("Failed to log out the id service", e);
+			logOutOfIdService();
+		}
+	}
+
+	private void logInToIdService() throws BusinessServiceException {
+		try {
+			idRestClient.logIn();
+		} catch (RestClientException e) {
+			throw new BusinessServiceException("Failed to logIn to the id service", e);
+		}
+	}
+
+	private void copyToTempZip(InputStream inputStream, File tempZipFile) throws IOException {
+		try (InputStream in = inputStream; OutputStream out = new FileOutputStream(tempZipFile)) {
+			StreamUtils.copy(in, out);
+		}
+	}
+
+	private void publishLegacyComponentIds(FileHelper fileHelper, String fileRootPath, String fileName, String releaseFileName) throws BusinessServiceException {
+		try {
+			publishLegacyIds(fileHelper.getFileStream(fileRootPath + fileName), fileName, releaseFileName);
+		} catch (IOException | RestClientException e) {
+			throw new BusinessServiceException("Failed to publish LegacyIds for file:" + fileName, e);
+		}
+	}
+
+	private void publishSctComponentIds(FileHelper fileHelper, String fileRootPath, String fileName, String filenameToCheck,
+			String releaseFileName, PublishStepTracker stepTracker, PublishStep step) throws BusinessServiceException {
+		try {
+			if (isSctComponentDeltaFile(filenameToCheck)) {
+				publishSctIds(fileHelper.getFileStream(fileRootPath + fileName), fileName, releaseFileName, stepTracker, step);
 			}
+		} catch (IOException | RestClientException | FileRecognitionException e) {
+			throw new BusinessServiceException("Failed to publish SctIDs for file:" + fileName, e);
+		}
+	}
+
+	private void verifyAdHocNamespacePermissions(File releasePackage, String originalFilename) throws BusinessServiceException {
+		try {
+			boolean isBetaRelease = originalFilename.startsWith(RF2Constants.BETA_RELEASE_PREFIX);
+			Set<String> requiredNamespaces = collectExtensionNamespacesFromZip(releasePackage, isBetaRelease);
+			assertExtensionNamespacesPermitted(requiredNamespaces);
+		} catch (IOException | FileRecognitionException e) {
+			throw new BusinessServiceException("Failed to verify permissions to publish to namespaces.", e);
 		}
 	}
 
@@ -952,7 +967,9 @@ public class PublishServiceImpl implements PublishService {
 			LOGGER.info("No extension namespaces found in delta files");
 			return;
 		}
-		LOGGER.info("Extension namespaces found in delta files: {}", ExtensionNamespacePermissions.format(requiredNamespaces));
+		if (LOGGER.isInfoEnabled()) {
+			LOGGER.info("Extension namespaces found in delta files: {}", ExtensionNamespacePermissions.format(requiredNamespaces));
+		}
 		Set<String> permittedNamespaces;
 		try {
 			permittedNamespaces = readPermittedNamespaces();
@@ -964,8 +981,10 @@ public class PublishServiceImpl implements PublishService {
 			LOGGER.error(message);
 			throw new BusinessServiceException(message);
 		}
-		LOGGER.info("CIS account can publish to the extension namespaces found in delta files: {}",
-				ExtensionNamespacePermissions.format(requiredNamespaces));
+		if (LOGGER.isInfoEnabled()) {
+			LOGGER.info("CIS account can publish to the extension namespaces found in delta files: {}",
+					ExtensionNamespacePermissions.format(requiredNamespaces));
+		}
 	}
 
 	private Set<String> readPermittedNamespaces() throws RestClientException {
@@ -973,11 +992,15 @@ public class PublishServiceImpl implements PublishService {
 		try {
 			return idRestClient.getPermittedNamespaces();
 		} finally {
-			try {
-				idRestClient.logOut();
-			} catch (RestClientException e) {
-				LOGGER.warn("Failed to log out the id service", e);
-			}
+			logOutOfIdService();
+		}
+	}
+
+	private void logOutOfIdService() {
+		try {
+			idRestClient.logOut();
+		} catch (RestClientException e) {
+			LOGGER.warn("Failed to log out the id service", e);
 		}
 	}
 
@@ -1004,17 +1027,25 @@ public class PublishServiceImpl implements PublishService {
 		try (ZipFile zip = new ZipFile(zipFile)) {
 			Enumeration<? extends ZipEntry> entries = zip.entries();
 			while (entries.hasMoreElements()) {
-				ZipEntry entry = entries.nextElement();
-				if (entry.isDirectory() || !isSctComponentDelta(entry.getName(), isBetaRelease)) {
-					continue;
-				}
-				LOGGER.info("Scanning delta file {} for extension namespaces", entry.getName());
-				try (InputStream inputStream = zip.getInputStream(entry)) {
-					ExtensionNamespacePermissions.collectFromDelta(inputStream, namespaces);
-				}
+				collectExtensionNamespaceFromZipEntry(zip, entries.nextElement(), isBetaRelease, namespaces);
 			}
 		}
 		return namespaces;
+	}
+
+	private void collectExtensionNamespaceFromZipEntry(ZipFile zip, ZipEntry entry, boolean isBetaRelease, Set<String> namespaces)
+			throws IOException, FileRecognitionException {
+		if (entry.isDirectory()) {
+			return;
+		}
+		String entryName = entry.getName();
+		if (!isSctComponentDelta(entryName, isBetaRelease)) {
+			return;
+		}
+		LOGGER.info("Scanning delta file {} for extension namespaces", entryName);
+		try (InputStream inputStream = zip.getInputStream(entry)) {
+			ExtensionNamespacePermissions.collectFromDelta(inputStream, namespaces);
+		}
 	}
 
 	private boolean isSctComponentDelta(String fileName, boolean isBetaRelease) throws FileRecognitionException {

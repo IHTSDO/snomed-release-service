@@ -635,6 +635,17 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 		}
 	}
 
+	private static String namespaceId(JsonElement element) {
+		if (!element.isJsonObject()) {
+			return null;
+		}
+		JsonObject namespaceRecord = element.getAsJsonObject();
+		if (!namespaceRecord.has(NAMESPACE) || namespaceRecord.get(NAMESPACE).isJsonNull()) {
+			return null;
+		}
+		return namespaceRecord.get(NAMESPACE).getAsString();
+	}
+
 	private Set<String> fetchPermittedNamespaces() throws RestClientException {
 		try {
 			String url = urlHelper.getUserNamespacesUrl(userName, token);
@@ -644,14 +655,10 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 			}
 			Set<String> namespaces = new HashSet<>();
 			for (JsonElement element : responseElement.getAsJsonArray()) {
-				if (!element.isJsonObject()) {
-					continue;
+				String namespace = namespaceId(element);
+				if (namespace != null) {
+					namespaces.add(namespace);
 				}
-				JsonObject namespaceRecord = element.getAsJsonObject();
-				if (!namespaceRecord.has(NAMESPACE) || namespaceRecord.get(NAMESPACE).isJsonNull()) {
-					continue;
-				}
-				namespaces.add(namespaceRecord.get(NAMESPACE).getAsString());
 			}
 			LOGGER.info("CIS user {} is permitted to publish to {} namespace(s)", userName, namespaces.size());
 			LOGGER.debug("CIS user {} permitted namespaces: {}", userName, namespaces);

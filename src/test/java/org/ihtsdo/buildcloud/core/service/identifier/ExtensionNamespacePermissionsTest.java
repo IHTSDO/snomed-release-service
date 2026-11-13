@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -48,7 +49,7 @@ class ExtensionNamespacePermissionsTest {
 		Set<String> namespaces = new LinkedHashSet<>();
 		try (InputStream in = getClass().getResourceAsStream(
 				"/org/ihtsdo/buildcloud/integration/workbenchworkarround/moduleids/expectedoutput/sct2_Concept_Delta_INT_20140731.txt")) {
-			assertTrue(in != null);
+			assertNotNull(in);
 			ExtensionNamespacePermissions.collectFromDelta(in, namespaces);
 		}
 		assertTrue(namespaces.isEmpty());
