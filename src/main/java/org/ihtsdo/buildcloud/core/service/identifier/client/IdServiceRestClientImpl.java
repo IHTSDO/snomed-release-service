@@ -623,6 +623,47 @@ public class IdServiceRestClientImpl implements IdServiceRestClient {
 	}
 
 	@Override
+	public Set<String> getPermittedNamespaces() throws RestClientException {
+		int attempt = 1;
+		while (true) {
+			try {
+				return fetchPermittedNamespaces();
+			} catch (Exception e) {
+				attempt++;
+				sleepAndRetry("get permitted namespaces for user " + userName, attempt, e);
+			}
+		}
+	}
+
+	private Set<String> fetchPermittedNamespaces() throws RestClientException {
+		try {
+			String url = urlHelper.getUserNamespacesUrl(userName, token);
+			JsonElement responseElement = makeHttpCall(url, HttpMethod.GET, HttpEntity.EMPTY);
+			if (!responseElement.isJsonArray()) {
+				throw new RestClientException("Unexpected response when reading namespaces for user " + userName);
+			}
+			Set<String> namespaces = new HashSet<>();
+			for (JsonElement element : responseElement.getAsJsonArray()) {
+				if (!element.isJsonObject()) {
+					continue;
+				}
+				JsonObject namespaceRecord = element.getAsJsonObject();
+				if (!namespaceRecord.has(NAMESPACE) || namespaceRecord.get(NAMESPACE).isJsonNull()) {
+					continue;
+				}
+				namespaces.add(namespaceRecord.get(NAMESPACE).getAsString());
+			}
+			LOGGER.info("CIS user {} is permitted to publish to {} namespace(s)", userName, namespaces.size());
+			LOGGER.debug("CIS user {} permitted namespaces: {}", userName, namespaces);
+			return namespaces;
+		} catch (RestClientException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new RestClientException("Error fetching permitted namespaces for user " + userName, e);
+		}
+	}
+
+	@Override
 	public boolean publishSctIds(List<Long> sctIds, Integer namespaceId, String comment) throws RestClientException {
 		LOGGER.debug("Start publishing sctIds with batch size {} for namespace {}", sctIds.size(), namespaceId);
 		if (sctIds.isEmpty()) {

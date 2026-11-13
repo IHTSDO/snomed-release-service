@@ -17,6 +17,10 @@ public class IdServiceRestUrlHelper {
 		return  rootApiUrl + "/users/logout" + TOKEN_PARAMETER + token;
 	}
 
+	public String getUserNamespacesUrl(String username, String token) {
+		return rootApiUrl + "/users/" + username + "/namespaces/" + TOKEN_PARAMETER + token;
+	}
+
 	public String getSctIdGenerateUrl(String token) {
 		return rootApiUrl + "/sct/generate" + TOKEN_PARAMETER + token;
 	}

@@ -17,6 +17,7 @@ import org.ihtsdo.buildcloud.core.entity.ReleaseCenter;
 import org.ihtsdo.buildcloud.core.service.build.RF2Constants;
 import org.ihtsdo.buildcloud.core.service.helper.PublishStep;
 import org.ihtsdo.buildcloud.core.service.helper.PublishStepTracker;
+import org.ihtsdo.buildcloud.core.service.identifier.ExtensionNamespacePermissions;
 import org.ihtsdo.buildcloud.core.service.identifier.client.IdServiceRestClient;
 import org.ihtsdo.buildcloud.core.service.identifier.client.SchemeIdType;
 import org.ihtsdo.buildcloud.telemetry.client.TelemetryStream;
@@ -53,6 +54,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 import static org.ihtsdo.buildcloud.core.service.PermissionServiceCache.BRANCH_ROOT;
@@ -209,7 +211,7 @@ public class PublishServiceImpl implements PublishService {
 					build.getUniqueId(), isRegressionTestBuild, publishComponentIds, env);
 
 			stepTracker = initializePublishStepTracker(buildKey);
-			ReleaseFile releaseFiles = findAndValidateReleaseFiles(build, stepTracker);
+			ReleaseFile releaseFiles = findAndValidateReleaseFiles(build, publishComponentIds, stepTracker);
 			if (releaseFiles.releaseFileName() != null) {
 				if (!isRegressionTestBuild) {
 					publishReleaseFile(build, releaseFiles, publishComponentIds, stepTracker);
@@ -242,7 +244,7 @@ public class PublishServiceImpl implements PublishService {
 		return stepTracker;
 	}
 
-	private ReleaseFile findAndValidateReleaseFiles(Build build, PublishStepTracker stepTracker) {
+	private ReleaseFile findAndValidateReleaseFiles(Build build, boolean publishComponentIds, PublishStepTracker stepTracker) throws BusinessServiceException {
 		String pkgOutPutDir = s3PathHelper.getBuildOutputFilesPath(build).toString();
 		List<String> filesFound;
 		PublishStep step1 = stepTracker.startStep("List files in build output directory");
@@ -253,7 +255,9 @@ public class PublishServiceImpl implements PublishService {
 			stepTracker.markStepFailed(step1, e.getMessage(), getErrorDetails(e));
 			throw e;
 		}
-		
+
+		verifyNamespacePublishPermissions(build, pkgOutPutDir, filesFound, publishComponentIds, stepTracker);
+
 		PublishStep step2 = stepTracker.startStep("Extract release files (zip and MD5) from file list");
 		ReleaseFile releaseFiles = getReleaseFiles(filesFound);
 		if (releaseFiles.releaseFileName() == null) {
@@ -589,7 +593,19 @@ public class PublishServiceImpl implements PublishService {
 				try (InputStream in = inputStream; OutputStream out = new FileOutputStream(tempZipFile)) {
 					StreamUtils.copy(in, out);
 				}
-				
+
+				if (publishComponentIds && !offlineMode) {
+					try {
+						boolean isBetaRelease = originalFilename.startsWith(RF2Constants.BETA_RELEASE_PREFIX);
+						Set<String> requiredNamespaces = collectExtensionNamespacesFromZip(tempZipFile, isBetaRelease);
+						assertExtensionNamespacesPermitted(requiredNamespaces);
+					} catch (BusinessServiceException e) {
+						throw e;
+					} catch (IOException | FileRecognitionException e) {
+						throw new BusinessServiceException("Failed to verify permissions to publish to namespaces.", e);
+					}
+				}
+
 				// Upload file
 				LOGGER.info("Uploading package to {}", publishFilePath);
 				srsFileHelper.putFile(new FileInputStream(tempZipFile), size, publishFilePath);
@@ -697,17 +713,10 @@ public class PublishServiceImpl implements PublishService {
 			
 			for (String fileName : filesFound) {
 					if (fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION) && fileName.contains(RF2Constants.DELTA)) {
-						String filenameToCheck = isBetaRelease ? fileName.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, RF2Constants.EMPTY_SPACE) : fileName;
-						// file name might contain parent folder
-						if (fileName.contains(S3PathHelper.SEPARATOR)) {
-							String[] splits = fileName.split(S3PathHelper.SEPARATOR);
-							filenameToCheck = splits[splits.length-1];
-							filenameToCheck = isBetaRelease ? filenameToCheck.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, RF2Constants.EMPTY_SPACE) : filenameToCheck ;
-						}
+						String filenameToCheck = resolvedDeltaFileName(fileName, isBetaRelease);
 						if (filenameToCheck.startsWith(RF2Constants.SCT2)) {
 							try {
-								ComponentType type = schemaFactory.createSchemaBean(filenameToCheck).getComponentType();
-								if (ComponentType.REFSET != type && ComponentType.IDENTIFIER != type) {
+								if (isSctComponentDeltaFile(filenameToCheck)) {
 									publishSctIds(fileHelper.getFileStream(fileRootPath + fileName), fileName, releaseFileName, stepTracker, step);
 								}
 							} catch (IOException | RestClientException | FileRecognitionException e) {
@@ -905,29 +914,134 @@ public class PublishServiceImpl implements PublishService {
 	private Map<String, List<Long>> groupSctIdsByNamespace(List<Long> assignedIds) {
 		Map<String, List<Long>> result = new HashMap<>();
 		for (Long sctId : assignedIds) {
-			int total = String.valueOf(sctId).length();
-			String partitionId = String.valueOf(sctId).substring(total-3,total-1);
-			String namespaceId = null;
-			if (partitionId.charAt(0) == '0') {
-				namespaceId = "0";
-			} else if (partitionId.charAt(0) == '1') {
-				namespaceId = String.valueOf(sctId).substring(total-10,total-3);
-			} else {
-				LOGGER.error("Invalid partition id:" + partitionId + " for sctId:" + sctId);
-			}
+			String namespaceId = ExtensionNamespacePermissions.fromSctId(String.valueOf(sctId));
 			if (namespaceId != null) {
-				List<Long> existing = result.get(namespaceId);
-				if (existing != null) {
-					existing.add(sctId);
-					
-				} else {
-					existing = new ArrayList<>();
-					existing.add(sctId);
-					result.put(namespaceId, existing);
-				}
+				result.computeIfAbsent(namespaceId, key -> new ArrayList<>()).add(sctId);
 			}
 		}
 		return result;
+	}
+
+	private void verifyNamespacePublishPermissions(Build build, String outputDir, List<String> filesFound,
+			boolean publishComponentIds, PublishStepTracker stepTracker) throws BusinessServiceException {
+		PublishStep step = stepTracker.startStep("Verify permissions to publish to namespaces");
+		if (!publishComponentIds) {
+			stepTracker.markStepSkipped(step, "Skipped because publishComponentIds was false for this publish request");
+			return;
+		}
+		if (offlineMode) {
+			stepTracker.markStepSkipped(step, "Skipped because Offline mode is enabled");
+			return;
+		}
+		try {
+			boolean isBetaRelease = build.getConfiguration().isBetaRelease();
+			Set<String> requiredNamespaces = collectExtensionNamespaces(outputDir, filesFound, isBetaRelease);
+			assertExtensionNamespacesPermitted(requiredNamespaces);
+			stepTracker.markStepSuccess(step);
+		} catch (BusinessServiceException e) {
+			stepTracker.markStepFailed(step, e.getMessage(), Collections.emptyList());
+			throw e;
+		} catch (Exception e) {
+			stepTracker.markStepFailed(step, e.getMessage(), getErrorDetails(e));
+			throw new BusinessServiceException("Failed to verify permissions to publish to namespaces.", e);
+		}
+	}
+
+	private void assertExtensionNamespacesPermitted(Set<String> requiredNamespaces) throws BusinessServiceException {
+		if (requiredNamespaces.isEmpty()) {
+			LOGGER.info("No extension namespaces found in delta files");
+			return;
+		}
+		LOGGER.info("Extension namespaces found in delta files: {}", ExtensionNamespacePermissions.format(requiredNamespaces));
+		Set<String> permittedNamespaces;
+		try {
+			permittedNamespaces = readPermittedNamespaces();
+		} catch (RestClientException e) {
+			throw new BusinessServiceException(e.getMessage(), e);
+		}
+		String message = ExtensionNamespacePermissions.missingPermissionMessage(requiredNamespaces, permittedNamespaces);
+		if (message != null) {
+			LOGGER.error(message);
+			throw new BusinessServiceException(message);
+		}
+		LOGGER.info("CIS account can publish to the extension namespaces found in delta files: {}",
+				ExtensionNamespacePermissions.format(requiredNamespaces));
+	}
+
+	private Set<String> readPermittedNamespaces() throws RestClientException {
+		idRestClient.logIn();
+		try {
+			return idRestClient.getPermittedNamespaces();
+		} finally {
+			try {
+				idRestClient.logOut();
+			} catch (RestClientException e) {
+				LOGGER.warn("Failed to log out the id service", e);
+			}
+		}
+	}
+
+	private Set<String> collectExtensionNamespaces(String fileRootPath, List<String> filesFound, boolean isBetaRelease)
+			throws IOException, FileRecognitionException {
+		Set<String> namespaces = new HashSet<>();
+		for (String fileName : filesFound) {
+			if (!isSctComponentDelta(fileName, isBetaRelease)) {
+				continue;
+			}
+			LOGGER.info("Scanning delta file {} for extension namespaces", fileName);
+			InputStream inputStream = srsFileHelper.getFileStream(fileRootPath + fileName);
+			if (inputStream == null) {
+				throw new IOException("Delta file listed in build output was not found: " + fileName);
+			}
+			ExtensionNamespacePermissions.collectFromDelta(inputStream, namespaces);
+		}
+		return namespaces;
+	}
+
+	private Set<String> collectExtensionNamespacesFromZip(File zipFile, boolean isBetaRelease)
+			throws IOException, FileRecognitionException {
+		Set<String> namespaces = new HashSet<>();
+		try (ZipFile zip = new ZipFile(zipFile)) {
+			Enumeration<? extends ZipEntry> entries = zip.entries();
+			while (entries.hasMoreElements()) {
+				ZipEntry entry = entries.nextElement();
+				if (entry.isDirectory() || !isSctComponentDelta(entry.getName(), isBetaRelease)) {
+					continue;
+				}
+				LOGGER.info("Scanning delta file {} for extension namespaces", entry.getName());
+				try (InputStream inputStream = zip.getInputStream(entry)) {
+					ExtensionNamespacePermissions.collectFromDelta(inputStream, namespaces);
+				}
+			}
+		}
+		return namespaces;
+	}
+
+	private boolean isSctComponentDelta(String fileName, boolean isBetaRelease) throws FileRecognitionException {
+		if (!fileName.endsWith(RF2Constants.TXT_FILE_EXTENSION) || !fileName.contains(RF2Constants.DELTA)) {
+			return false;
+		}
+		return isSctComponentDeltaFile(resolvedDeltaFileName(fileName, isBetaRelease));
+	}
+
+	private boolean isSctComponentDeltaFile(String filenameToCheck) throws FileRecognitionException {
+		if (!filenameToCheck.startsWith(RF2Constants.SCT2)) {
+			return false;
+		}
+		ComponentType type = schemaFactory.createSchemaBean(filenameToCheck).getComponentType();
+		return ComponentType.REFSET != type && ComponentType.IDENTIFIER != type;
+	}
+
+	private String resolvedDeltaFileName(String fileName, boolean isBetaRelease) {
+		String filenameToCheck = fileName;
+		int separator = Math.max(fileName.lastIndexOf(S3PathHelper.SEPARATOR), fileName.lastIndexOf('\\'));
+		if (separator >= 0) {
+			filenameToCheck = fileName.substring(separator + 1);
+		}
+		if (isBetaRelease) {
+			filenameToCheck = filenameToCheck.replaceFirst(RF2Constants.BETA_RELEASE_PREFIX, RF2Constants.EMPTY_SPACE);
+		}
+		return filenameToCheck;
 	}
 
 	private Set<Long> getSctIdsFromFile(InputStream inputFileStream) throws IOException {
