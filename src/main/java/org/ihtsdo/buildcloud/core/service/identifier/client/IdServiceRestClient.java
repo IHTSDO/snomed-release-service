@@ -3,6 +3,7 @@ package org.ihtsdo.buildcloud.core.service.identifier.client;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.ihtsdo.otf.rest.client.RestClientException;
@@ -53,6 +54,12 @@ public interface IdServiceRestClient {
 	String logIn() throws RestClientException;
 	
 	void logOut() throws RestClientException;
+
+	/**
+	 * Namespaces the logged-in account is allowed to publish to.
+	 * Call {@link #logIn()} first.
+	 */
+	Set<String> getPermittedNamespaces() throws RestClientException;
 
 	boolean publishSctIds(List<Long> sctids, Integer namespaceId, String comment) throws RestClientException;
 

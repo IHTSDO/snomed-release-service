@@ -1,9 +1,11 @@
 package org.ihtsdo.buildcloud.core.service.identifier.client;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -114,6 +116,11 @@ public class IdServiceRestClientOfflineDemoImpl implements IdServiceRestClient {
 	@Override
 	public void logOut() throws RestClientException {
 		
+	}
+
+	@Override
+	public Set<String> getPermittedNamespaces() {
+		return Collections.emptySet();
 	}
 
 	@Override
