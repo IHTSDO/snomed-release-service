@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -50,12 +51,12 @@ public final class ExtensionNamespacePermissions {
 		}
 		if (partitionId.charAt(0) == '1') {
 			if (id.length() < 10) {
-				LOGGER.error("Invalid extension sctId:" + id);
+				LOGGER.error("Invalid extension sctId:{}", id);
 				return null;
 			}
 			return Long.toString(Long.parseLong(id.substring(id.length() - 10, id.length() - 3)));
 		}
-		LOGGER.error("Invalid partition id:" + partitionId + " for sctId:" + id);
+		LOGGER.error("Invalid partition id:{} for sctId:{}", partitionId, id);
 		return null;
 	}
 
@@ -65,29 +66,32 @@ public final class ExtensionNamespacePermissions {
 	 */
 	public static void collectFromDelta(InputStream inputStream, Set<String> extensionNamespaces) throws IOException {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, RF2Constants.UTF_8))) {
-			String line;
-			boolean header = true;
-			while ((line = reader.readLine()) != null) {
-				if (header) {
-					header = false;
-					continue;
-				}
-				if (line.isEmpty()) {
-					continue;
-				}
-				int tab = line.indexOf(RF2Constants.COLUMN_SEPARATOR);
-				String componentId = tab < 0 ? line.trim() : line.substring(0, tab).trim();
-				if (componentId.isEmpty()) {
-					continue;
-				}
-				if (!isAllDigits(componentId)) {
-					throw new IOException("Delta row has a non-numeric component id: " + abbreviate(componentId));
-				}
-				String namespaceId = fromSctId(componentId);
-				if (namespaceId != null && !INTERNATIONAL_NAMESPACE.equals(namespaceId)) {
-					extensionNamespaces.add(namespaceId);
+			String line = reader.readLine();
+			if (line != null) {
+				line = reader.readLine();
+				while (line != null) {
+					collectExtensionNamespace(line, extensionNamespaces);
+					line = reader.readLine();
 				}
 			}
+		}
+	}
+
+	private static void collectExtensionNamespace(String line, Set<String> extensionNamespaces) throws IOException {
+		if (line.isEmpty()) {
+			return;
+		}
+		int tab = line.indexOf(RF2Constants.COLUMN_SEPARATOR);
+		String componentId = tab < 0 ? line.trim() : line.substring(0, tab).trim();
+		if (componentId.isEmpty()) {
+			return;
+		}
+		if (!isAllDigits(componentId)) {
+			throw new IOException("Delta row has a non-numeric component id: " + abbreviate(componentId));
+		}
+		String namespaceId = fromSctId(componentId);
+		if (namespaceId != null && !INTERNATIONAL_NAMESPACE.equals(namespaceId)) {
+			extensionNamespaces.add(namespaceId);
 		}
 	}
 
@@ -106,7 +110,8 @@ public final class ExtensionNamespacePermissions {
 		}
 		List<String> missing = requiredNamespaces.stream()
 				.map(ExtensionNamespacePermissions::normalize)
-				.filter(namespace -> namespace != null && !INTERNATIONAL_NAMESPACE.equals(namespace))
+				.filter(Objects::nonNull)
+				.filter(namespace -> !INTERNATIONAL_NAMESPACE.equals(namespace))
 				.filter(namespace -> !permitted.contains(namespace))
 				.distinct()
 				.sorted(Comparator.comparingLong(Long::parseLong))
@@ -120,7 +125,7 @@ public final class ExtensionNamespacePermissions {
 	public static String format(Collection<String> namespaces) {
 		return namespaces.stream()
 				.map(ExtensionNamespacePermissions::normalize)
-				.filter(namespace -> namespace != null)
+				.filter(Objects::nonNull)
 				.distinct()
 				.sorted(Comparator.comparingLong(Long::parseLong))
 				.collect(Collectors.joining(", "));
