@@ -17,21 +17,21 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
-public class BuildConfigurationTest {
+class BuildConfigurationTest {
 
 	private StringWriter stringWriter;
 	private JsonGenerator jsonGenerator;
 	private ObjectMapper objectMapper;
 
 	@BeforeEach
-	public void setUp() throws Exception {
+	void setUp() throws Exception {
 		objectMapper = new ObjectMapper();
 		stringWriter = new StringWriter();
 		jsonGenerator = objectMapper.createGenerator(stringWriter);
 	}
 
 	@Test
-	public void testToJsonAndBack() throws IOException, ParseException {
+	void testToJsonAndBack() throws IOException, ParseException {
 		BuildConfiguration configuration = new BuildConfiguration();
 
 		Date effectiveTime = new GregorianCalendar(2014, 6, 31).getTime();
@@ -73,13 +73,13 @@ public class BuildConfigurationTest {
 	}
 
 	@Test
-	public void historicalSnapshotWithoutFlagKeepsAdditionalRelationships() throws IOException {
+	void historicalSnapshotWithoutFlagKeepsAdditionalRelationships() throws IOException {
 		BuildConfiguration configuration = objectMapper.readValue("{\"betaRelease\":false}", BuildConfiguration.class);
 		assertFalse(configuration.isExcludeAdditionalRelationships());
 	}
 
 	@Test
-	public void snapshotKeepsStoredExcludeAdditionalRelationshipsValue() throws IOException {
+	void snapshotKeepsStoredExcludeAdditionalRelationshipsValue() throws IOException {
 		BuildConfiguration excludedConfiguration = objectMapper.readValue("{\"excludeAdditionalRelationships\":true}", BuildConfiguration.class);
 		assertTrue(excludedConfiguration.isExcludeAdditionalRelationships());
 
