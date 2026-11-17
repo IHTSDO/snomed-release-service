@@ -29,6 +29,7 @@
     "excludeLanguageRefsetIds" : null,
     "dailyBuild" : false,
     "frequentRelease" : false,
+    "excludeAdditionalRelationships" : false,
     "classifyOutputFiles" : false,
     "licenceStatement" : null,
     "additionalReleaseInformationFields" : null,

@@ -89,8 +89,6 @@ public class BuildServiceImpl implements BuildService {
 	private static final String BUILD_NOT_FOUND_MSG = "Unable to find build: %s for product: %s";
 	private static final String HYPHEN = "-";
 
-	private static final String ADDITIONAL_RELATIONSHIP = "900000000000227009";
-
 	private static final String STATED_RELATIONSHIP = "_StatedRelationship_";
 	private static final String DELTA_FROM_DATE = "deltaFromDate";
 	private static final String DELTA_TO_DATE = "deltaToDate";
@@ -1344,7 +1342,7 @@ public class BuildServiceImpl implements BuildService {
 							isFirstLine = false;
 						}
 						String[] columnValues = line.split(RF2Constants.COLUMN_SEPARATOR);
-						if (ADDITIONAL_RELATIONSHIP.equals(columnValues[8]) && RF2Constants.BOOLEAN_FALSE.equals(columnValues[2])) {
+						if (RF2Constants.ADDITIONAL_RELATIONSHIP.equals(columnValues[8]) && RF2Constants.BOOLEAN_FALSE.equals(columnValues[2])) {
 							writer.write(line);
 							writer.write(RF2Constants.LINE_ENDING);
 						}

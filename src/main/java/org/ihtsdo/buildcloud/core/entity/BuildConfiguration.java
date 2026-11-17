@@ -95,6 +95,10 @@ public class BuildConfiguration {
 	private boolean frequentRelease;
 
 	@Convert(converter = YesNoConverter.class)
+	@Column(name = "exclude_additional_relationships")
+	private boolean excludeAdditionalRelationships;
+
+	@Convert(converter = YesNoConverter.class)
 	@Column(name = "classify_output_files")
 	private boolean classifyOutputFiles;
 
@@ -479,6 +483,7 @@ public class BuildConfiguration {
 				", excludeLanguageRefsetIds='" + excludeLanguageRefsetIds + '\'' +
 				", dailyBuild=" + dailyBuild +
 				", frequentRelease=" + frequentRelease +
+				", excludeAdditionalRelationships=" + excludeAdditionalRelationships +
 				", classifyOutputFiles=" + classifyOutputFiles +
 				", licenceStatement='" + licenceStatement + '\'' +
 				", additionalReleaseInformationFields='" + additionalReleaseInformationFields + '\'' +
@@ -586,6 +591,14 @@ public class BuildConfiguration {
 
 	public void setFrequentRelease(boolean frequentRelease) {
 		this.frequentRelease = frequentRelease;
+	}
+
+	public boolean isExcludeAdditionalRelationships() {
+		return excludeAdditionalRelationships;
+	}
+
+	public void setExcludeAdditionalRelationships(boolean excludeAdditionalRelationships) {
+		this.excludeAdditionalRelationships = excludeAdditionalRelationships;
 	}
 
 	public boolean requiresReleasePackageInformation() {

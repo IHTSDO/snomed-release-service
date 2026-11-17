@@ -23,6 +23,7 @@ public interface ProductService extends EntityService<Product> {
 	String BETA_RELEASE = "betaRelease";
 	String DAILY_BUILD = "dailyBuild";
 	String FREQUENT_RELEASE = "frequentRelease";
+	String EXCLUDE_ADDITIONAL_RELATIONSHIPS = "excludeAdditionalRelationships";
 	String PREVIOUS_PACKAGE = "previousPackage";
 	String PREVIOUS_PUBLISHED_PACKAGE = "previousPublishedPackage";
 	String README_END_DATE = "readmeEndDate";

@@ -45,7 +45,8 @@ public class ProductServiceImplTest extends TestEntityGenerator {
 		int before = page.getContent().size();
 		//LOGGER.warn("Found " + before + " products");
 		assertTrue(before > 0);  //Check our test data is in there.
-		bs.create(releaseCenterKey, "my test product name", null);
+		Product created = bs.create(releaseCenterKey, "my test product name", null);
+		assertTrue(created.getBuildConfiguration().isExcludeAdditionalRelationships());
 		int after = bs.findAll(releaseCenterKey, filterOptions,PageRequest.of(0,20), false).getContent().size();
 		assertEquals(before + 1, after);
 		

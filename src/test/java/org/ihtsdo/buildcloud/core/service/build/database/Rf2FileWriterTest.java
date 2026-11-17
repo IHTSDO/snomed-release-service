@@ -152,6 +152,41 @@ class Rf2FileWriterTest {
 	    StreamTestUtils.assertStreamsEqualLineByLine(getClass().getResourceAsStream(EXPECTED_EXTENDED_MAP_FULL_20140731), new ByteArrayInputStream(fullOutputStream.toByteArray()));
 	}
 
+	@Test
+	void testExcludeAdditionalRelationshipsOmitsThemFromDeltaFullAndSnapshot() throws Exception {
+		final String filename = "sct2_Relationship_Delta_INT_20190131.txt";
+		final String header = "id\teffectiveTime\tactive\tmoduleId\tsourceId\tdestinationId\trelationshipGroup\ttypeId\tcharacteristicTypeId\tmodifierId";
+		final String inferredHistorical = "100\t20170731\t1\t900000000000207008\t404684003\t138875005\t0\t116680003\t900000000000011006\t900000000000451002";
+		final String inferredCurrent = "100\t20190131\t1\t900000000000207008\t404684003\t138875005\t0\t116680003\t900000000000011006\t900000000000451002";
+		final String additionalHistorical = "200\t20170731\t0\t900000000000207008\t404684003\t123037004\t0\t116680003\t900000000000227009\t900000000000451002";
+		final String additionalCurrent = "300\t20190131\t1\t900000000000207008\t404684003\t123037004\t0\t116680003\t900000000000227009\t900000000000451002";
+		final String laterInferred = "400\t20190131\t1\t900000000000207008\t404684003\t138875005\t0\t116680003\t900000000000011006\t900000000000451002";
+		final String content = String.join("\n", header, inferredHistorical, additionalHistorical, inferredCurrent, additionalCurrent, laterInferred) + "\n";
+
+		tableSchema = rf2TableDAO.createTable(filename, new ByteArrayInputStream(content.getBytes(RF2Constants.UTF_8)), false);
+		Rf2FileWriter ignoringWriter = new Rf2FileWriter(null, null, true);
+		ignoringWriter.exportFullAndSnapshot(rf2TableDAO.selectAllOrdered(tableSchema), tableSchema,
+				RF2Constants.DATE_FORMAT.parse("20190131"), fullOutputStream, snapshotOutputStream);
+
+		StreamTestUtils.assertStreamsEqualLineByLine(
+				new ByteArrayInputStream((header + "\n" + inferredHistorical + "\n" + inferredCurrent + "\n" + laterInferred + "\n").getBytes(RF2Constants.UTF_8)),
+				new ByteArrayInputStream(fullOutputStream.toByteArray()));
+		StreamTestUtils.assertStreamsEqualLineByLine(
+				new ByteArrayInputStream((header + "\n" + inferredCurrent + "\n" + laterInferred + "\n").getBytes(RF2Constants.UTF_8)),
+				new ByteArrayInputStream(snapshotOutputStream.toByteArray()));
+
+		ByteArrayOutputStream includedDelta = new ByteArrayOutputStream();
+		rf2FileWriter.exportDelta(rf2TableDAO.selectAllOrdered(tableSchema), tableSchema, includedDelta, Collections.emptySet());
+		StreamTestUtils.assertStreamsEqualLineByLine(
+				new ByteArrayInputStream((header + "\n" + inferredHistorical + "\n" + inferredCurrent + "\n" + additionalHistorical + "\n" + additionalCurrent + "\n" + laterInferred + "\n").getBytes(RF2Constants.UTF_8)),
+				new ByteArrayInputStream(includedDelta.toByteArray()));
+
+		ignoringWriter.exportDelta(rf2TableDAO.selectAllOrdered(tableSchema), tableSchema, deltaOutputStream, Collections.emptySet());
+		StreamTestUtils.assertStreamsEqualLineByLine(
+				new ByteArrayInputStream((header + "\n" + inferredHistorical + "\n" + inferredCurrent + "\n" + laterInferred + "\n").getBytes(RF2Constants.UTF_8)),
+				new ByteArrayInputStream(deltaOutputStream.toByteArray()));
+	}
+
 	@AfterEach
     void tearDown() throws Exception {
 		rf2TableDAO.closeConnection();

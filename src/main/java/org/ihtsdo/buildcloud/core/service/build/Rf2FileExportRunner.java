@@ -198,7 +198,7 @@ public class Rf2FileExportRunner {
 			timer.logTimeTaken("Create table");
 
 			// Export ordered Delta file
-			final Rf2FileWriter rf2FileWriter = new Rf2FileWriter(configuration.getExcludeRefsetDescriptorMembers(), configuration.getExcludeLanguageRefsetIds());
+			final Rf2FileWriter rf2FileWriter = new Rf2FileWriter(configuration.getExcludeRefsetDescriptorMembers(), configuration.getExcludeLanguageRefsetIds(), configuration.isExcludeAdditionalRelationships());
 			final AsyncPipedStreamBean deltaFileAsyncPipe = buildDao
 					.getOutputFileOutputStream(build, transformedDeltaDataFile);
 			

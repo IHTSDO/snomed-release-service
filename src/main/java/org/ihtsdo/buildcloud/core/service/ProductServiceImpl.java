@@ -146,6 +146,10 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		if (StringUtils.hasLength(overriddenSnomedCtProduct)) {
 			product.setOverriddenSnomedCtProduct(overriddenSnomedCtProduct);
 		}
+		BuildConfiguration configuration = new BuildConfiguration();
+		configuration.setExcludeAdditionalRelationships(true);
+		configuration.setProduct(product);
+		product.setBuildConfiguration(configuration);
 		releaseCenter.addProduct(product);
 		productDAO.save(product);
 
@@ -306,6 +310,7 @@ public class ProductServiceImpl extends EntityServiceImpl<Product> implements Pr
 		setConfigurationValueIfPresent(newPropertyValues, BETA_RELEASE, configuration, BETA_RELEASE, true);
 		setConfigurationValueIfPresent(newPropertyValues, DAILY_BUILD, configuration, DAILY_BUILD, true);
 		setConfigurationValueIfPresent(newPropertyValues, FREQUENT_RELEASE, configuration, FREQUENT_RELEASE, true);
+		setConfigurationValueIfPresent(newPropertyValues, EXCLUDE_ADDITIONAL_RELATIONSHIPS, configuration, EXCLUDE_ADDITIONAL_RELATIONSHIPS, true);
 		setConfigurationValueIfPresent(newPropertyValues, WORKBENCH_DATA_FIXES_REQUIRED, configuration, WORKBENCH_DATA_FIXES_REQUIRED, true);
 		setConfigurationValueIfPresent(newPropertyValues, INPUT_FILES_FIXES_REQUIRED, configuration, INPUT_FILES_FIXES_REQUIRED, true);
 		setConfigurationValueIfPresent(newPropertyValues, CREATE_LEGACY_IDS, configuration, CREATE_LEGACY_IDS, true);

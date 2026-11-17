@@ -12,7 +12,9 @@ import java.text.ParseException;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 public class BuildConfigurationTest {
@@ -68,6 +70,21 @@ public class BuildConfigurationTest {
 		assertEquals("554471000005108", extConfig.getModuleIds());
 		assertEquals("1000005", extConfig.getNamespaceId());
 		assertEquals("2021-07-31", extConfig.getPreviousEditionDependencyEffectiveDateFormatted());
+	}
+
+	@Test
+	public void historicalSnapshotWithoutFlagKeepsAdditionalRelationships() throws IOException {
+		BuildConfiguration configuration = objectMapper.readValue("{\"betaRelease\":false}", BuildConfiguration.class);
+		assertFalse(configuration.isExcludeAdditionalRelationships());
+	}
+
+	@Test
+	public void snapshotKeepsStoredExcludeAdditionalRelationshipsValue() throws IOException {
+		BuildConfiguration excludedConfiguration = objectMapper.readValue("{\"excludeAdditionalRelationships\":true}", BuildConfiguration.class);
+		assertTrue(excludedConfiguration.isExcludeAdditionalRelationships());
+
+		BuildConfiguration includedConfiguration = objectMapper.readValue("{\"excludeAdditionalRelationships\":false}", BuildConfiguration.class);
+		assertFalse(includedConfiguration.isExcludeAdditionalRelationships());
 	}
 
 	private TreeSet<BuildConfiguration.RefsetCompositeKey> getSortedKeys(BuildConfiguration buildConfigurationFromJson) {

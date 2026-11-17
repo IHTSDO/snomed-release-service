@@ -59,6 +59,9 @@ public class RF2Constants {
 	public static final ReleaseCenter INT_RELEASE_CENTER = new ReleaseCenter("International Release Center", "International");
 	public static final String INT = "INT";
 	public static final String ADDITIONAL_TXT = "_additional.txt";
+	/** Characteristic type |Additional relationship (core metadata concept)|. */
+	public static final String ADDITIONAL_RELATIONSHIP = "900000000000227009";
+	public static final int CHARACTERISTIC_TYPE_ID_COLUMN = 8;
 	public static final String SNOMEDCT = "SNOMEDCT";
 	public static final String 	DAILY_BUILD_TIME_FORMAT = "yyyy-MM-dd-HHmmss";
 	public static final String REFSET = "Refset";
