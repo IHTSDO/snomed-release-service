@@ -21,6 +21,11 @@ public interface RF2TableExportDAO {
 
 	Set<Key> findAlreadyPublishedDeltaKeys(TableSchema tableSchema, InputStream previousSnapshotFileStream) throws IOException;
 
+	/**
+	 * Removes additional relationships introduced in this release. Rows with an earlier effective time stay.
+	 */
+	void removeNewAdditionalRelationships(String releaseEffectiveTime);
+
 	RF2TableResults selectAllOrdered(TableSchema tableSchema) throws SQLException;
 
 	RF2TableResults selectWithEffectiveDateOrdered(TableSchema table, String effectiveDate) throws SQLException;

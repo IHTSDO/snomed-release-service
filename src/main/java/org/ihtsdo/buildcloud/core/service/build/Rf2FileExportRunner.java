@@ -122,6 +122,9 @@ public class Rf2FileExportRunner {
 			timer.split();
 			final boolean workbenchDataFixesRequired = configuration.isWorkbenchDataFixesRequired();
 			tableSchema = rf2TableDAO.createTable(transformedDeltaDataFile, transformedDeltaInputStream, workbenchDataFixesRequired);
+			if (configuration.isExcludeAdditionalRelationships()) {
+				rf2TableDAO.removeNewAdditionalRelationships(effectiveTime);
+			}
 
 			if (configuration.getExtensionConfig() != null && configuration.getExtensionConfig().isReleaseAsAnEdition()) {
 				if (StringUtils.isBlank(configuration.getExtensionConfig().getDependencyRelease())) {
@@ -198,7 +201,7 @@ public class Rf2FileExportRunner {
 			timer.logTimeTaken("Create table");
 
 			// Export ordered Delta file
-			final Rf2FileWriter rf2FileWriter = new Rf2FileWriter(configuration.getExcludeRefsetDescriptorMembers(), configuration.getExcludeLanguageRefsetIds(), configuration.isExcludeAdditionalRelationships());
+			final Rf2FileWriter rf2FileWriter = new Rf2FileWriter(configuration.getExcludeRefsetDescriptorMembers(), configuration.getExcludeLanguageRefsetIds());
 			final AsyncPipedStreamBean deltaFileAsyncPipe = buildDao
 					.getOutputFileOutputStream(build, transformedDeltaDataFile);
 			

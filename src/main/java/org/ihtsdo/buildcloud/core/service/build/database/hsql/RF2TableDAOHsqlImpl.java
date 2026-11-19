@@ -91,6 +91,11 @@ public class RF2TableDAOHsqlImpl implements RF2TableExportDAO {
 	}
 
 	@Override
+	public void removeNewAdditionalRelationships(String releaseEffectiveTime) {
+		throw new UnsupportedOperationException("Method is not supported!");
+	}
+
+	@Override
 	public RF2TableResults selectNone(TableSchema tableSchema) throws SQLException {
 		String idFieldName = getIdFieldName(tableSchema);
 		PreparedStatement preparedStatement = connection.prepareStatement(

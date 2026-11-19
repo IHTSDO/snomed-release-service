@@ -112,6 +112,33 @@ public class RF2TableExportDAOImpl implements RF2TableExportDAO {
 	}
 
 	@Override
+	public void removeNewAdditionalRelationships(String releaseEffectiveTime) {
+		if (table == null || table.isEmpty() || tableSchema == null || tableSchema.getFilename() == null
+				|| !tableSchema.getFilename().contains("Relationship") || releaseEffectiveTime == null || releaseEffectiveTime.isEmpty()) {
+			return;
+		}
+		int releaseDate = Integer.parseInt(releaseEffectiveTime);
+		int characteristicIndex = RF2Constants.CHARACTERISTIC_TYPE_ID_COLUMN - 2;
+		List<Key> keysToRemove = new ArrayList<>();
+		for (Map.Entry<Key, String> entry : table.entrySet()) {
+			String effectiveTime = entry.getKey().getDate();
+			if (effectiveTime != null && !effectiveTime.isEmpty() && Integer.parseInt(effectiveTime) < releaseDate) {
+				continue;
+			}
+			String[] columns = entry.getValue().split(RF2Constants.COLUMN_SEPARATOR, characteristicIndex + 2);
+			if (columns.length > characteristicIndex && RF2Constants.ADDITIONAL_RELATIONSHIP.equals(columns[characteristicIndex])) {
+				keysToRemove.add(entry.getKey());
+			}
+		}
+		for (Key key : keysToRemove) {
+			table.remove(key);
+		}
+		if (!keysToRemove.isEmpty()) {
+			LOGGER.info("Removed {} new additional relationship row(s) from {}", keysToRemove.size(), tableSchema.getFilename());
+		}
+	}
+
+	@Override
 	public RF2TableResults selectAllOrdered(final TableSchema tableSchema) {
 		return new RF2TableResultsMapImpl(table);
 	}

@@ -25,18 +25,11 @@ public class Rf2FileWriter {
 
 	private String excludeLanguageRefsetIds;
 
-	private boolean excludeAdditionalRelationships;
-
 	public Rf2FileWriter() {}
 
 	public Rf2FileWriter(final String excludeRefsetDescriptorMembers, final String excludeLanguageRefsetIds) {
-		this(excludeRefsetDescriptorMembers, excludeLanguageRefsetIds, false);
-	}
-
-	public Rf2FileWriter(final String excludeRefsetDescriptorMembers, final String excludeLanguageRefsetIds, final boolean excludeAdditionalRelationshipRows) {
 		this.excludeRefsetDescriptorMembers = excludeRefsetDescriptorMembers;
 		this.excludeLanguageRefsetIds = excludeLanguageRefsetIds;
-		this.excludeAdditionalRelationships = excludeAdditionalRelationshipRows;
 	}
 
 	public void exportDelta(RF2TableResults tableResults, TableSchema tableSchema, OutputStream deltaOutputStream, Set<Key> deltaKeysToDiscard) throws SQLException, IOException {
@@ -44,7 +37,6 @@ public class Rf2FileWriter {
 		final Set<String> ignoredKeyLookup = buildIgnoredKeyLookup(deltaKeysToDiscard);
 		final boolean isIdentifier = ComponentType.IDENTIFIER.equals(tableSchema.getComponentType());
 		final boolean isLanguageFile = !isIdentifier && Pattern.compile(RF2Constants.LANGUAGE_FILE_PATTERN).matcher(tableSchema.getFilename()).matches();
-		final boolean filterAdditionalRelationships = shouldExcludeAdditionalRelationships(tableSchema);
 
 		try (BufferedWriter deltaWriter = new BufferedWriter(new OutputStreamWriter(deltaOutputStream, RF2Constants.UTF_8))) {
 			List<Field> fields = tableSchema.getFields();
@@ -54,46 +46,34 @@ public class Rf2FileWriter {
 			deltaWriter.append(RF2Constants.LINE_ENDING);
 
 			String line;
+			String currentId;
 			while ((line = tableResults.nextLine()) != null) {
-				String outputLine = prepareDeltaLine(line, tableSchema, isIdentifier, isLanguageFile, ignoredKeyLookup, filterAdditionalRelationships);
-				if (outputLine == null) {
+				String[] lineParts;
+				String languageRefsetId = null;
+				if (isIdentifier) {
+					lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 6);
+					currentId = lineParts[0] + RF2Constants.COLUMN_SEPARATOR + lineParts[1];
+					// Replace the composite key by identifierSchemeId
+					line = line.replace(currentId, lineParts[0]);
+				} else {
+					if (isLanguageFile) {
+						lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 6);
+						languageRefsetId = lineParts[4];
+					} else {
+						lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
+					}
+					currentId = lineParts[0];
+				}
+
+				final String effectiveTime = isIdentifier ? lineParts[2] : lineParts[1];
+				if (isIgnoredKey(ignoredKeyLookup, currentId, effectiveTime)
+				 || (!isIdentifier && isRF2LineExcluded(tableSchema, currentId, languageRefsetId))) {
 					continue;
 				}
-				deltaWriter.append(outputLine);
+				deltaWriter.append(line);
 				deltaWriter.append(RF2Constants.LINE_ENDING);
 			}
 		}
-	}
-
-	private String prepareDeltaLine(String line, TableSchema tableSchema, boolean isIdentifier, boolean isLanguageFile,
-			Set<String> ignoredKeyLookup, boolean filterAdditionalRelationships) {
-		if (filterAdditionalRelationships && isAdditionalRelationshipLine(line)) {
-			return null;
-		}
-		String[] lineParts;
-		String currentId;
-		String languageRefsetId = null;
-		if (isIdentifier) {
-			lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 6);
-			currentId = lineParts[0] + RF2Constants.COLUMN_SEPARATOR + lineParts[1];
-			// Replace the composite key by identifierSchemeId
-			line = line.replace(currentId, lineParts[0]);
-		} else {
-			if (isLanguageFile) {
-				lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 6);
-				languageRefsetId = lineParts[4];
-			} else {
-				lineParts = line.split(RF2Constants.COLUMN_SEPARATOR, 3);
-			}
-			currentId = lineParts[0];
-		}
-
-		final String effectiveTime = isIdentifier ? lineParts[2] : lineParts[1];
-		if (isIgnoredKey(ignoredKeyLookup, currentId, effectiveTime)
-				|| (!isIdentifier && isRF2LineExcluded(tableSchema, currentId, languageRefsetId))) {
-			return null;
-		}
-		return line;
 	}
 
 	private static Set<String> buildIgnoredKeyLookup(Set<Key> deltaKeysToDiscard) {
@@ -138,11 +118,10 @@ public class Rf2FileWriter {
 			snapshotWriter.write(header);
 			snapshotWriter.append(RF2Constants.LINE_ENDING);
 
-			final boolean filterAdditionalRelationships = shouldExcludeAdditionalRelationships(schema);
-			final boolean isLanguageFile = Pattern.compile(RF2Constants.LANGUAGE_FILE_PATTERN).matcher(schema.getFilename()).matches();
-
 			// Variables for snapshot resolution
 			String currentLine;
+			String currentId;
+			int currentEffectiveTimeInt;
 			int targetEffectiveTimeInt = Integer.parseInt(new SimpleDateFormat("yyyyMMdd").format(targetEffectiveTime));
 			String lastId = null;
 			String validLine = null;
@@ -151,18 +130,40 @@ public class Rf2FileWriter {
 
 			// Iterate through data
 			while ((currentLine = tableResults.nextLine()) != null) {
-				ReleaseLine releaseLine = toReleaseLine(schema, currentLine, isLanguageFile, filterAdditionalRelationships);
-				if (releaseLine == null) {
-					continue;
+				// Parse out id and effectiveTime
+				String[] lineParts;
+				String languageRefsetId = null;
+				if (ComponentType.IDENTIFIER.equals(schema.getComponentType())) {
+					lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 6);
+					currentId = lineParts[0] + RF2Constants.COLUMN_SEPARATOR + lineParts[1];
+					// effective time is on the third column
+					currentEffectiveTimeInt = Integer.parseInt(lineParts[2]);
+					// Replace the composite key by identifierSchemeId
+					currentLine = currentLine.replace(currentId, lineParts[0]);
+				} else {
+					if (Pattern.compile(RF2Constants.LANGUAGE_FILE_PATTERN).matcher(schema.getFilename()).matches()) {
+						lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 6);
+						languageRefsetId = lineParts[4];
+					} else {
+						lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 3);
+					}
+
+					currentId = lineParts[0];
+					// effective time is on the second column
+					currentEffectiveTimeInt = Integer.parseInt(lineParts[1]);
+
+					if (isRF2LineExcluded(schema, currentId, languageRefsetId)) {
+						continue;
+					}
 				}
 
 				// Write to Full file
-				fullWriter.append(releaseLine.outputLine);
+				fullWriter.append(currentLine);
 				fullWriter.append(RF2Constants.LINE_ENDING);
 
 				// If moved to new member or passed target effectiveTime write any previous valid line
-				movedToNewMember = lastId != null && !lastId.equals(releaseLine.id);
-				passedTargetEffectiveTime = releaseLine.effectiveTime > targetEffectiveTimeInt;
+				movedToNewMember = lastId != null && !lastId.equals(currentId);
+				passedTargetEffectiveTime = currentEffectiveTimeInt > targetEffectiveTimeInt;
 				if (movedToNewMember || passedTargetEffectiveTime) {
 					if (validLine != null) {
 						snapshotWriter.append(validLine);
@@ -173,11 +174,11 @@ public class Rf2FileWriter {
 
 				// Store valid line if effectiveTime not exceeded
 				if (!passedTargetEffectiveTime) {
-					validLine = releaseLine.outputLine;
+					validLine = currentLine;
 				}
 
 				// Record last id
-				lastId = releaseLine.id;
+				lastId = currentId;
 			}
 
 			// Write out any valid line not yet written
@@ -189,7 +190,6 @@ public class Rf2FileWriter {
 	}
 
 	public void exportFull(RF2TableResults results, TableSchema tableSchema, OutputStream fullOutputStream) throws IOException, SQLException {
-		final boolean filterAdditionalRelationships = shouldExcludeAdditionalRelationships(tableSchema);
 		try (BufferedWriter fullWriter = new BufferedWriter(new OutputStreamWriter(fullOutputStream, RF2Constants.UTF_8))) {
 			String header = productHeader(tableSchema.getFields());
 			fullWriter.append(header);
@@ -197,75 +197,15 @@ public class Rf2FileWriter {
 
 			String line;
 			while ((line = results.nextLine()) != null) {
-				if (filterAdditionalRelationships && isAdditionalRelationshipLine(line)) {
-					continue;
-				}
 				fullWriter.append(line);
 				fullWriter.append(RF2Constants.LINE_ENDING);
 			}
 		}
 	}
 
-	private ReleaseLine toReleaseLine(TableSchema schema, String currentLine, boolean isLanguageFile, boolean filterAdditionalRelationships) {
-		if (filterAdditionalRelationships && isAdditionalRelationshipLine(currentLine)) {
-			return null;
-		}
-		String[] lineParts;
-		String currentId;
-		int currentEffectiveTimeInt;
-		if (ComponentType.IDENTIFIER.equals(schema.getComponentType())) {
-			lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 6);
-			currentId = lineParts[0] + RF2Constants.COLUMN_SEPARATOR + lineParts[1];
-			// effective time is on the third column
-			currentEffectiveTimeInt = Integer.parseInt(lineParts[2]);
-			// Replace the composite key by identifierSchemeId
-			currentLine = currentLine.replace(currentId, lineParts[0]);
-		} else {
-			String languageRefsetId = null;
-			if (isLanguageFile) {
-				lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 6);
-				languageRefsetId = lineParts[4];
-			} else {
-				lineParts = currentLine.split(RF2Constants.COLUMN_SEPARATOR, 3);
-			}
-			currentId = lineParts[0];
-			// effective time is on the second column
-			currentEffectiveTimeInt = Integer.parseInt(lineParts[1]);
-			if (isRF2LineExcluded(schema, currentId, languageRefsetId)) {
-				return null;
-			}
-		}
-		return new ReleaseLine(currentLine, currentId, currentEffectiveTimeInt);
-	}
-
-	private boolean shouldExcludeAdditionalRelationships(TableSchema tableSchema) {
-		return excludeAdditionalRelationships
-				&& tableSchema != null
-				&& tableSchema.getFilename() != null
-				&& tableSchema.getFilename().contains("Relationship");
-	}
-
-	private boolean isAdditionalRelationshipLine(String line) {
-		String[] columns = line.split(RF2Constants.COLUMN_SEPARATOR, RF2Constants.CHARACTERISTIC_TYPE_ID_COLUMN + 2);
-		return columns.length > RF2Constants.CHARACTERISTIC_TYPE_ID_COLUMN
-				&& RF2Constants.ADDITIONAL_RELATIONSHIP.equals(columns[RF2Constants.CHARACTERISTIC_TYPE_ID_COLUMN]);
-	}
-
 	private boolean isRF2LineExcluded(TableSchema tableSchema, String currentId, String languageRefsetId) {
 		return (tableSchema.getFilename().contains(RF2Constants.REFERENCE_SET_DESCRIPTOR_FILE_IDENTIFIER) && this.excludeRefsetDescriptorMembers != null && this.excludeRefsetDescriptorMembers.contains(currentId))
 				|| (this.excludeLanguageRefsetIds != null && languageRefsetId != null && excludeLanguageRefsetIds.contains(languageRefsetId));
-	}
-
-	private static final class ReleaseLine {
-		private final String outputLine;
-		private final String id;
-		private final int effectiveTime;
-
-		private ReleaseLine(String outputLine, String id, int effectiveTime) {
-			this.outputLine = outputLine;
-			this.id = id;
-			this.effectiveTime = effectiveTime;
-		}
 	}
 
 	private String productHeader(List<Field> fields) {
